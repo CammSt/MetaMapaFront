@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MetaMapa - Mi Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background-color: #f0f2f5;">
+    <div class="d-flex" style="min-height: 100vh;">
+        <nav id="sidebar" class="sidebar"></nav>
+        <div class="main-content-wrapper">
+            <button class="btn btn-primary d-lg-none sidebar-toggler" type="button" id="sidebar-toggler-btn"><span>&#9776;</span></button>
+            <main class="container-fluid" id="main-content"></main>
+        </div>
+    </div>
+    <div id="modal-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!AppState.currentUser || AppState.currentUser.role !== 'contributor') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            renderSidebar('contributor');
+            
+            let pageState = {
+                activeTab: 'my-facts',
+                filters: { type: '', status: '' }
+            };
+
+            const reRenderContent = () => renderContributorPanelContent(pageState);
+
+            mainContent.addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+
+                // --- LÓGICA CORREGIDA PARA LAS PESTAÑAS ---
+                if (button.id === 'contrib-tab-my-facts' || button.id === 'contrib-tab-my-requests') {
+                    // Actualiza el estado
+                    pageState.activeTab = button.id === 'contrib-tab-my-facts' ? 'my-facts' : 'my-requests';
+
+                    // Cambia el estilo de los botones de las pestañas
+                    mainContent.querySelector('#contrib-tab-my-facts').classList.remove('active');
+                    mainContent.querySelector('#contrib-tab-my-requests').classList.remove('active');
+                    button.classList.add('active');
+
+                    // Dibuja solo el contenido de la pestaña
+                    reRenderContent();
+                    return; // Termina el evento aquí
+                }
+
+                // Lógica para los modales
+                if (button.dataset.editFactId) openModal(renderFactModal, facts.find(f => f.id === parseInt(button.dataset.editFactId)));
+            });
+
+            mainContent.addEventListener('change', (e) => {
+                if (e.target.id === 'contrib-filter-type') pageState.filters.type = e.target.value;
+                if (e.target.id === 'contrib-filter-status') pageState.filters.status = e.target.value;
+                reRenderContent();
+            });
+
+            renderContributorPanelLayout(pageState);
+            reRenderContent();
+        });
+    </script>
+</body>
+</html>

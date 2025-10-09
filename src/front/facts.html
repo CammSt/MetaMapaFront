@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MetaMapa - Hechos de la Colección</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background-color: #f0f2f5;">
+    <div class="d-flex" style="min-height: 100vh;">
+        <nav id="sidebar" class="sidebar"></nav>
+        <div class="main-content-wrapper">
+            <button class="btn btn-primary d-lg-none sidebar-toggler" type="button" id="sidebar-toggler-btn"><span>&#9776;</span></button>
+            <main class="container-fluid" id="main-content"></main>
+        </div>
+    </div>
+    <div id="modal-container"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar('collections');
+
+            const params = new URLSearchParams(window.location.search);
+            const collectionId = parseInt(params.get('collection_id'));
+            const collection = collections.find(c => c.handle_id === collectionId);
+
+            if (collection) {
+                let pageState = {
+                    collectionId: collectionId,
+                    collection: collection,
+                    mapView: false,
+                    viewMode: 'irrestricto',
+                    searchTerm: '',
+                    filters: { date: '', category: '', source: '' }
+                };
+
+                const reRenderResults = () => renderFactsResults(pageState);
+                
+                mainContent.addEventListener('change', (e) => {
+                    if (e.target.name === 'viewMode') pageState.viewMode = e.target.id;
+                    if (['filter-date', 'filter-category', 'filter-source'].includes(e.target.id)) {
+                        pageState.filters[e.target.id.replace('filter-', '')] = e.target.value;
+                    }
+                    reRenderResults();
+                });
+                mainContent.addEventListener('input', (e) => {
+                    if (e.target.id === 'search-input') {
+                        pageState.searchTerm = e.target.value;
+                        reRenderResults();
+                    }
+                });
+                mainContent.addEventListener('click', (e) => {
+                    const button = e.target.closest('button');
+                    if (!button) return;
+
+                    if (button.id === 'map-view-btn') pageState.mapView = true;
+                    if (button.id === 'list-view-btn') pageState.mapView = false;
+                    if (button.dataset.deleteFactId) {
+                        const factId = parseInt(button.dataset.deleteFactId);
+                        openModal(renderFactDeletionModal, factId);
+                    }
+                    
+                    if (['map-view-btn', 'list-view-btn'].includes(button.id)) {
+                        reRenderResults();
+                    }
+                });
+
+                renderFactsPageLayout(pageState);
+                reRenderResults();
+            } else {
+                mainContent.innerHTML = `<div class="p-5 text-center"><h2 class="text-danger">Error: Colección no encontrada</h2><p>La colección que buscas no existe.</p><a href="index.html" class="btn btn-primary">Volver al inicio</a></div>`;
+            }
+        });
+    </script>
+</body>
+</html>

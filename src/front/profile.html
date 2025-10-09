@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MetaMapa - Mi Perfil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background-color: #f0f2f5;">
+    <div class="d-flex" style="min-height: 100vh;">
+        <nav id="sidebar" class="sidebar"></nav>
+        <div class="main-content-wrapper">
+            <button class="btn btn-primary d-lg-none sidebar-toggler" type="button" id="sidebar-toggler-btn"><span>&#9776;</span></button>
+            <main class="container-fluid" id="main-content"></main>
+        </div>
+    </div>
+    <div id="modal-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Auth Guard: si no está logueado, lo redirige al login
+            if (!AppState.currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            renderSidebar('profile');
+            renderProfilePage();
+
+            mainContent.addEventListener('submit', (e) => {
+                if (e.target.id === 'profile-form') {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const updatedUser = {
+                        ...AppState.currentUser,
+                        name: formData.get('name'),
+                        lastName: formData.get('lastName'),
+                        birthDate: formData.get('birthDate'),
+                    };
+                    
+                    // Guardar en sessionStorage y actualizar el estado
+                    sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
+                    AppState.currentUser = updatedUser;
+
+                    // Mostrar feedback
+                    const alertPlaceholder = document.getElementById('alert-placeholder');
+                    alertPlaceholder.innerHTML = '<div class="alert alert-success alert-dismissible fade show" role="alert">¡Datos guardados con éxito!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
