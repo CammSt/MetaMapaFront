@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle=~{::title}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+
+<head>
+    <title>MetaMapa - Mi Panel</title>
+</head>
+<body>
+
+<main class="container-fluid" id="main-content"></main>
+
+<div id="page-scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Guardia de autenticación: si el usuario no es contribuyente, lo redirige
+            if (!AppState.currentUser || AppState.currentUser.role !== 'contributor') {
+                window.location.href = 'login.html'; // O mejor, th:href="@{/login}"
+                return;
+            }
+
+            // Renderiza la barra lateral, marcando 'contributor' como la página activa
+            renderSidebar('contributor');
+
+            // Estado inicial de la página (pestaña activa, filtros, etc.)
+            let pageState = {
+                activeTab: 'my-facts',
+                filters: { type: '', status: '' }
+            };
+
+            // Función para volver a renderizar solo el contenido principal cuando algo cambia
+            const reRenderContent = () => renderContributorPanelContent(pageState);
+
+            // Manejador de eventos para todos los clics dentro del área de contenido principal
+            mainContent.addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+
+                // Lógica para cambiar entre pestañas ("Mis Hechos" y "Estado de Solicitudes")
+                if (button.id === 'contrib-tab-my-facts' || button.id === 'contrib-tab-my-requests') {
+                    pageState.activeTab = button.id === 'contrib-tab-my-facts' ? 'my-facts' : 'my-requests';
+
+                    // Actualiza la clase 'active' en los botones de las pestañas
+                    mainContent.querySelector('#contrib-tab-my-facts').classList.remove('active');
+                    mainContent.querySelector('#contrib-tab-my-requests').classList.remove('active');
+                    button.classList.add('active');
+
+                    reRenderContent(); // Vuelve a dibujar solo el contenido de la pestaña
+                    return;
+                }
+
+                // Lógica para abrir el modal de edición de un hecho
+                if (button.dataset.editFactId) {
+                    openModal(renderFactModal, facts.find(f => f.id === parseInt(button.dataset.editFactId)));
+                }
+            });
+
+            // Manejador para los cambios en los filtros de la pestaña de solicitudes
+            mainContent.addEventListener('change', (e) => {
+                if (e.target.id === 'contrib-filter-type') pageState.filters.type = e.target.value;
+                if (e.target.id === 'contrib-filter-status') pageState.filters.status = e.target.value;
+                reRenderContent();
+            });
+
+            // Renderizado inicial del layout del panel y su contenido
+            renderContributorPanelLayout(pageState);
+            reRenderContent();
+        });
+    </script>
+</div>
+
+</body>
+</html>

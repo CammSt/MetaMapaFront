@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle=~{::title}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+
+<head>
+    <title>MetaMapa - Acceso</title>
+</head>
+<body>
+
+<main class="container-fluid" id="main-content">
+</main>
+
+<div id="page-scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar('login');
+            renderLoginRegister();
+            renderLoginForm();
+
+            mainContent.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target.id === 'login-contrib-btn') loginAs('contributor');
+                if (target.id === 'login-admin-btn') loginAs('admin');
+                if (target.id === 'show-register') renderRegisterForm();
+                if (target.id === 'show-login') renderLoginForm();
+                if (target.closest('[data-show-terms]')) {
+                    e.preventDefault();
+                    openModal(renderTermsModal);
+                }
+            });
+        });
+    </script>
+</div>
+
+</body>
+</html>

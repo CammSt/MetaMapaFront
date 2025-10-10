@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle=~{::title}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+
+<head>
+    <title>Inicio</title>
+</head>
+<body>
+
+<main class="container-fluid" id="main-content">
+</main>
+
+<div id="page-scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar('index');
+            renderCollectionView();
+
+            // Event listener específico para esta página
+            mainContent.addEventListener('click', (e) => {
+                if (e.target.closest('[data-create-fact]')) {
+                    if (AppState.currentUser) {
+                        openModal(renderFactModal);
+                    } else {
+                        // <-- ¡AQUÍ ESTÁ EL ARREGLO!
+                        // Cambiamos 'login.html' por la ruta correcta '/login'
+                        window.location.href = '/login';
+                    }
+                }
+            });
+        });
+    </script>
+</div>
+
+</body>
+</html>

@@ -1,4 +1,3 @@
-// js/data.js
 
 const availableSources = ['Carga Manual', 'API Sudoeste', 'Datos Abiertos GCBA', 'API Externa B'];
 const availableCategories = ['Crimen de Odio', 'Incendio Forestal', 'Accidente Vial', 'Contaminación Hídrica', 'Contaminación Aérea', 'Otro'];

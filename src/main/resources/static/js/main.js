@@ -1,4 +1,3 @@
-// js/main.js
 
 const AppState = { currentUser: JSON.parse(sessionStorage.getItem('currentUser')) || null };
 
@@ -7,15 +6,15 @@ const modalContainer = document.getElementById('modal-container');
 const sidebar = document.getElementById('sidebar');
 
 function loginAs(role) {
-    const user = role === 'contributor' 
-        ? { id: 1, name: 'Ana', lastName: 'Perez', role: 'contributor', birthDate: '1990-05-15', email: 'ana.perez@example.com' } 
+    const user = role === 'contributor'
+        ? { id: 1, name: 'Ana', lastName: 'Perez', role: 'contributor', birthDate: '1990-05-15', email: 'ana.perez@example.com' }
         : { id: 99, name: 'Admin', lastName: 'Principal', role: 'admin', birthDate: '1985-01-01', email: 'admin@example.com' };
     sessionStorage.setItem('currentUser', JSON.stringify(user));
-    window.location.href = 'index.html';
+    window.location.href = '/';
 }
 function logout() {
     sessionStorage.clear();
-    window.location.href = 'index.html';
+    window.location.href = '/';
 }
 
 function renderSidebar(currentPage) {
@@ -24,7 +23,7 @@ function renderSidebar(currentPage) {
     if (currentUser) {
         userMenu = `
             <li class="nav-item mb-2">
-                <a href="profile.html" class="nav-link w-100 text-start py-2 rounded-3 ${currentPage === 'profile' ? 'active bg-primary text-white' : ''}">
+                <a href="/profile" class="nav-link w-100 text-start py-2 rounded-3 ${currentPage === 'profile' ? 'active bg-primary text-white' : ''}">
                     <i class="bi bi-person-circle me-2"></i> Mi Perfil
                 </a>
             </li>
@@ -32,15 +31,18 @@ function renderSidebar(currentPage) {
     }
 
     let navLinks = `
-        <li class="nav-item mb-2"><a href="index.html" class="nav-link w-100 text-start py-2 rounded-3 ${currentPage === 'index' ? 'active bg-primary text-white' : ''}"><i class="bi bi-grid me-2"></i> Colecciones</a></li>`;
+        <li class="nav-item mb-2"><a href="/" class="nav-link w-100 text-start py-2 rounded-3 ${currentPage === 'index' ? 'active bg-primary text-white' : ''}"><i class="bi bi-grid me-2"></i> Colecciones</a></li>`;
     if (currentUser) {
-        if (currentUser.role === 'admin') navLinks += `<li class="nav-item mb-2"><a href="admin.html" class="nav-link w-100 text-start py-2 rounded-3 ${currentPage === 'admin' ? 'active bg-primary text-white' : ''}"><i class="bi bi-person-gear me-2"></i> Administración</a></li>`;
-        if (currentUser.role === 'contributor') navLinks += `<li class="nav-item mb-2"><a href="contributor.html" class="nav-link w-100 text-start py-2 rounded-3 ${currentPage === 'contributor' ? 'active bg-primary text-white' : ''}"><i class="bi bi-person-workspace me-2"></i> Mi Panel</a></li>`;
+        if (currentUser.role === 'admin') navLinks += `<li class="nav-item mb-2"><a href="/admin" class="nav-link w-100 text-start py-2 rounded-3 ${currentPage === 'admin' ? 'active bg-primary text-white' : ''}"><i class="bi bi-person-gear me-2"></i> Administración</a></li>`;
+        if (currentUser.role === 'contributor') navLinks += `<li class="nav-item mb-2"><a href="/contributor" class="nav-link w-100 text-start py-2 rounded-3 ${currentPage === 'contributor' ? 'active bg-primary text-white' : ''}"><i class="bi bi-person-workspace me-2"></i> Mi Panel</a></li>`;
         navLinks += `${userMenu}<li class="nav-item mt-auto"><button id="logout-btn" class="nav-link w-100 text-start py-2 rounded-3 text-danger"><i class="bi bi-box-arrow-left me-2"></i> Cerrar Sesión</button></li>`;
     } else {
-        navLinks += `<li class="nav-item mb-2"><a href="login.html" class="nav-link w-100 text-start py-2 rounded-3 ${currentPage === 'login' ? 'active bg-primary text-white' : ''}"><i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión</a></li>`;
+        navLinks += `<li class="nav-item mb-2"><a href="/login" class="nav-link w-100 text-start py-2 rounded-3 ${currentPage === 'login' ? 'active bg-primary text-white' : ''}"><i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión</a></li>`;
     }
-    sidebar.innerHTML = `<div class="d-flex flex-column h-100"><div class="sidebar-header d-flex align-items-center mb-4 pb-3 border-bottom"><img src="https://via.placeholder.com/50" alt="MetaMapa Logo" class="logo-sidebar" style="border-radius: 100%;"><h2 class="display-9 fw-bold text-primary mb-0">MetaMapa</h2></div><ul class="nav nav-pills flex-column flex-grow-1">${navLinks}</ul><div class="border-top pt-3 mt-auto"><small class="text-muted">DSI - 2025 (mi-no-grupo-24)</small></div></div>`;
+
+    const imagePath = "/assets/logo.png";
+    sidebar.innerHTML = `<div class="d-flex flex-column h-100"><div class="sidebar-header d-flex align-items-center mb-4 pb-3 border-bottom"><img src="${imagePath}" alt="MetaMapa Logo" class="logo-sidebar" style="border-radius: 100%;"><h2 class="display-9 fw-bold text-primary mb-0">MetaMapa</h2></div><ul class="nav nav-pills flex-column flex-grow-1">${navLinks}</ul><div class="border-top pt-3 mt-auto"><small class="text-muted">DSI - 2025 (mi-no-grupo-24)</small></div></div>`;
+
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
 }
@@ -56,13 +58,13 @@ function openModal(modalRenderFunc, ...args) {
 }
 
 function renderCollectionView() {
-    mainContent.innerHTML = `<div class="p-4"><div class="text-center mb-5 animate__animated animate__fadeInDown"><h2 class="display-4 fw-bold text-primary">Información Colaborativa para un Mundo Transparente</h2><p class="lead text-secondary">MetaMapa es una plataforma abierta y ciudadana para mapear, verificar y visualizar información geolocalizada. Nuestro objetivo es construir una fuente de datos confiable sobre temas de interés público, impulsada por la comunidad.</p><button class="btn btn-primary rounded-pill px-4 py-2 fw-bold" data-create-fact>+ Subir Hecho</button></div><section class="animate__animated animate__fadeIn"><h3 class="mb-4 text-primary fw-bold border-bottom pb-2">Explora Nuestras Colecciones</h3><div class="row g-4">${collections.map(c=>`<div class="col-md-6 col-lg-4"><div class="card h-100 shadow-sm border-0 rounded-3 custom-card-hover"><div class="card-body d-flex flex-column"><h5 class="card-title text-primary fw-bold mb-2">${c.title}</h5><p class="card-text text-muted flex-grow-1 mb-3">${c.description}</p><div class="mt-auto pt-3 border-top d-grid gap-2"><a href="facts.html?collection_id=${c.handle_id}" class="btn btn-primary btn-sm rounded-pill">Ver Listado</a></div></div></div></div>`).join('')}</div></section></div>`;
+    mainContent.innerHTML = `<div class="p-4"><div class="text-center mb-5 animate__animated animate__fadeInDown"><h2 class="display-4 fw-bold text-primary">Información Colaborativa para un Mundo Transparente</h2><p class="lead text-secondary">MetaMapa es una plataforma abierta y ciudadana para mapear, verificar y visualizar información geolocalizada. Nuestro objetivo es construir una fuente de datos confiable sobre temas de interés público, impulsada por la comunidad.</p><button class="btn btn-primary rounded-pill px-4 py-2 fw-bold" data-create-fact>+ Subir Hecho</button></div><section class="animate__animated animate__fadeIn"><h3 class="mb-4 text-primary fw-bold border-bottom pb-2">Explora Nuestras Colecciones</h3><div class="row g-4">${collections.map(c=>`<div class="col-md-6 col-lg-4"><div class="card h-100 shadow-sm border-0 rounded-3 custom-card-hover"><div class="card-body d-flex flex-column"><h5 class="card-title text-primary fw-bold mb-2">${c.title}</h5><p class="card-text text-muted flex-grow-1 mb-3">${c.description}</p><div class="mt-auto pt-3 border-top d-grid gap-2"><a href="/facts?collection_id=${c.handle_id}" class="btn btn-primary btn-sm rounded-pill">Ver Hechos</a></div></div></div></div>`).join('')}</div></section></div>`;
 }
 
 function renderFactsPageLayout(pageState) {
     const allCategories = [...new Set(facts.filter(f => f.collection_id === pageState.collectionId).map(f => f.category))];
     const allSources = [...new Set(facts.filter(f => f.collection_id === pageState.collectionId).flatMap(f => f.sources))];
-    mainContent.innerHTML = `<div class="p-4"><a href="index.html" class="btn btn-outline-secondary mb-4 rounded-pill px-4 py-2 fw-bold animate__animated animate__fadeInLeft">← Volver a Colecciones</a><div class="alert alert-info p-4 rounded-3 mb-4 border-0 shadow-sm animate__animated animate__fadeIn"><h3 class="alert-heading fw-bold text-info-emphasis">${pageState.collection.title}</h3><p class="mb-0 text-info-emphasis">${pageState.collection.description}</p></div><div class="card mb-4 shadow-sm border-0 rounded-3 p-4 animate__animated animate__fadeInUp"><h5 class="card-title text-primary fw-bold mb-3">Filtros</h5><div class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label small text-muted">Fecha</label><input type="date" id="filter-date" class="form-control" value="${pageState.filters.date}"></div><div class="col-md-3"><label class="form-label small text-muted">Categoría</label><select id="filter-category" class="form-select"><option value="">Todas</option>${allCategories.map(c => `<option value="${c}" ${pageState.filters.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div><div class="col-md-3"><label class="form-label small text-muted">Fuente</label><select id="filter-source" class="form-select"><option value="">Todas</option>${allSources.map(s => `<option value="${s}" ${pageState.filters.source === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="col-md-3"><div class="d-flex align-items-center gap-3"><span class="fw-semibold text-secondary">Modo:</span><div class="btn-group" role="group"><input type="radio" class="btn-check" name="viewMode" id="irrestricto" ${pageState.viewMode==='irrestricto'?'checked':''}><label class="btn btn-outline-primary rounded-start-pill btn-sm" for="irrestricto">Irrestricto</label><input type="radio" class="btn-check" name="viewMode" id="curado" ${pageState.viewMode==='curado'?'checked':''}><label class="btn btn-outline-primary rounded-end-pill btn-sm" for="curado">Curado</label></div></div></div></div></div><div class="d-flex justify-content-between align-items-center mb-4"><div class="btn-group"><button id="list-view-btn" class="btn ${!pageState.mapView ? 'btn-primary' : 'btn-outline-primary'}">Lista</button><button id="map-view-btn" class="btn ${pageState.mapView ? 'btn-primary' : 'btn-outline-primary'}">Mapa</button></div><div class="input-group" style="max-width: 300px;"><input type="text" id="search-input" class="form-control" placeholder="Buscar por título..." value="${pageState.searchTerm}"><button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button></div></div><div id="facts-content-wrapper"></div></div>`;
+    mainContent.innerHTML = `<div class="p-4"><a href="/" class="btn btn-outline-secondary mb-4 rounded-pill px-4 py-2 fw-bold animate__animated animate__fadeInLeft">← Volver a Colecciones</a><div class="alert alert-info p-4 rounded-3 mb-4 border-0 shadow-sm animate__animated animate__fadeIn"><h3 class="alert-heading fw-bold text-info-emphasis">${pageState.collection.title}</h3><p class="mb-0 text-info-emphasis">${pageState.collection.description}</p></div><div class="card mb-4 shadow-sm border-0 rounded-3 p-4 animate__animated animate__fadeInUp"><h5 class="card-title text-primary fw-bold mb-3">Filtros</h5><div class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label small text-muted">Fecha</label><input type="date" id="filter-date" class="form-control" value="${pageState.filters.date}"></div><div class="col-md-3"><label class="form-label small text-muted">Categoría</label><select id="filter-category" class="form-select"><option value="">Todas</option>${allCategories.map(c => `<option value="${c}" ${pageState.filters.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div><div class="col-md-3"><label class="form-label small text-muted">Fuente</label><select id="filter-source" class="form-select"><option value="">Todas</option>${allSources.map(s => `<option value="${s}" ${pageState.filters.source === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="col-md-3"><div class="d-flex align-items-center gap-3"><span class="fw-semibold text-secondary">Modo:</span><div class="btn-group" role="group"><input type="radio" class="btn-check" name="viewMode" id="irrestricto" ${pageState.viewMode==='irrestricto'?'checked':''}><label class="btn btn-outline-primary rounded-start-pill btn-sm" for="irrestricto">Irrestricto</label><input type="radio" class="btn-check" name="viewMode" id="curado" ${pageState.viewMode==='curado'?'checked':''}><label class="btn btn-outline-primary rounded-end-pill btn-sm" for="curado">Curado</label></div></div></div></div></div><div class="d-flex justify-content-between align-items-center mb-4"><div class="btn-group"><button id="list-view-btn" class="btn ${!pageState.mapView ? 'btn-primary' : 'btn-outline-primary'}">Lista</button><button id="map-view-btn" class="btn ${pageState.mapView ? 'btn-primary' : 'btn-outline-primary'}">Mapa</button></div><div class="input-group" style="max-width: 300px;"><input type="text" id="search-input" class="form-control" placeholder="Buscar por título..." value="${pageState.searchTerm}"><button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button></div></div><div id="facts-content-wrapper"></div></div>`;
 }
 function renderFactsResults(pageState) {
     const getFilteredFacts = () => {

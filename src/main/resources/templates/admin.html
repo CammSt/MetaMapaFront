@@ -1,76 +1,73 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle=~{::title}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+
 <head>
-    <meta charset="UTF-8">
     <title>MetaMapa - Administración</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link rel="stylesheet" href="css/style.css">
 </head>
-<body style="background-color: #f0f2f5;">
-    <div class="d-flex" style="min-height: 100vh;">
-        <nav id="sidebar" class="sidebar"></nav>
-        <div class="main-content-wrapper">
-            <button class="btn btn-primary d-lg-none sidebar-toggler" type="button" id="sidebar-toggler-btn"><span>&#9776;</span></button>
-            <main class="container-fluid" id="main-content"></main>
-        </div>
-    </div>
-    <div id="modal-container"></div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/main.js"></script>
+<body>
+
+<main class="container-fluid" id="main-content"></main>
+
+<div id="page-scripts">
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Guardia de autenticación: si el usuario no es admin, lo redirige
             if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
-                window.location.href = 'login.html';
+                window.location.href = 'login.html'; // O mejor, th:href="@{/login}"
                 return;
             }
 
+            // Renderiza la barra lateral, marcando 'admin' como la página activa
             renderSidebar('admin');
-            
+
+            // Estado inicial de la página (pestaña activa, filtros, etc.)
             let pageState = {
                 activeTab: 'collections',
                 filters: { type: '', status: '' }
             };
 
+            // Función para volver a renderizar solo el contenido principal cuando algo cambia
             const reRenderContent = () => renderAdminPanelContent(pageState);
 
+            // Manejador de eventos para todos los clics dentro del área de contenido principal
             mainContent.addEventListener('click', (e) => {
                 const button = e.target.closest('button');
                 if (!button) return;
 
-                // --- LÓGICA CORREGIDA PARA LAS PESTAÑAS ---
+                // Lógica para cambiar entre pestañas ("Gestionar Colecciones" y "Revisar Solicitudes")
                 if (button.id === 'admin-tab-collections' || button.id === 'admin-tab-requests') {
-                    // Actualiza el estado
                     pageState.activeTab = button.id === 'admin-tab-collections' ? 'collections' : 'requests';
-                    
-                    // Cambia el estilo de los botones de las pestañas
+
+                    // Actualiza la clase 'active' en los botones de las pestañas
                     mainContent.querySelector('#admin-tab-collections').classList.remove('active');
                     mainContent.querySelector('#admin-tab-requests').classList.remove('active');
                     button.classList.add('active');
 
-                    // Dibuja solo el contenido de la pestaña
-                    reRenderContent();
-                    return; // Termina el evento aquí
+                    reRenderContent(); // Vuelve a dibujar solo el contenido de la pestaña
+                    return;
                 }
 
-                // Lógica para los modales
+                // Lógica para abrir los diferentes modales
                 if (button.dataset.createCollection != null) openModal(renderCollectionModal, null, reRenderContent);
                 if (button.dataset.editId) openModal(renderCollectionModal, collections.find(c => c.handle_id === parseInt(button.dataset.editId)), reRenderContent);
                 if (button.dataset.importCsv != null) openModal(renderCsvImportModal);
                 if (button.dataset.reviewReqId) openModal(renderRequestReviewModal, parseInt(button.dataset.reviewReqId));
             });
 
+            // Manejador para los cambios en los filtros de la pestaña de solicitudes
             mainContent.addEventListener('change', (e) => {
                 if (e.target.id === 'admin-filter-type') pageState.filters.type = e.target.value;
                 if (e.target.id === 'admin-filter-status') pageState.filters.status = e.target.value;
                 reRenderContent();
             });
 
+            // Renderizado inicial del layout del panel y su contenido
             renderAdminPanelLayout(pageState);
             reRenderContent();
         });
     </script>
+</div>
+
 </body>
 </html>
