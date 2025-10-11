@@ -1,31 +1,44 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: layout(pageTitle=~{::title}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
-
-<head>
-    <title>Inicio</title>
-</head>
+      th:replace="~{layout/base :: layout(pageTitle='Inicio', content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
 <body>
 
-<main class="container-fluid" id="main-content">
+<main class="container-fluid p-4" id="main-content">
+    <div class="text-center mb-5 animate__animated animate__fadeInDown">
+        <h2 class="display-4 fw-bold text-primary">Información Colaborativa para un Mundo Transparente</h2>
+        <p class="lead text-secondary">MetaMapa es una plataforma abierta y ciudadana para mapear, verificar y visualizar información geolocalizada.</p>
+        <button id="create-fact-btn" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">+ Subir Hecho</button>
+    </div>
+    <section class="animate__animated animate__fadeIn">
+        <h3 class="mb-4 text-primary fw-bold border-bottom pb-2">Explora Nuestras Colecciones</h3>
+        <div class="row g-4">
+            <div class="col-12" th:if="${#lists.isEmpty(colecciones)}">
+                <div class="alert alert-warning">No hay colecciones para mostrar.</div>
+            </div>
+            <div class="col-md-6 col-lg-4" th:each="coleccion : ${colecciones}">
+                <div class="card h-100 shadow-sm border-0 rounded-3 custom-card-hover">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-primary fw-bold mb-2" th:text="${coleccion.titulo}"></h5>
+                        <p class="card-text text-muted flex-grow-1 mb-3" th:text="${coleccion.descripcion}"></p>
+                        <div class="mt-auto pt-3 border-top d-grid gap-2">
+                            <a th:href="@{/facts(handleId=${coleccion.handleID})}" class="btn btn-primary btn-sm rounded-pill">Ver Hechos</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 </main>
 
 <div id="page-scripts">
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('index');
-            renderCollectionView();
-
-            // Event listener específico para esta página
-            mainContent.addEventListener('click', (e) => {
-                if (e.target.closest('[data-create-fact]')) {
-                    if (AppState.currentUser) {
-                        openModal(renderFactModal);
-                    } else {
-                        // <-- ¡AQUÍ ESTÁ EL ARREGLO!
-                        // Cambiamos 'login.html' por la ruta correcta '/login'
-                        window.location.href = '/login';
-                    }
+            document.getElementById('create-fact-btn').addEventListener('click', () => {
+                if (AppState.currentUser) {
+                    openModal(renderFactModal); // Llama a la función del modal
+                } else {
+                    window.location.href = '/login';
                 }
             });
         });

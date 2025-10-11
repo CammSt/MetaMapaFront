@@ -1,69 +1,146 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: layout(pageTitle=~{::title}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
-
-<head>
-    <title>MetaMapa - Mi Panel</title>
-</head>
+      th:replace="~{layout/base :: layout(pageTitle='Mi Panel', content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
 <body>
 
-<main class="container-fluid" id="main-content"></main>
+<main class="container-fluid p-4 animate__animated animate__fadeIn" id="main-content">
+    <div class="card shadow-lg border-0 rounded-3">
+        <div class="card-header bg-primary text-white border-bottom-0 p-4 rounded-top-3"><h3 class="fw-bold mb-0">Mi Panel de Contribuyente</h3></div>
+        <div class="card-body p-4">
+            <ul class="nav nav-pills nav-justified mb-4">
+                <li class="nav-item"><button id="contrib-tab-my-facts" class="nav-link active">Mis Hechos Publicados</button></li>
+                <li class="nav-item"><button id="contrib-tab-my-requests" class="nav-link">Estado de Solicitudes</button></li>
+            </ul>
+            <div id="contrib-tab-content-wrapper">
+                <div id="my-facts-content">
+                    <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
+                        <div th:if="${#lists.isEmpty(misHechos)}" class="text-center text-muted p-5">Aún no tienes hechos publicados.</div>
+                        <table th:unless="${#lists.isEmpty(misHechos)}" class="table table-striped table-hover mb-0">
+                            <thead class="bg-light"><tr><th class="text-secondary fw-bold">Título</th><th class="text-secondary fw-bold">Fecha</th><th class="text-end text-secondary fw-bold">Acciones</th></tr></thead>
+                            <tbody>
+                            <tr th:each="hecho : ${misHechos}">
+                                <td th:text="${hecho.titulo}"></td>
+                                <td th:text="${#temporals.format(hecho.fechaAcontecimiento, 'dd/MM/yyyy')}"></td>
+                                <td class="text-end">
+                                    <button th:attr="data-fact-id=${hecho.id}" class="btn btn-primary btn-sm rounded-pill btn-edit-fact">Editar</button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="my-requests-content" style="display: none;">
+                    <div class="card card-body mb-3 bg-light border-0">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-6">
+                                <label class="form-label small">Filtrar por tipo</label>
+                                <select class="form-select form-select-sm" id="filter-request-type">
+                                    <option value="">Todos</option>
+                                    <option value="Nuevo Hecho">Nuevo Hecho</option>
+                                    <option value="Eliminación">Eliminación</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">Filtrar por estado</label>
+                                <select class="form-select form-select-sm" id="filter-request-status">
+                                    <option value="">Todos</option>
+                                    <option value="PENDIENTE">Pendiente</option>
+                                    <option value="APROBADA">Aprobada</option>
+                                    <option value="RECHAZADA">Rechazada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
+                        <div th:if="${#lists.isEmpty(misSolicitudes)}" class="text-center text-muted p-5">No has realizado ninguna solicitud todavía.</div>
+                        <table th:unless="${#lists.isEmpty(misSolicitudes)}" class="table table-striped table-hover mb-0">
+                            <thead class="bg-light"><tr><th class="text-secondary fw-bold">Título</th><th class="text-secondary fw-bold">Tipo</th><th class="text-secondary fw-bold">Estado</th></tr></thead>
+                            <tbody id="requests-table-body">
+                            <tr th:each="req : ${misSolicitudes}">
+                                <td th:text="${req.tituloDelHechoAEliminar}"></td>
+                                <td><span class="badge bg-secondary" th:text="${req.tipo}"></span></td>
+                                <td><span class="badge" th:classappend="${req.estado == 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' ? 'bg-success' : 'bg-danger')}" th:text="${req.estado}"></span></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
 
 <div id="page-scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const allMyFacts = /*[[${misHechos}]]*/ [];
+        // AÑADIDO: Pasamos la lista completa de solicitudes a JavaScript
+        const allMyRequests = /*[[${misSolicitudes}]]*/ [];
+        /*]]>*/
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Guardia de autenticación: si el usuario no es contribuyente, lo redirige
-            if (!AppState.currentUser || AppState.currentUser.role !== 'contributor') {
-                window.location.href = 'login.html'; // O mejor, th:href="@{/login}"
-                return;
-            }
-
-            // Renderiza la barra lateral, marcando 'contributor' como la página activa
             renderSidebar('contributor');
 
-            // Estado inicial de la página (pestaña activa, filtros, etc.)
-            let pageState = {
-                activeTab: 'my-facts',
-                filters: { type: '', status: '' }
-            };
+            // Lógica para pestañas (sin cambios)
+            const tabFacts = document.getElementById('contrib-tab-my-facts');
+            const tabRequests = document.getElementById('contrib-tab-my-requests');
+            const contentFacts = document.getElementById('my-facts-content');
+            const contentRequests = document.getElementById('my-requests-content');
+            tabFacts.addEventListener('click', () => { tabFacts.classList.add('active'); tabRequests.classList.remove('active'); contentFacts.style.display = 'block'; contentRequests.style.display = 'none'; });
+            tabRequests.addEventListener('click', () => { tabRequests.classList.add('active'); tabFacts.classList.remove('active'); contentRequests.style.display = 'block'; contentFacts.style.display = 'none'; });
 
-            // Función para volver a renderizar solo el contenido principal cuando algo cambia
-            const reRenderContent = () => renderContributorPanelContent(pageState);
+            // Lógica para modal de edición (sin cambios)
+            document.querySelectorAll('.btn-edit-fact').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const factId = btn.getAttribute('data-fact-id');
+                    const factToEdit = allMyFacts.find(f => f.id == factId);
+                    if (factToEdit) { openModal(renderFactModal, factToEdit); }
+                });
+            });
 
-            // Manejador de eventos para todos los clics dentro del área de contenido principal
-            mainContent.addEventListener('click', (e) => {
-                const button = e.target.closest('button');
-                if (!button) return;
+            // --- AÑADIDO: Lógica para los filtros de solicitudes ---
+            const filterType = document.getElementById('filter-request-type');
+            const filterStatus = document.getElementById('filter-request-status');
+            const requestsTableBody = document.getElementById('requests-table-body');
 
-                // Lógica para cambiar entre pestañas ("Mis Hechos" y "Estado de Solicitudes")
-                if (button.id === 'contrib-tab-my-facts' || button.id === 'contrib-tab-my-requests') {
-                    pageState.activeTab = button.id === 'contrib-tab-my-facts' ? 'my-facts' : 'my-requests';
-
-                    // Actualiza la clase 'active' en los botones de las pestañas
-                    mainContent.querySelector('#contrib-tab-my-facts').classList.remove('active');
-                    mainContent.querySelector('#contrib-tab-my-requests').classList.remove('active');
-                    button.classList.add('active');
-
-                    reRenderContent(); // Vuelve a dibujar solo el contenido de la pestaña
+            // Función que renderiza la tabla con una lista de solicitudes
+            function renderRequestsTable(requests) {
+                requestsTableBody.innerHTML = ''; // Limpiamos la tabla
+                if (requests.length === 0) {
+                    requestsTableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted p-4">No hay solicitudes que coincidan con los filtros.</td></tr>';
                     return;
                 }
+                requests.forEach(req => {
+                    let statusBadgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado === 'APROBADA' ? 'bg-success' : 'bg-danger');
+                    const row = `
+                        <tr>
+                            <td>${req.tituloDelHechoAEliminar}</td>
+                            <td><span class="badge bg-secondary">${req.tipo}</span></td>
+                            <td><span class="badge ${statusBadgeClass}">${req.estado}</span></td>
+                        </tr>`;
+                    requestsTableBody.innerHTML += row;
+                });
+            }
 
-                // Lógica para abrir el modal de edición de un hecho
-                if (button.dataset.editFactId) {
-                    openModal(renderFactModal, facts.find(f => f.id === parseInt(button.dataset.editFactId)));
-                }
-            });
+            // Función que se ejecuta cada vez que un filtro cambia
+            function applyRequestFilters() {
+                const typeValue = filterType.value;
+                const statusValue = filterStatus.value;
 
-            // Manejador para los cambios en los filtros de la pestaña de solicitudes
-            mainContent.addEventListener('change', (e) => {
-                if (e.target.id === 'contrib-filter-type') pageState.filters.type = e.target.value;
-                if (e.target.id === 'contrib-filter-status') pageState.filters.status = e.target.value;
-                reRenderContent();
-            });
+                const filteredRequests = allMyRequests.filter(req => {
+                    const typeMatch = !typeValue || req.tipo === typeValue;
+                    const statusMatch = !statusValue || req.estado === statusValue;
+                    return typeMatch && statusMatch;
+                });
 
-            // Renderizado inicial del layout del panel y su contenido
-            renderContributorPanelLayout(pageState);
-            reRenderContent();
+                renderRequestsTable(filteredRequests);
+            }
+
+            // Asignamos el evento 'change' a cada filtro
+            filterType.addEventListener('change', applyRequestFilters);
+            filterStatus.addEventListener('change', applyRequestFilters);
         });
     </script>
 </div>

@@ -1,33 +1,82 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: layout(pageTitle=~{::title}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
-
-<head>
-    <title>MetaMapa - Acceso</title>
-</head>
+      th:replace="~{layout/base :: layout(pageTitle='Acceso', content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
 <body>
 
-<main class="container-fluid" id="main-content">
+<main class="container-fluid d-flex justify-content-center align-items-center" id="main-content" style="min-height: 80vh;">
+    <div class="card shadow-sm border-0 rounded-3 p-4" style="max-width: 450px; width: 100%;">
+        <div id="login-register-container">
+
+            <div class="card-body" id="login-form-container">
+                <h5 class="card-title text-primary fw-bold text-center mb-4">Iniciar Sesión</h5>
+
+                <form th:action="@{/login}" method="post">
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label text-muted small">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="email" name="email" required placeholder="tu@email.com">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label text-muted small">Contraseña</label>
+                        <input type="password" class="form-control" id="password" name="password" required placeholder="••••••••">
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary fw-bold">Iniciar Sesión</button>
+                    </div>
+                </form>
+
+                <hr>
+                <div class="text-center mt-3">
+                    <small class="text-muted">¿No tienes cuenta?
+                        <span id="show-register" class="text-primary fw-bold" style="cursor:pointer;">Regístrate aquí</span>
+                    </small>
+                </div>
+            </div>
+            <div class="card-body" id="register-form-container" style="display: none;">
+                <h5 class="card-title text-primary fw-bold text-center mb-2">Registro</h5>
+                <form id="register-form">
+                    <div class="mb-2"><label class="form-label text-muted small">Nombre</label><input type="text" class="form-control" required></div>
+                    <div class="mb-2"><label class="form-label text-muted small">Fecha de Nacimiento</label><input type="date" class="form-control" required></div>
+                    <div class="mb-2"><label class="form-label text-muted small">Correo Electrónico</label><input type="email" class="form-control" required></div>
+                    <div class="mb-2"><label class="form-label text-muted small">Contraseña</label><input type="password" class="form-control" required></div>
+                    <div class="mb-2"><label class="form-label text-muted small">Confirmar Contraseña</label><input type="password" class="form-control" required></div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="termsCheck" required>
+                        <label class="form-check-label small" for="termsCheck">Acepto los <a href="#" id="show-terms" class="link-primary">términos y condiciones</a>.</label>
+                    </div>
+                    <div class="d-grid"><button type="submit" class="btn btn-primary fw-bold">Registrarme</button></div>
+                </form>
+                <div class="text-center mt-3"><small class="text-muted">¿Ya tienes cuenta? <span id="show-login" class="text-primary fw-bold" style="cursor:pointer;">Inicia sesión</span></small></div>
+            </div>
+        </div>
+    </div>
 </main>
 
 <div id="page-scripts">
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('login');
-            renderLoginRegister();
-            renderLoginForm();
+            const loginContainer = document.getElementById('login-form-container');
+            const registerContainer = document.getElementById('register-form-container');
 
-            mainContent.addEventListener('click', (e) => {
-                const target = e.target;
-                if (target.id === 'login-contrib-btn') loginAs('contributor');
-                if (target.id === 'login-admin-btn') loginAs('admin');
-                if (target.id === 'show-register') renderRegisterForm();
-                if (target.id === 'show-login') renderLoginForm();
-                if (target.closest('[data-show-terms]')) {
-                    e.preventDefault();
-                    openModal(renderTermsModal);
-                }
+            document.getElementById('show-register').addEventListener('click', () => {
+                loginContainer.style.display = 'none';
+                registerContainer.style.display = 'block';
             });
+            document.getElementById('show-login').addEventListener('click', () => {
+                registerContainer.style.display = 'none';
+                loginContainer.style.display = 'block';
+            });
+            document.getElementById('show-terms').addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal(renderTermsModal);
+            });
+
+            // Los botones de login simulado ya no son necesarios aquí
+            // document.getElementById('login-contrib-btn').addEventListener('click', () => loginAs('contributor'));
+            // document.getElementById('login-admin-btn').addEventListener('click', () => loginAs('admin'));
         });
     </script>
 </div>

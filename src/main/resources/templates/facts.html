@@ -1,76 +1,166 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: layout(pageTitle=~{::title}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
-
-<head>
-    <title>MetaMapa - Hechos de la Colección</title>
-</head>
+      th:replace="~{layout/base :: layout(pageTitle=${'Hechos de ' + coleccion.titulo}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
 <body>
 
-<main class="container-fluid" id="main-content"></main>
+<main class="container-fluid p-4" id="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4"><a th:href="@{/}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold">← Volver</a><button id="create-fact-btn-facts" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">+ Subir Hecho</button></div>
+
+    <div class="alert alert-info p-4 rounded-3 mb-4 border-0 shadow-sm"><h3 class="alert-heading fw-bold text-info-emphasis" th:text="${coleccion.titulo}"></h3><p class="mb-1 text-info-emphasis" th:text="${coleccion.descripcion}"></p><small class="d-block text-info-emphasis" th:if="${coleccion.consensusAlgorithm != null}"><i class="bi bi-check-circle-fill me-1"></i><strong>Consenso:</strong> <span th:text="${coleccion.consensusAlgorithm}"></span></small></div>
+
+    <div class="card mb-4 shadow-sm border-0 rounded-3 p-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4"><label for="filter-date-from" class="form-label small text-muted">Fecha Desde</label><input type="date" id="filter-date-from" class="form-control filter-input"></div>
+            <div class="col-md-4"><label for="filter-date-to" class="form-label small text-muted">Fecha Hasta</label><input type="date" id="filter-date-to" class="form-control filter-input"></div>
+            <div class="col-md-4"><label for="filter-category" class="form-label small text-muted">Categoría</label><select id="filter-category" class="form-select filter-input"><option value="">Todas</option><option th:each="cat : ${categorias}" th:value="${cat}" th:text="${cat}"></option></select></div>
+        </div>
+    </div>
+
+    <h4 class="text-primary fw-bold mb-3">Hechos de la Colección</h4>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="flex-grow-1 me-3" style="max-width: 450px;">
+            <input type="text" id="filter-title" class="form-control filter-input" placeholder="Buscar por título...">
+        </div>
+        <div class="d-flex gap-3">
+            <div class="btn-group" role="group"><input type="radio" class="btn-check filter-input" name="nav-mode" id="nav-unrestricted" value="irrestricta" autocomplete="off" checked><label class="btn btn-outline-secondary btn-sm" for="nav-unrestricted"><i class="bi bi-unlock me-2"></i>Irrestricta</label><input type="radio" class="btn-check filter-input" name="nav-mode" id="nav-curated" value="curada" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="nav-curated"><i class="bi bi-shield-check me-2"></i>Curada</label></div>
+            <div class="btn-group" role="group"><button type="button" class="btn btn-primary btn-sm active" id="list-tab-btn"><i class="bi bi-list-ul me-2"></i>Lista</button><button type="button" class="btn btn-primary btn-sm" id="map-tab-btn"><i class="bi bi-map me-2"></i>Mapa</button></div>
+        </div>
+    </div>
+
+    <div id="view-content">
+        <div id="list-view"><div class="row g-4" id="facts-list-container"></div></div>
+        <div id="map-view" style="display: none;"><div class="card shadow-sm border-0 rounded-3" style="height: 70vh;"><div id="map" style="height: 100%; border-radius: .4375rem;"></div></div></div>
+    </div>
+</main>
 
 <div id="page-scripts">
+    <script th:inline="javascript">/*<![CDATA[*/ const allFacts = /*[[${hechos}]]*/ []; /*]]>*/</script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            renderSidebar('collections');
+            renderSidebar('index');
+            const map = L.map('map').setView([-40, -64], 4);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            let markersLayer = L.layerGroup().addTo(map);
+            const factsListContainer = document.getElementById('facts-list-container');
 
-            const params = new URLSearchParams(window.location.search);
-            const collectionId = parseInt(params.get('collection_id'));
-            const collection = collections.find(c => c.handle_id === collectionId);
-
-            if (collection) {
-                let pageState = {
-                    collectionId: collectionId,
-                    collection: collection,
-                    mapView: false,
-                    viewMode: 'irrestricto',
-                    searchTerm: '',
-                    filters: { date: '', category: '', source: '' }
-                };
-
-                const reRenderResults = () => renderFactsResults(pageState);
-
-                mainContent.addEventListener('change', (e) => {
-                    if (e.target.name === 'viewMode') pageState.viewMode = e.target.id;
-                    if (['filter-date', 'filter-category', 'filter-source'].includes(e.target.id)) {
-                        pageState.filters[e.target.id.replace('filter-', '')] = e.target.value;
-                    }
-                    reRenderResults();
+            function renderFactList(facts) {
+                factsListContainer.innerHTML = '';
+                if (facts.length === 0) {
+                    factsListContainer.innerHTML = '<div class="col-12"><div class="card card-body text-center text-muted">No hay hechos que coincidan con los filtros.</div></div>';
+                    return;
+                }
+                facts.forEach(fact => {
+                    const factCard = `
+                    <div class="col-md-6 col-lg-4"><div data-fact-id="${fact.id}" class="card h-100 shadow-sm border-0 rounded-3 custom-card-hover fact-card" style="cursor: pointer;"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between mb-2"><h6 class="card-title text-primary fw-bold">${fact.titulo}</h6><div class="dropdown"><button class="btn btn-sm btn-light py-0 px-2" type="button" data-bs-toggle="dropdown" onclick="event.stopPropagation();">•••</button><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="#">Solicitar Eliminación</a></li></ul></div></div><p class="card-text text-muted small flex-grow-1">${fact.descripcion}</p><div class="mt-auto pt-3 border-top"><span class="badge bg-secondary me-2">${fact.categoria}</span><small class="text-muted">Fecha: ${new Date(fact.fechaAcontecimiento).toLocaleDateString('es-ES')}</small></div></div></div></div>`;
+                    factsListContainer.innerHTML += factCard;
                 });
-
-                mainContent.addEventListener('input', (e) => {
-                    if (e.target.id === 'search-input') {
-                        pageState.searchTerm = e.target.value;
-                        reRenderResults();
-                    }
-                });
-
-                mainContent.addEventListener('click', (e) => {
-                    const button = e.target.closest('button');
-                    if (!button) return;
-
-                    if (button.id === 'map-view-btn') pageState.mapView = true;
-                    if (button.id === 'list-view-btn') pageState.mapView = false;
-
-                    if (button.dataset.deleteFactId) {
-                        const factId = parseInt(button.dataset.deleteFactId);
-                        openModal(renderFactDeletionModal, factId);
-                    }
-
-                    if (['map-view-btn', 'list-view-btn'].includes(button.id)) {
-                        renderFactsPageLayout(pageState);
-                        reRenderResults();
-                    }
-                });
-
-                renderFactsPageLayout(pageState);
-                reRenderResults();
-            } else {
-                mainContent.innerHTML = `<div class="p-5 text-center"><h2 class="text-danger">Error: Colección no encontrada</h2><p>La colección que buscas no existe.</p><a href="/" class="btn btn-primary">Volver al inicio</a></div>`;
+                addEventListenersToCards();
             }
+
+            function renderMapMarkers(facts) {
+                markersLayer.clearLayers();
+                facts.forEach(fact => {
+                    if (fact.latitud && fact.longitud) {
+                        const marker = L.marker([fact.latitud, fact.longitud]).addTo(markersLayer);
+                        const popupContent = `
+                        <div class="p-1" style="min-width: 200px; max-width: 300px;">
+                            <strong class="text-primary">${fact.titulo}</strong>
+                            <p class="my-1 small text-muted">${fact.descripcion.substring(0, Math.min(fact.descripcion.length, 70))}...</p>
+                            <small class="text-muted">${new Date(fact.fechaAcontecimiento).toLocaleDateString('es-ES')}</small>
+                            <button class="btn btn-sm btn-outline-primary mt-2 w-100 open-fact-detail" data-fact-id="${fact.id}">Ver Detalles</button>
+                        </div>`;
+                        marker.bindPopup(popupContent);
+                        marker.on('popupopen', (e) => {
+                            const button = e.popup._container.querySelector('.open-fact-detail');
+                            if (button) {
+                                button.addEventListener('click', () => {
+                                    const factId = button.getAttribute('data-fact-id');
+                                    const factToShow = allFacts.find(f => f.id == factId);
+                                    if (factToShow) {
+                                        marker.closePopup();
+                                        const modalEl = openModal(renderFactDetailModal, factToShow);
+                                        if(modalEl) {
+                                            modalEl.addEventListener('shown.bs.modal', () => {
+                                                const miniMap = L.map('mini-map').setView([factToShow.latitud, factToShow.longitud], 13);
+                                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
+                                                L.marker([factToShow.latitud, factToShow.longitud]).addTo(miniMap);
+                                            }, { once: true });
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+
+            function applyAllFilters() {
+                const titleValue = document.getElementById('filter-title').value.toLowerCase().trim();
+                const navMode = document.querySelector('input[name="nav-mode"]:checked').value;
+                const dateFrom = document.getElementById('filter-date-from').value;
+                const dateTo = document.getElementById('filter-date-to').value;
+                const category = document.getElementById('filter-category').value;
+                let filteredFacts = allFacts;
+                if (navMode === 'curada') {
+                    filteredFacts = filteredFacts.filter(f => f.consensuado);
+                }
+                if (dateFrom) {
+                    filteredFacts = filteredFacts.filter(f => new Date(f.fechaAcontecimiento) >= new Date(dateFrom));
+                }
+                if (dateTo) {
+                    let toDate = new Date(dateTo);
+                    toDate.setHours(23, 59, 59, 999);
+                    filteredFacts = filteredFacts.filter(f => new Date(f.fechaAcontecimiento) <= toDate);
+                }
+                if (category) {
+                    filteredFacts = filteredFacts.filter(f => f.categoria === category);
+                }
+                if (titleValue) {
+                    filteredFacts = filteredFacts.filter(f => f.titulo.toLowerCase().includes(titleValue));
+                }
+                renderFactList(filteredFacts);
+                renderMapMarkers(filteredFacts);
+            }
+
+            function addEventListenersToCards() {
+                document.querySelectorAll('.fact-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const factId = card.getAttribute('data-fact-id');
+                        const factToShow = allFacts.find(f => f.id == factId);
+                        if (factToShow) {
+                            const modalEl = openModal(renderFactDetailModal, factToShow);
+                            if(modalEl) {
+                                modalEl.addEventListener('shown.bs.modal', () => {
+                                    const miniMap = L.map('mini-map').setView([factToShow.latitud, factToShow.longitud], 13);
+                                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
+                                    L.marker([factToShow.latitud, factToShow.longitud]).addTo(miniMap);
+                                }, { once: true });
+                            }
+                        }
+                    });
+                });
+            }
+
+            document.querySelectorAll('.filter-input').forEach(el => {
+                if (el.type === 'text') {
+                    el.addEventListener('input', applyAllFilters);
+                } else {
+                    el.addEventListener('change', applyAllFilters);
+                }
+            });
+
+            applyAllFilters();
+
+            const listTabBtn = document.getElementById('list-tab-btn');
+            const mapTabBtn = document.getElementById('map-tab-btn');
+            const listView = document.getElementById('list-view');
+            const mapView = document.getElementById('map-view');
+            listTabBtn.addEventListener('click', () => { listTabBtn.classList.add('active'); mapTabBtn.classList.remove('active'); listView.style.display = 'block'; mapView.style.display = 'none'; });
+            mapTabBtn.addEventListener('click', () => { mapTabBtn.classList.add('active'); listTabBtn.classList.remove('active'); mapView.style.display = 'block'; listView.style.display = 'none'; setTimeout(() => map.invalidateSize(), 10); });
+            document.getElementById('create-fact-btn-facts').addEventListener('click', () => { if (AppState.currentUser) { openModal(renderFactModal); } else { window.location.href = '/login'; } });
         });
     </script>
 </div>
-
 </body>
 </html>

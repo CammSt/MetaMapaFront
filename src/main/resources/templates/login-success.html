@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Iniciando Sesión...</title>
+</head>
+<body>
+<p style="font-family: sans-serif; text-align: center; margin-top: 50px;">
+    Iniciando sesión, por favor espera...
+</p>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+
+    // 1. Recibimos el rol del usuario desde el backend (Thymeleaf)
+    const userRole = /*[[${userRole}]]*/ 'none';
+
+    // 2. Creamos el objeto de usuario correspondiente en el frontend
+    let user = null;
+    if (userRole === 'admin') {
+        user = {
+            id: 99, name: 'Admin', lastName: 'Principal', role: 'admin',
+            email: 'admin@metamapa.com', birthDate: '1985-01-01'
+        };
+    } else if (userRole === 'contributor') {
+        user = {
+            id: 1, name: 'Usuario', lastName: 'Contribuyente', role: 'contributor',
+            email: 'user@metamapa.com', birthDate: '1990-05-15'
+        };
+    }
+
+    // 3. ¡El paso CLAVE! Guardamos el usuario en sessionStorage
+    if (user) {
+        sessionStorage.setItem('currentUser', JSON.stringify(user));
+    }
+
+    // 4. Redirigimos al destino final
+    if (userRole === 'admin') {
+        window.location.href = '/admin';
+    } else {
+        window.location.href = '/';
+    }
+
+    /*]]>*/
+</script>
+</body>
+</html>

@@ -1,73 +1,189 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: layout(pageTitle=~{::title}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
-
-<head>
-    <title>MetaMapa - Administración</title>
-</head>
+      th:replace="~{layout/base :: layout(pageTitle='Administración', content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
 <body>
+<main class="container-fluid p-4 animate__animated animate__fadeIn" id="main-content">
+    <div class="card shadow-lg border-0 rounded-3">
+        <div class="card-header bg-primary text-white border-bottom-0 p-4 rounded-top-3"><h3 class="fw-bold mb-0">Panel de Administración</h3></div>
+        <div class="card-body p-4">
+            <ul class="nav nav-pills nav-justified mb-4">
+                <li class="nav-item"><button id="admin-tab-collections" class="nav-link active">Gestionar Colecciones</button></li>
+                <li class="nav-item"><button id="admin-tab-requests" class="nav-link">Revisar Solicitudes</button></li>
+            </ul>
 
-<main class="container-fluid" id="main-content"></main>
+            <div id="admin-tab-content-wrapper">
+                <div id="collections-content">
+                    <div class="d-flex gap-2 mb-4">
+                        <button id="btn-create-collection" class="btn btn-success rounded-pill px-4 fw-bold">+ Nueva Colección</button>
+                        <button id="btn-import-csv" class="btn btn-info rounded-pill px-4 fw-bold text-white"><i class="bi bi-upload me-2"></i>Importar CSV</button>
+                    </div>
+                    <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
+                        <div th:if="${#lists.isEmpty(colecciones)}" class="text-center text-muted p-5">No hay colecciones para gestionar.</div>
+                        <table th:unless="${#lists.isEmpty(colecciones)}" class="table table-striped table-hover mb-0">
+                            <thead class="bg-light">
+                            <tr>
+                                <th class="text-secondary fw-bold">Título</th>
+                                <th class="text-secondary fw-bold">Fuente</th>
+                                <th class="text-end text-secondary fw-bold">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="col : ${colecciones}">
+                                <td th:text="${col.titulo}"></td>
+                                <td><span class="badge bg-secondary">Carga Manual</span></td>
+                                <td class="text-end">
+                                    <button th:attr="data-collection-id=${col.handleID}" class="btn btn-primary btn-sm rounded-pill btn-edit-collection">Editar</button>
+                                    <button class="btn btn-danger btn-sm rounded-pill">Eliminar</button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="requests-content" style="display: none;">
+                    <div class="card card-body mb-3 bg-light border-0">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-6">
+                                <label class="form-label small">Filtrar por tipo</label>
+                                <select class="form-select form-select-sm" id="admin-filter-type">
+                                    <option value="">Todos</option>
+                                    <option value="Nuevo Hecho">Nuevo Hecho</option>
+                                    <option value="Eliminación">Eliminación</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">Filtrar por estado</label>
+                                <select class="form-select form-select-sm" id="admin-filter-status">
+                                    <option value="">Todos</option>
+                                    <option value="PENDIENTE">Pendiente</option>
+                                    <option value="APROBADA">Aprobada</option>
+                                    <option value="RECHAZADA">Rechazada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
+                        <div th:if="${#lists.isEmpty(solicitudes)}" class="text-center text-muted p-5">No hay solicitudes pendientes.</div>
+                        <table th:unless="${#lists.isEmpty(solicitudes)}" class="table table-striped table-hover mb-0">
+                            <thead class="bg-light">
+                            <tr>
+                                <th class="text-secondary fw-bold">Título</th>
+                                <th class="text-secondary fw-bold">Tipo</th>
+                                <th class="text-secondary fw-bold">Estado</th>
+                                <th class="text-end text-secondary fw-bold">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody id="admin-requests-table-body">
+                            <tr th:each="req : ${solicitudes}">
+                                <td th:text="${req.tituloDelHechoAEliminar}"></td>
+                                <td><span class="badge bg-info" th:text="${req.tipo}"></span></td>
+                                <td><span class="badge" th:classappend="${req.estado == 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' ? 'bg-success' : 'bg-danger')}" th:text="${req.estado}"></span></td>
+                                <td class="text-end">
+                                    <button th:attr="data-review-req-id=${req.nroDeSolicitud}" class="btn btn-primary btn-sm rounded-pill btn-review-request">Evaluar</button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
 
 <div id="page-scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const allRequests = /*[[${solicitudes}]]*/ [];
+        const allCollections = /*[[${colecciones}]]*/ [];
+        const consensusLabels = /*[[${consensusLabels}]]*/ {};
+        const availableSources = /*[[${availableSources}]]*/ [];
+        /*]]>*/
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Guardia de autenticación: si el usuario no es admin, lo redirige
-            if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
-                window.location.href = 'login.html'; // O mejor, th:href="@{/login}"
-                return;
-            }
-
-            // Renderiza la barra lateral, marcando 'admin' como la página activa
             renderSidebar('admin');
 
-            // Estado inicial de la página (pestaña activa, filtros, etc.)
-            let pageState = {
-                activeTab: 'collections',
-                filters: { type: '', status: '' }
-            };
+            const tabCollections = document.getElementById('admin-tab-collections');
+            const tabRequests = document.getElementById('admin-tab-requests');
+            const contentCollections = document.getElementById('collections-content');
+            const contentRequests = document.getElementById('requests-content');
+            tabCollections.addEventListener('click', () => { tabCollections.classList.add('active'); tabRequests.classList.remove('active'); contentCollections.style.display = 'block'; contentRequests.style.display = 'none'; });
+            tabRequests.addEventListener('click', () => { tabRequests.classList.add('active'); tabCollections.classList.remove('active'); contentRequests.style.display = 'block'; contentCollections.style.display = 'none'; });
 
-            // Función para volver a renderizar solo el contenido principal cuando algo cambia
-            const reRenderContent = () => renderAdminPanelContent(pageState);
+            // --- Lógica para los modales ---
+            document.getElementById('btn-create-collection').addEventListener('click', () => {
+                openModal(renderCollectionModal, null, consensusLabels, availableSources);
+            });
 
-            // Manejador de eventos para todos los clics dentro del área de contenido principal
-            mainContent.addEventListener('click', (e) => {
-                const button = e.target.closest('button');
-                if (!button) return;
+            document.querySelectorAll('.btn-edit-collection').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const collectionId = btn.getAttribute('data-collection-id');
+                    const collectionToEdit = allCollections.find(c => c.handleID === collectionId);
+                    if (collectionToEdit) {
+                        openModal(renderCollectionModal, collectionToEdit, consensusLabels, availableSources);
+                    }
+                });
+            });
 
-                // Lógica para cambiar entre pestañas ("Gestionar Colecciones" y "Revisar Solicitudes")
-                if (button.id === 'admin-tab-collections' || button.id === 'admin-tab-requests') {
-                    pageState.activeTab = button.id === 'admin-tab-collections' ? 'collections' : 'requests';
+            document.getElementById('btn-import-csv').addEventListener('click', () => {
+                openModal(renderCsvImportModal);
+            });
 
-                    // Actualiza la clase 'active' en los botones de las pestañas
-                    mainContent.querySelector('#admin-tab-collections').classList.remove('active');
-                    mainContent.querySelector('#admin-tab-requests').classList.remove('active');
-                    button.classList.add('active');
+            const adminRequestsTableBody = document.getElementById('admin-requests-table-body');
+            function addReviewRequestEventListeners() {
+                document.querySelectorAll('.btn-review-request').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const reqId = btn.getAttribute('data-review-req-id');
+                        const request = allRequests.find(r => r.nroDeSolicitud == reqId);
+                        if(request) openModal(renderRequestReviewModal, request);
+                    });
+                });
+            }
+            addReviewRequestEventListeners(); // Llama a la función al cargar la página
 
-                    reRenderContent(); // Vuelve a dibujar solo el contenido de la pestaña
+            // --- Lógica para los filtros de solicitudes del Admin ---
+            const adminFilterType = document.getElementById('admin-filter-type');
+            const adminFilterStatus = document.getElementById('admin-filter-status');
+
+            function renderAdminRequestsTable(requests) {
+                adminRequestsTableBody.innerHTML = '';
+                if (requests.length === 0) {
+                    adminRequestsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-4">No hay solicitudes que coincidan con los filtros.</td></tr>';
                     return;
                 }
+                requests.forEach(req => {
+                    let statusBadgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado === 'APROBADA' ? 'bg-success' : 'bg-danger');
+                    const row = `
+                        <tr>
+                            <td>${req.tituloDelHechoAEliminar}</td>
+                            <td><span class="badge bg-info">${req.tipo}</span></td>
+                            <td><span class="badge ${statusBadgeClass}">${req.estado}</span></td>
+                            <td class="text-end">
+                                <button data-review-req-id="${req.nroDeSolicitud}" class="btn btn-primary btn-sm rounded-pill btn-review-request">Evaluar</button>
+                            </td>
+                        </tr>`;
+                    adminRequestsTableBody.innerHTML += row;
+                });
+                addReviewRequestEventListeners(); // Vuelve a asignar los eventos a los nuevos botones
+            }
 
-                // Lógica para abrir los diferentes modales
-                if (button.dataset.createCollection != null) openModal(renderCollectionModal, null, reRenderContent);
-                if (button.dataset.editId) openModal(renderCollectionModal, collections.find(c => c.handle_id === parseInt(button.dataset.editId)), reRenderContent);
-                if (button.dataset.importCsv != null) openModal(renderCsvImportModal);
-                if (button.dataset.reviewReqId) openModal(renderRequestReviewModal, parseInt(button.dataset.reviewReqId));
-            });
+            function applyAdminRequestFilters() {
+                const typeValue = adminFilterType.value;
+                const statusValue = adminFilterStatus.value;
+                const filteredRequests = allRequests.filter(req => {
+                    const typeMatch = !typeValue || req.tipo === typeValue;
+                    const statusMatch = !statusValue || req.estado === statusValue;
+                    return typeMatch && statusMatch;
+                });
+                renderAdminRequestsTable(filteredRequests);
+            }
 
-            // Manejador para los cambios en los filtros de la pestaña de solicitudes
-            mainContent.addEventListener('change', (e) => {
-                if (e.target.id === 'admin-filter-type') pageState.filters.type = e.target.value;
-                if (e.target.id === 'admin-filter-status') pageState.filters.status = e.target.value;
-                reRenderContent();
-            });
-
-            // Renderizado inicial del layout del panel y su contenido
-            renderAdminPanelLayout(pageState);
-            reRenderContent();
+            adminFilterType.addEventListener('change', applyAdminRequestFilters);
+            adminFilterStatus.addEventListener('change', applyAdminRequestFilters);
         });
     </script>
 </div>
-
 </body>
 </html>
