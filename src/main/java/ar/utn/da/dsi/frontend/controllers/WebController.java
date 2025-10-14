@@ -43,13 +43,11 @@ public class WebController {
 
     // 1. Verifica si las credenciales son de Administrador
     if ("admin@test".equals(email) && "admin".equals(password)) {
-      // Redirige al puente con el rol 'admin'
       return new RedirectView("/login-success?role=admin");
     }
 
     // 2. Verifica si las credenciales son de Contribuyente
     else if ("user@test".equals(email) && "user".equals(password)) {
-      // Redirige al puente con el rol 'contributor'
       return new RedirectView("/login-success?role=contributor");
     }
 

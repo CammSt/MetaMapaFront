@@ -1,17 +1,10 @@
 package ar.utn.da.dsi.frontend.client;
 
-import ar.utn.da.dsi.frontend.client.dto.ColeccionDTO;
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
 import ar.utn.da.dsi.frontend.client.dto.SolicitudDTO;
 import ar.utn.da.dsi.frontend.services.MockDataService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 

@@ -16,17 +16,17 @@ public class AuthService {
 
 	private static final Logger log = LoggerFactory.getLogger(GestionAlumnosApiService.class);
 	private final WebClient webClient;
-	private final WebApiCallerService webApiCallerService;
+	private final ApiClientService apiClientService;
 	private final String authServiceUrl;
 	private final String alumnosServiceUrl;
 
 	@Autowired
 	public GestionAlumnosApiService(
-			WebApiCallerService webApiCallerService,
+			ApiClientService apiClientService,
 			@Value("${auth.service.url}") String authServiceUrl,
 			@Value("${alumnos.service.url}") String alumnosServiceUrl) {
 		this.webClient = WebClient.builder().build();
-		this.webApiCallerService = webApiCallerService;
+		this.apiClientService = apiClientService;
 		this.authServiceUrl = authServiceUrl;
 		this.alumnosServiceUrl = alumnosServiceUrl;
 	}
