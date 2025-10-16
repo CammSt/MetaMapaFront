@@ -1,7 +1,6 @@
 package ar.utn.da.dsi.frontend.services;
 
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
-import ar.utn.da.dsi.frontend.client.dto.SolicitudDTO;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

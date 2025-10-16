@@ -44,6 +44,19 @@
             let markersLayer = L.layerGroup().addTo(map);
             const factsListContainer = document.getElementById('facts-list-container');
 
+            function addRequestDeletionEventListeners() {
+                document.querySelectorAll('.btn-request-deletion').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const factTitle = button.getAttribute('data-fact-title');
+
+                        openModal(renderDeletionRequestModal, handleDeletionRequestSubmit, factTitle);
+                    });
+                });
+            }
+
             function renderFactList(facts) {
                 factsListContainer.innerHTML = '';
                 if (facts.length === 0) {
@@ -52,10 +65,31 @@
                 }
                 facts.forEach(fact => {
                     const factCard = `
-                    <div class="col-md-6 col-lg-4"><div data-fact-id="${fact.id}" class="card h-100 shadow-sm border-0 rounded-3 custom-card-hover fact-card" style="cursor: pointer;"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between mb-2"><h6 class="card-title text-primary fw-bold">${fact.titulo}</h6><div class="dropdown"><button class="btn btn-sm btn-light py-0 px-2" type="button" data-bs-toggle="dropdown" onclick="event.stopPropagation();">•••</button><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="#">Solicitar Eliminación</a></li></ul></div></div><p class="card-text text-muted small flex-grow-1">${fact.descripcion}</p><div class="mt-auto pt-3 border-top"><span class="badge bg-secondary me-2">${fact.categoria}</span><small class="text-muted">Fecha: ${new Date(fact.fechaAcontecimiento).toLocaleDateString('es-ES')}</small></div></div></div></div>`;
+        <div class="col-md-6 col-lg-4">
+            <div data-fact-id="${fact.id}" class="card h-100 shadow-sm border-0 rounded-3 custom-card-hover fact-card" style="cursor: pointer;">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between mb-2">
+                        <h6 class="card-title text-primary fw-bold">${fact.titulo}</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light py-0 px-2" type="button" data-bs-toggle="dropdown" onclick="event.stopPropagation();">•••</button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item btn-request-deletion" href="#" data-fact-title="${fact.titulo}">Solicitar Eliminación</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small flex-grow-1">${fact.descripcion}</p>
+                    <div class="mt-auto pt-3 border-top">
+                        <span class="badge bg-secondary me-2">${fact.categoria}</span>
+                        <small class="text-muted">Fecha: ${new Date(fact.fechaAcontecimiento).toLocaleDateString('es-ES')}</small>
+                    </div>
+                </div>
+            </div>
+        </div>`;
                     factsListContainer.innerHTML += factCard;
                 });
                 addEventListenersToCards();
+
+                addRequestDeletionEventListeners();
             }
 
             function renderMapMarkers(facts) {

@@ -1,4 +1,4 @@
-package ar.utn.da.dsi.frontend.services;
+package ar.utn.da.dsi.frontend.services.solicitudes;
 
 import ar.utn.da.dsi.frontend.client.dto.input.SolicitudEliminacionInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.SolicitudEliminacionOutputDTO;

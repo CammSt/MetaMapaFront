@@ -1,4 +1,4 @@
-package ar.utn.da.dsi.frontend.services;
+package ar.utn.da.dsi.frontend.services.colecciones;
 
 import ar.utn.da.dsi.frontend.client.dto.input.ColeccionInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.ColeccionOutputDTO;

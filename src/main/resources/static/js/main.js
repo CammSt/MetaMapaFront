@@ -139,27 +139,28 @@ function renderFactModal(container, fact = null) {
 // Modal para Crear/Editar Colección (con todos los campos)
 function renderCollectionModal(container, collection = null, consensusLabels = {}, availableSources = []) {
     const isEditing = collection !== null;
-    const consensusOptions = Object.entries(consensusLabels).map(([value, label]) => `<option value="${value}" ${collection?.consensus_algorithm === value ? 'selected' : ''}>${label}</option>`).join('');
-    const sourceOptions = availableSources.map(source => `<option value="${source}" ${collection?.source === source ? 'selected' : ''}>${source}</option>`).join('');
+
+    // Convertimos los consensusLabels a options para el select
+    const consensusOptions = Object.entries(consensusLabels)
+        .map(([value, label]) => `<option value="${value.toUpperCase()}" ${collection?.algoritmoConsenso === value.toUpperCase() ? 'selected' : ''}>${label}</option>`)
+        .join('');
 
     container.innerHTML = `
-        <div class="modal fade" id="collection-modal" tabindex="-1">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content rounded-4 shadow-lg border-0">
+        <div class="modal fade" id="collection-modal">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
                     <form>
-                        <div class="modal-header border-bottom-0 pb-0">
-                            <h5 class="modal-title text-primary fw-bold">${isEditing ? 'Editar' : 'Crear'} Colección</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <div class="modal-header"><h5>${isEditing ? 'Editar' : 'Crear'} Colección</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                        <div class="modal-body">
+                            <input type="hidden" name="handleID" value="${collection?.handleID || ''}">
+                            
+                            <div class="mb-3"><label class="form-label">Título</label><input type="text" name="titulo" class="form-control" value="${collection?.titulo || ''}" required></div>
+                            <div class="mb-3"><label class="form-label">Descripción</label><textarea name="descripcion" class="form-control" rows="3" required>${collection?.descripcion || ''}</textarea></div>
+                            <div class="mb-4"><label class="form-label">Algoritmo de Consenso</label><select name="algoritmoConsenso" class="form-select">${consensusOptions}</select></div>
                         </div>
-                        <div class="modal-body p-4 pt-0">
-                            <div class="mb-3"><label class="form-label fw-semibold">Título</label><input type="text" name="title" class="form-control" value="${collection?.titulo || ''}" required></div>
-                            <div class="mb-3"><label class="form-label fw-semibold">Descripción</label><textarea name="description" class="form-control" rows="3" required>${collection?.descripcion || ''}</textarea></div>
-                            <div class="mb-3"><label class="form-label fw-semibold">Fuente</label><select name="source" class="form-select">${sourceOptions}</select></div>
-                            <div class="mb-4"><label class="form-label fw-semibold">Algoritmo de Consenso</label><select name="consensus_algorithm" class="form-select">${consensusOptions}</select></div>
-                        </div>
-                        <div class="modal-footer pt-3 border-top">
-                            <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar</button>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
                         </div>
                     </form>
                 </div>
@@ -170,7 +171,7 @@ function renderCollectionModal(container, collection = null, consensusLabels = {
 // Modal para Evaluar Solicitud (con botones)
 function renderRequestReviewModal(container, request) {
     container.innerHTML = `
-        <div class="modal fade" id="req-review-modal" tabindex="-1">
+        <div class="modal fade" id="req-review-modal">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -183,8 +184,8 @@ function renderRequestReviewModal(container, request) {
                         <p><strong>Motivo:</strong><br>${request.motivo || 'No especificado.'}</p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Rechazar</button>
-                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Aprobar</button>
+                        <button type="button" id="btn-reject-request" data-request-id="${request.nroDeSolicitud}" class="btn btn-danger">Rechazar</button>
+                        <button type="button" id="btn-approve-request" data-request-id="${request.nroDeSolicitud}" class="btn btn-success">Aprobar</button>
                     </div>
                 </div>
             </div>
@@ -247,6 +248,205 @@ function renderFactDetailModal(container, fact) {
                 </div>
             </div>
         </div>`;
+}
+
+
+// Maneja el envío del formulario de Colecciones (Crear/Editar).
+// Se comunica directamente con la API del backend.
+
+async function handleCollectionFormSubmit(form, modal) {
+    const id = form.querySelector('input[name="handleID"]').value;
+    const isEditing = !!id;
+
+    const url = isEditing ? `/colecciones/${id}` : '/colecciones';
+    const method = isEditing ? 'PUT' : 'POST';
+
+    // Construimos el objeto DTO que espera el backend
+    const coleccionData = {
+        titulo: form.querySelector('input[name="titulo"]').value,
+        descripcion: form.querySelector('textarea[name="descripcion"]').value,
+        algoritmoConsenso: form.querySelector('select[name="algoritmoConsenso"]').value,
+        visualizadorID: AppState.currentUser ? AppState.currentUser.name : null // Asegúrate que 'name' sea el ID
+    };
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(coleccionData)
+        });
+
+        if (response.ok) {
+            modal.hide();
+            location.reload();
+        } else {
+            const errorData = await response.json();
+            alert('Error al guardar: ' + (errorData.message || 'Por favor, revise los campos.'));
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
+        alert('Error de conexión con el servidor. Inténtelo más tarde.');
+    }
+}
+
+
+// Maneja la eliminación de una colección.
+
+async function handleDeleteCollection(collectionId) {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta colección?')) {
+        return;
+    }
+
+    const visualizadorID = AppState.currentUser ? AppState.currentUser.name : null;
+    if (!visualizadorID) {
+        alert('Debes estar logueado para realizar esta acción.');
+        return;
+    }
+
+    const url = `/colecciones/${collectionId}?visualizadorID=${visualizadorID}`;
+
+    try {
+        const response = await fetch(url, { method: 'DELETE' });
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Error al eliminar la colección.');
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
+        alert('Error de conexión con el servidor.');
+    }
+}
+
+
+// Maneja la decisión de aprobar o rechazar una solicitud.
+
+async function handleReviewRequest(requestId, isApproved) {
+    const visualizadorID = AppState.currentUser ? AppState.currentUser.name : null;
+    if (!visualizadorID) {
+        alert('Debes estar logueado para realizar esta acción.');
+        return;
+    }
+
+    // La URL apunta al endpoint PUT del backend
+    const url = `/solicitudes/${requestId}?visualizadorId=${visualizadorID}&aceptado=${isApproved}`;
+
+    try {
+        const response = await fetch(url, { method: 'PUT' });
+        if (response.ok) {
+            location.reload();
+        } else {
+            const errorData = await response.json();
+            alert('Error al procesar la solicitud: ' + (errorData.message || 'Error desconocido.'));
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
+        alert('Error de conexión con el servidor.');
+    }
+}
+
+function renderFactList(facts) {
+    factsListContainer.innerHTML = '';
+    if (facts.length === 0) {
+        factsListContainer.innerHTML = '<div class="col-12"><div class="card card-body text-center text-muted">No hay hechos que coincidan con los filtros.</div></div>';
+        return;
+    }
+    facts.forEach(fact => {
+        const factCard = `
+        <div class="col-md-6 col-lg-4">
+            <div data-fact-id="${fact.id}" class="card h-100 shadow-sm border-0 rounded-3 custom-card-hover fact-card" style="cursor: pointer;">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between mb-2">
+                        <h6 class="card-title text-primary fw-bold">${fact.titulo}</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light py-0 px-2" type="button" data-bs-toggle="dropdown" onclick="event.stopPropagation();">•••</button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item btn-request-deletion" href="#" data-fact-title="${fact.titulo}">Solicitar Eliminación</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small flex-grow-1">${fact.descripcion}</p>
+                    <div class="mt-auto pt-3 border-top">
+                        <span class="badge bg-secondary me-2">${fact.categoria}</span>
+                        <small class="text-muted">Fecha: ${new Date(fact.fechaAcontecimiento).toLocaleDateString('es-ES')}</small>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        factsListContainer.innerHTML += factCard;
+    });
+    addEventListenersToCards();
+
+    // 👇 Es importante llamar a la función que agrega los eventos a los nuevos botones
+    addRequestDeletionEventListeners();
+}
+
+//Renderiza el modal para crear una nueva solicitud de eliminación.
+
+function renderDeletionRequestModal(container, factTitle) {
+    container.innerHTML = `
+        <div class="modal fade" id="deletion-request-modal">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form>
+                        <div class="modal-header">
+                            <h5 class="modal-title text-primary fw-bold">Solicitar Eliminación</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Estás solicitando la eliminación del hecho: <strong>"${factTitle}"</strong></p>
+                            <input type="hidden" name="tituloHecho" value="${factTitle}">
+                            
+                            <div class="mb-3">
+                                <label for="motivo" class="form-label">Motivo de la solicitud</label>
+                                <textarea name="motivo" class="form-control" rows="6" required minlength="500" placeholder="Por favor, describe detalladamente por qué este hecho debería ser eliminado (mínimo 500 caracteres)."></textarea>
+                                <div class="form-text">Tu solicitud será revisada por un administrador.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Enviar Solicitud</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>`;
+}
+
+// Maneja el envío del formulario de solicitud de eliminación.
+// Se comunica con la API del backend.
+
+async function handleDeletionRequestSubmit(form, modal) {
+    const requestData = {
+        tituloHecho: form.querySelector('input[name="tituloHecho"]').value,
+        motivo: form.querySelector('textarea[name="motivo"]').value
+    };
+
+    // Validamos en el frontend para dar feedback rápido
+    if (requestData.motivo.length < 500) {
+        alert('El motivo debe tener al menos 500 caracteres.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/solicitudes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+
+        if (response.ok) {
+            modal.hide();
+            alert('¡Solicitud enviada exitosamente!');
+            window.location.href = '/contributor';
+        } else {
+            const errorData = await response.json();
+            alert('Error al enviar la solicitud: ' + (errorData.message || 'Error desconocido.'));
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
+        alert('Error de conexión con el servidor.');
+    }
 }
 
 // --- INICIALIZACIÓN ---

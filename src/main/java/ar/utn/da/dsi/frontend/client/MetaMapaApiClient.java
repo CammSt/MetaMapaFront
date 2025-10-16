@@ -1,7 +1,6 @@
 package ar.utn.da.dsi.frontend.client;
 
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
-import ar.utn.da.dsi.frontend.client.dto.SolicitudDTO;
 import ar.utn.da.dsi.frontend.services.MockDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

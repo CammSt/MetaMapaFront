@@ -33,7 +33,7 @@
                                 <td><span class="badge bg-secondary">Carga Manual</span></td>
                                 <td class="text-end">
                                     <button th:attr="data-collection-id=${col.handleID}" class="btn btn-primary btn-sm rounded-pill btn-edit-collection">Editar</button>
-                                    <button class="btn btn-danger btn-sm rounded-pill">Eliminar</button>
+                                    <button th:attr="data-collection-id=${col.handleID}" class="btn btn-danger btn-sm rounded-pill btn-delete-collection">Eliminar</button>
                                 </td>
                             </tr>
                             </tbody>
@@ -114,7 +114,8 @@
 
             // --- Lógica para los modales ---
             document.getElementById('btn-create-collection').addEventListener('click', () => {
-                openModal(renderCollectionModal, null, consensusLabels, availableSources);
+                // Llama a openModal, pasando la función que renderiza y la que maneja el submit
+                openModal(renderCollectionModal, handleCollectionFormSubmit, null, consensusLabels, availableSources);
             });
 
             document.querySelectorAll('.btn-edit-collection').forEach(btn => {
@@ -122,8 +123,15 @@
                     const collectionId = btn.getAttribute('data-collection-id');
                     const collectionToEdit = allCollections.find(c => c.handleID === collectionId);
                     if (collectionToEdit) {
-                        openModal(renderCollectionModal, collectionToEdit, consensusLabels, availableSources);
+                        openModal(renderCollectionModal, handleCollectionFormSubmit, collectionToEdit, consensusLabels, availableSources);
                     }
+                });
+            });
+
+            document.querySelectorAll('.btn-delete-collection').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const collectionId = btn.getAttribute('data-collection-id');
+                    handleDeleteCollection(collectionId);
                 });
             });
 
@@ -137,7 +145,21 @@
                     btn.addEventListener('click', () => {
                         const reqId = btn.getAttribute('data-review-req-id');
                         const request = allRequests.find(r => r.nroDeSolicitud == reqId);
-                        if(request) openModal(renderRequestReviewModal, request);
+
+                        if (request) {
+                            const modalElement = openModal(renderRequestReviewModal, request);
+
+                            if (modalElement) {
+                                modalElement.querySelector('#btn-approve-request').addEventListener('click', (e) => {
+                                    const requestId = e.target.getAttribute('data-request-id');
+                                    handleReviewRequest(requestId, true);
+                                });
+                                modalElement.querySelector('#btn-reject-request').addEventListener('click', (e) => {
+                                    const requestId = e.target.getAttribute('data-request-id');
+                                    handleReviewRequest(requestId, false);
+                                });
+                            }
+                        }
                     });
                 });
             }

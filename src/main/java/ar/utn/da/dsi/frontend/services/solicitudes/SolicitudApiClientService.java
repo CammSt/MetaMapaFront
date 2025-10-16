@@ -1,7 +1,8 @@
-package ar.utn.da.dsi.frontend.services;
+package ar.utn.da.dsi.frontend.services.solicitudes;
 
 import ar.utn.da.dsi.frontend.client.dto.input.SolicitudEliminacionInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.SolicitudEliminacionOutputDTO;
+import ar.utn.da.dsi.frontend.services.ApiClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
