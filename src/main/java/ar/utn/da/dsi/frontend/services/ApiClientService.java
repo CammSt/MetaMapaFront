@@ -189,7 +189,7 @@ public class ApiClientService {
   /**
    * Obtiene el access token de la sesión
    */
-  private String getAccessTokenFromSession() {
+  public String getAccessTokenFromSession() {
     ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
     HttpServletRequest request = attributes.getRequest();
     return (String) request.getSession().getAttribute("accessToken");
@@ -198,7 +198,7 @@ public class ApiClientService {
   /**
    * Obtiene el refresh token de la sesión
    */
-  private String getRefreshTokenFromSession() {
+  public String getRefreshTokenFromSession() {
     ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
     HttpServletRequest request = attributes.getRequest();
     return (String) request.getSession().getAttribute("refreshToken");

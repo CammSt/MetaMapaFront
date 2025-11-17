@@ -3,7 +3,7 @@ package ar.utn.da.dsi.frontend.providers;
 import ar.utn.da.dsi.frontend.client.dto.AuthResponseDTO;
 import ar.utn.da.dsi.frontend.client.dto.RolesPermisosDTO;
 
-import ar.utn.da.dsi.frontend.services.GestionAlumnosApiService;
+import ar.utn.da.dsi.frontend.services.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +24,9 @@ import java.util.List;
 @Component
 public class CustomAuthProvider implements AuthenticationProvider {
 	private static final Logger log = LoggerFactory.getLogger(CustomAuthProvider.class);
-	private final GestionAlumnosApiService externalAuthService;
+	private final AuthService externalAuthService;
 
-	public CustomAuthProvider(GestionAlumnosApiService externalAuthService) {
+	public CustomAuthProvider(AuthService externalAuthService) {
 		this.externalAuthService = externalAuthService;
 	}
 

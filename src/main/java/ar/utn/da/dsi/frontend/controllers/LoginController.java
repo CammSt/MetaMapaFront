@@ -1,7 +1,6 @@
 package ar.utn.da.dsi.frontend.controllers;
 
 
-import ar.utn.da.dsi.frontend.client.MetaMapaApiClient;
 import org.apache.coyote.Request;
 import org.apache.coyote.Response;
 
