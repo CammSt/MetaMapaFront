@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle=${titulo}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+<body>
+
+<main class="container-fluid p-4 animate__animated animate__fadeIn" id="main-content">
+    <h3 class="fw-bold mb-4 text-primary" th:text="${titulo}"></h3>
+
+    <div class="card shadow-lg border-0 rounded-3">
+        <div class="card-body p-4">
+
+            <form th:object="${hechoDTO}"
+                  th:action="${accion == 'crear'} ? @{/hechos/crear} : @{/hechos/{id}/editar(id=${hechoDTO.id})}" method="post">
+                <p class="text-muted small">
+                    Tu sugerencia será revisada por un administrador antes de ser pública.
+                </p>
+
+                <div class="mb-3">
+                    <label for="titulo" class="form-label">Título</label>
+                    <input type="text" id="titulo" class="form-control" th:field="*{titulo}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción</label>
+                    <textarea id="descripcion" class="form-control" rows="4" th:field="*{descripcion}" required></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="categoria" class="form-label">Categoría</label>
+
+                        <select id="categoria" class="form-select" th:field="*{categoria}" required>
+                            <option value="">Seleccione...</option>
+                            <option th:each="cat : ${categorias}"
+                                    th:value="${cat}"
+                                    th:text="${cat}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="fechaAcontecimiento" class="form-label">Fecha del Hecho</label>
+                        <input type="datetime-local" id="fechaAcontecimiento" class="form-control" th:field="*{fechaAcontecimiento}" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="latitud" class="form-label">Latitud</label>
+                        <input type="number" step="any" id="latitud" class="form-control" th:field="*{latitud}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="longitud" class="form-label">Longitud</label>
+                        <input type="number" step="any" id="longitud" class="form-control" th:field="*{longitud}" required>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a th:href="@{/}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                        <span th:text="${accion == 'crear'} ? 'Enviar Sugerencia' : 'Guardar Cambios'"></span>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<div id="page-scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar('index');
+        });
+    </script>
+</div>
+
+</body>
+</html>

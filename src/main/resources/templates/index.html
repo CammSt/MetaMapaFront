@@ -7,7 +7,7 @@
     <div class="text-center mb-5 animate__animated animate__fadeInDown">
         <h2 class="display-4 fw-bold text-primary">Información Colaborativa para un Mundo Transparente</h2>
         <p class="lead text-secondary">MetaMapa es una plataforma abierta y ciudadana para mapear, verificar y visualizar información geolocalizada.</p>
-        <button id="create-fact-btn" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">+ Subir Hecho</button>
+        <a th:href="@{/hechos/nuevo}" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">+ Subir Hecho</a>
     </div>
     <section class="animate__animated animate__fadeIn">
         <h3 class="mb-4 text-primary fw-bold border-bottom pb-2">Explora Nuestras Colecciones</h3>
@@ -32,16 +32,7 @@
 
 <div id="page-scripts">
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            renderSidebar('index');
-            document.getElementById('create-fact-btn').addEventListener('click', () => {
-                if (AppState.currentUser) {
-                    openModal(renderFactModal); // Llama a la función del modal
-                } else {
-                    window.location.href = '/login';
-                }
-            });
-        });
+
     </script>
 </div>
 

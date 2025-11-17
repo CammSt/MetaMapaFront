@@ -4,7 +4,10 @@
 <body>
 
 <main class="container-fluid p-4" id="main-content">
-    <div class="d-flex justify-content-between align-items-center mb-4"><a th:href="@{/}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold">← Volver</a><button id="create-fact-btn-facts" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">+ Subir Hecho</button></div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a th:href="@{/}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold">← Volver</a>
+        <a th:href="@{/hechos/nuevo}" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">+ Subir Hecho</a>
+    </div>
 
     <div class="alert alert-info p-4 rounded-3 mb-4 border-0 shadow-sm"><h3 class="alert-heading fw-bold text-info-emphasis" th:text="${coleccion.titulo}"></h3><p class="mb-1 text-info-emphasis" th:text="${coleccion.descripcion}"></p><small class="d-block text-info-emphasis" th:if="${coleccion.consensusAlgorithm != null}"><i class="bi bi-check-circle-fill me-1"></i><strong>Consenso:</strong> <span th:text="${coleccion.consensusAlgorithm}"></span></small></div>
 
@@ -44,19 +47,6 @@
             let markersLayer = L.layerGroup().addTo(map);
             const factsListContainer = document.getElementById('facts-list-container');
 
-            function addRequestDeletionEventListeners() {
-                document.querySelectorAll('.btn-request-deletion').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        const factTitle = button.getAttribute('data-fact-title');
-
-                        openModal(renderDeletionRequestModal, handleDeletionRequestSubmit, factTitle);
-                    });
-                });
-            }
-
             function renderFactList(facts) {
                 factsListContainer.innerHTML = '';
                 if (facts.length === 0) {
@@ -73,7 +63,7 @@
                         <div class="dropdown">
                             <button class="btn btn-sm btn-light py-0 px-2" type="button" data-bs-toggle="dropdown" onclick="event.stopPropagation();">•••</button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item btn-request-deletion" href="#" data-fact-title="${fact.titulo}">Solicitar Eliminación</a></li>
+                                <li><a class="dropdown-item" href="/solicitudes/nueva?hechoId=${fact.id}">Solicitar Eliminación</a></li>
                             </ul>
                         </div>
                     </div>
@@ -89,7 +79,6 @@
                 });
                 addEventListenersToCards();
 
-                addRequestDeletionEventListeners();
             }
 
             function renderMapMarkers(facts) {
@@ -192,7 +181,6 @@
             const mapView = document.getElementById('map-view');
             listTabBtn.addEventListener('click', () => { listTabBtn.classList.add('active'); mapTabBtn.classList.remove('active'); listView.style.display = 'block'; mapView.style.display = 'none'; });
             mapTabBtn.addEventListener('click', () => { mapTabBtn.classList.add('active'); listTabBtn.classList.remove('active'); mapView.style.display = 'block'; listView.style.display = 'none'; setTimeout(() => map.invalidateSize(), 10); });
-            document.getElementById('create-fact-btn-facts').addEventListener('click', () => { if (AppState.currentUser) { openModal(renderFactModal); } else { window.location.href = '/login'; } });
         });
     </script>
 </div>

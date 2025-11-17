@@ -22,7 +22,7 @@
                                 <td th:text="${hecho.titulo}"></td>
                                 <td th:text="${#temporals.format(hecho.fechaAcontecimiento, 'dd/MM/yyyy')}"></td>
                                 <td class="text-end">
-                                    <button th:attr="data-fact-id=${hecho.id}" class="btn btn-primary btn-sm rounded-pill btn-edit-fact">Editar</button>
+                                    <a th:href="@{/hechos/{id}/editar(id=${hecho.id})}" class="btn btn-primary btn-sm rounded-pill">Editar</a>
                                 </td>
                             </tr>
                             </tbody>
@@ -91,14 +91,6 @@
             tabFacts.addEventListener('click', () => { tabFacts.classList.add('active'); tabRequests.classList.remove('active'); contentFacts.style.display = 'block'; contentRequests.style.display = 'none'; });
             tabRequests.addEventListener('click', () => { tabRequests.classList.add('active'); tabFacts.classList.remove('active'); contentRequests.style.display = 'block'; contentFacts.style.display = 'none'; });
 
-            // Lógica para modal de edición (sin cambios)
-            document.querySelectorAll('.btn-edit-fact').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const factId = btn.getAttribute('data-fact-id');
-                    const factToEdit = allMyFacts.find(f => f.id == factId);
-                    if (factToEdit) { openModal(renderFactModal, factToEdit); }
-                });
-            });
 
             // --- AÑADIDO: Lógica para los filtros de solicitudes ---
             const filterType = document.getElementById('filter-request-type');

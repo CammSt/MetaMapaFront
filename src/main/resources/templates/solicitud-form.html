@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle=${titulo}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+<body>
+
+<main class="container-fluid p-4 animate__animated animate__fadeIn" id="main-content">
+    <h3 class="fw-bold mb-4 text-primary" th:text="${titulo}"></h3>
+
+    <div class="card shadow-lg border-0 rounded-3">
+        <div class="card-body p-4">
+
+            <div class="alert alert-warning" role="alert">
+                <h5 class="alert-heading">Atención</h5>
+                <p>Estás a punto de solicitar la eliminación del hecho:
+                    <strong th:text="${hecho.titulo}"></strong>
+                </p>
+                <p class="mb-0">Tu solicitud será revisada por un administrador.</p>
+            </div>
+
+            <form th:object="${solicitudDTO}" th:action="@{/solicitudes/crear}" method="post">
+
+                <input type="hidden" th:field="*{tituloHecho}" />
+
+                <div class.mb-3>
+                    <label for="motivo" class="form-label">Motivo de la solicitud</label>
+                    <textarea id="motivo" class="form-control" rows="8" th:field="*{motivo}" required
+                              placeholder="Por favor, describe detalladamente por qué este hecho debería ser eliminado (mínimo 500 caracteres)."></textarea>
+
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a th:href="@{/facts(handleId=${hecho.collectionHandle})}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">
+                        Enviar Solicitud
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<div id="page-scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar('index');
+        });
+    </script>
+</div>
+
+</body>
+</html>

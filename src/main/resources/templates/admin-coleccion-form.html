@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle=${titulo}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+<body>
+
+<main class="container-fluid p-4 animate__animated animate__fadeIn" id="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0 text-primary" th:text="${titulo}"></h3>
+        <a th:href="@{/admin}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold">
+            ← Volver al Panel
+        </a>
+    </div>
+
+    <div class="card shadow-lg border-0 rounded-3">
+        <div class="card-body p-4">
+
+            <form th:object="${coleccionDTO}"
+                  th:action="${accion == 'crear'} ? @{/admin/colecciones/crear} : @{/admin/colecciones/{id}/editar(id=${coleccionDTO.handleID})}"
+                  method="post">
+
+                <div class="mb-3">
+                    <label for="titulo" class="form-label">Título</label>
+                    <input type="text" id="titulo" class="form-control" th:field="*{titulo}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción</label>
+                    <textarea id="descripcion" class="form-control" rows="4" th:field="*{descripcion}" required></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label for="algoritmoConsenso" class="form-label">Algoritmo de Consenso</label>
+                    <select id="algoritmoConsenso" class="form-select" th:field="*{algoritmoConsenso}" required>
+                        <option value="">Seleccione un algoritmo...</option>
+                        <option th:each="entry : ${consensusLabels}"
+                                th:value="${entry.key}"
+                                th:text="${entry.value}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a th:href="@{/admin}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                        <span th:text="${accion == 'crear'} ? 'Crear Colección' : 'Guardar Cambios'"></span>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<div id="page-scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar('admin');
+        });
+    </script>
+</div>
+
+</body>
+</html>

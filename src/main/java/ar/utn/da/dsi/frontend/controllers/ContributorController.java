@@ -1,5 +1,6 @@
 package ar.utn.da.dsi.frontend.controllers;
 
+import ar.utn.da.dsi.frontend.services.hechos.HechoService;
 import ar.utn.da.dsi.frontend.services.solicitudes.SolicitudService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -12,9 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class ContributorController {
 
   private final SolicitudService solicitudService;
+  private final HechoService hechoService;
 
-  public ContributorController(SolicitudService solicitudService) {
+  public ContributorController(SolicitudService solicitudService, HechoService hechoService) {
     this.solicitudService = solicitudService;
+    this.hechoService = hechoService;
   }
 
   @GetMapping

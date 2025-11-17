@@ -14,8 +14,13 @@
             <div id="admin-tab-content-wrapper">
                 <div id="collections-content">
                     <div class="d-flex gap-2 mb-4">
-                        <button id="btn-create-collection" class="btn btn-success rounded-pill px-4 fw-bold">+ Nueva Colección</button>
-                        <button id="btn-import-csv" class="btn btn-info rounded-pill px-4 fw-bold text-white"><i class="bi bi-upload me-2"></i>Importar CSV</button>
+                        <a th:href="@{/admin/colecciones/nueva}" class="btn btn-success rounded-pill px-4 fw-bold">
+                            + Nueva Colección
+                        </a>
+                        <button type="button" class="btn btn-info rounded-pill px-4 fw-bold text-white"
+                                data-bs-toggle="modal" data-bs-target="#csvImportModal">
+                            <i class="bi bi-upload me-2"></i>Importar CSV
+                        </button>
                     </div>
                     <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
                         <div th:if="${#lists.isEmpty(colecciones)}" class="text-center text-muted p-5">No hay colecciones para gestionar.</div>
@@ -29,11 +34,21 @@
                             </thead>
                             <tbody>
                             <tr th:each="col : ${colecciones}">
-                                <td th:text="${col.titulo}"></td>
+                                <td th:text="${col.titulo()}"></td>
                                 <td><span class="badge bg-secondary">Carga Manual</span></td>
                                 <td class="text-end">
-                                    <button th:attr="data-collection-id=${col.handleID}" class="btn btn-primary btn-sm rounded-pill btn-edit-collection">Editar</button>
-                                    <button th:attr="data-collection-id=${col.handleID}" class="btn btn-danger btn-sm rounded-pill btn-delete-collection">Eliminar</button>
+
+                                    <a th:href="@{/admin/colecciones/{id}/editar(id=${col.handleID()})}" class="btn btn-primary btn-sm rounded-pill">
+                                        Editar
+                                    </a>
+
+                                    <form th:action="@{/admin/colecciones/{id}/eliminar(id=${col.handleID()})}" method="post" class="d-inline"
+                                          onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta colección?');">
+                                        <button type="submit" class="btn btn-danger btn-sm rounded-pill">
+                                            Eliminar
+                                        </button>
+                                    </form>
+
                                 </td>
                             </tr>
                             </tbody>
@@ -90,15 +105,46 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="csvImportModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <form th:action="@{/admin/hechos/importar-csv}" method="post" enctype="multipart/form-data">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary fw-bold">Importar desde CSV</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small">
+                            Selecciona un archivo .csv para la carga masiva de hechos.
+                            El archivo será procesado en segundo plano.
+                        </p>
+                        <div class="mb-3">
+                            <label for="csvFile" class="form-label">Archivo CSV</label>
+                            <input class="form-control" type="file" id="csvFile" name="csvFile" accept=".csv" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Importar</button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
 </main>
 
 <div id="page-scripts">
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const allRequests = /*[[${solicitudes}]]*/ [];
         const allCollections = /*[[${colecciones}]]*/ [];
         const consensusLabels = /*[[${consensusLabels}]]*/ {};
         const availableSources = /*[[${availableSources}]]*/ [];
+        const allRequestsForFilter = /*[[${solicitudes}]]*/ [];
         /*]]>*/
     </script>
     <script>
@@ -112,58 +158,7 @@
             tabCollections.addEventListener('click', () => { tabCollections.classList.add('active'); tabRequests.classList.remove('active'); contentCollections.style.display = 'block'; contentRequests.style.display = 'none'; });
             tabRequests.addEventListener('click', () => { tabRequests.classList.add('active'); tabCollections.classList.remove('active'); contentRequests.style.display = 'block'; contentCollections.style.display = 'none'; });
 
-            // --- Lógica para los modales ---
-            document.getElementById('btn-create-collection').addEventListener('click', () => {
-                // Llama a openModal, pasando la función que renderiza y la que maneja el submit
-                openModal(renderCollectionModal, handleCollectionFormSubmit, null, consensusLabels, availableSources);
-            });
-
-            document.querySelectorAll('.btn-edit-collection').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const collectionId = btn.getAttribute('data-collection-id');
-                    const collectionToEdit = allCollections.find(c => c.handleID === collectionId);
-                    if (collectionToEdit) {
-                        openModal(renderCollectionModal, handleCollectionFormSubmit, collectionToEdit, consensusLabels, availableSources);
-                    }
-                });
-            });
-
-            document.querySelectorAll('.btn-delete-collection').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const collectionId = btn.getAttribute('data-collection-id');
-                    handleDeleteCollection(collectionId);
-                });
-            });
-
-            document.getElementById('btn-import-csv').addEventListener('click', () => {
-                openModal(renderCsvImportModal);
-            });
-
             const adminRequestsTableBody = document.getElementById('admin-requests-table-body');
-            function addReviewRequestEventListeners() {
-                document.querySelectorAll('.btn-review-request').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const reqId = btn.getAttribute('data-review-req-id');
-                        const request = allRequests.find(r => r.nroDeSolicitud == reqId);
-
-                        if (request) {
-                            const modalElement = openModal(renderRequestReviewModal, request);
-
-                            if (modalElement) {
-                                modalElement.querySelector('#btn-approve-request').addEventListener('click', (e) => {
-                                    const requestId = e.target.getAttribute('data-request-id');
-                                    handleReviewRequest(requestId, true);
-                                });
-                                modalElement.querySelector('#btn-reject-request').addEventListener('click', (e) => {
-                                    const requestId = e.target.getAttribute('data-request-id');
-                                    handleReviewRequest(requestId, false);
-                                });
-                            }
-                        }
-                    });
-                });
-            }
-            addReviewRequestEventListeners(); // Llama a la función al cargar la página
 
             // --- Lógica para los filtros de solicitudes del Admin ---
             const adminFilterType = document.getElementById('admin-filter-type');
@@ -183,18 +178,21 @@
                             <td><span class="badge bg-info">${req.tipo}</span></td>
                             <td><span class="badge ${statusBadgeClass}">${req.estado}</span></td>
                             <td class="text-end">
-                                <button data-review-req-id="${req.nroDeSolicitud}" class="btn btn-primary btn-sm rounded-pill btn-review-request">Evaluar</button>
+                                <button type="button" class="btn btn-primary btn-sm rounded-pill"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#reviewModal-${req.nroDeSolicitud}">
+                                    Evaluar
+                                </button>
                             </td>
                         </tr>`;
                     adminRequestsTableBody.innerHTML += row;
                 });
-                addReviewRequestEventListeners(); // Vuelve a asignar los eventos a los nuevos botones
             }
 
             function applyAdminRequestFilters() {
                 const typeValue = adminFilterType.value;
                 const statusValue = adminFilterStatus.value;
-                const filteredRequests = allRequests.filter(req => {
+                const filteredRequests = allRequestsForFilter.filter(req => {
                     const typeMatch = !typeValue || req.tipo === typeValue;
                     const statusMatch = !statusValue || req.estado === statusValue;
                     return typeMatch && statusMatch;

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle='No Encontrado', content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+<body>
+
+<main class="container-fluid p-4 d-flex align-items-center justify-content-center" style="min-height: 80vh;" id="main-content">
+    <div class="text-center animate__animated animate__fadeIn">
+        <h1 class="display-1 fw-bold text-primary">404</h1>
+        <h3 class="fw-bold text-secondary">Página No Encontrada</h3>
+        <p class="lead text-muted">
+            Lo sentimos, la página que buscas no existe o fue movida.
+        </p>
+        <a th:href="@{/}" class="btn btn-primary rounded-pill px-4 py-2 fw-bold mt-3">
+            Volver al Inicio
+        </a>
+    </div>
+</main>
+
+<div id="page-scripts">
+</div>
+
+</body>
+</html>

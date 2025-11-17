@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle='Estadísticas', content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+<body>
+
+<main class="container-fluid p-4 animate__animated animate__fadeIn" id="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0 text-primary" th:text="${titulo}"></h3>
+        <a th:href="@{/admin}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold">
+            ← Volver al Panel
+        </a>
+    </div>
+
+    <div class="card shadow-lg border-0 rounded-3">
+        <div class="card-body p-4">
+
+            <div class="row g-4" th:if="${estadisticas}">
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card card-body text-center shadow-sm h-100">
+                        <i class="bi bi-file-earmark-text display-4 text-primary"></i>
+                        <h1 class="display-5 fw-bold text-primary my-2" th:text="${estadisticas.totalHechos}">0</h1>
+                        <p class="mb-0 text-muted fs-5">Hechos Totales</p>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card card-body text-center shadow-sm h-100">
+                        <i class="bi bi-file-earmark-lock display-4 text-warning"></i>
+                        <h1 class="display-5 fw-bold text-warning my-2" th:text="${estadisticas.hechosPendientes}">0</h1>
+                        <p class="mb-0 text-muted fs-5">Hechos Pendientes</p>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card card-body text-center shadow-sm h-100">
+                        <i class="bi bi-hourglass-split display-4 text-danger"></i>
+                        <h1 class="display-5 fw-bold text-danger my-2" th:text="${estadisticas.solicitudesPendientes}">0</h1>
+                        <p class="mb-0 text-muted fs-5">Solicitudes Pendientes</p>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card card-body text-center shadow-sm h-100">
+                        <i class="bi bi-people display-4 text-success"></i>
+                        <h1 class="display-5 fw-bold text-success my-2" th:text="${estadisticas.totalContribuyentes}">0</h1>
+                        <p class="mb-0 text-muted fs-5">Contribuyentes</L>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card card-body text-center shadow-sm h-100">
+                        <i class="bi bi-collection display-4 text-info"></i>
+                        <h1 class="display-5 fw-bold text-info my-2" th:text="${estadisticas.totalColecciones}">0</h1>
+                        <p class="mb-0 text-muted fs-5">Colecciones Totales</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div th:if="${estadisticas == null}" class="alert alert-danger" role="alert">
+                <h4 class="alert-heading">Error al Cargar Estadísticas</h4>
+                <p>
+                    No se pudieron obtener los datos de estadísticas desde el backend.
+                    Por favor, asegúrese de que el servicio Agregador esté funcionando
+                    y que el endpoint <code>GET /admin/estadisticas</code> esté disponible.
+                </p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div id="page-scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar('admin');
+        });
+    </script>
+</div>
+
+</body>
+</html>
