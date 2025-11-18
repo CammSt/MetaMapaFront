@@ -40,9 +40,9 @@ public class AuthService {
 		try {
 			AuthResponseDTO response = webClient
 					.post()
-					.uri(authServiceUrl + "/auth") // Asumiendo endpoint /auth
+					.uri(authServiceUrl + "/login")
 					.bodyValue(Map.of(
-							"username", username,
+							"email", username,
 							"password", password
 					))
 					.retrieve()
@@ -84,23 +84,24 @@ public class AuthService {
 	/**
 	 * Llama al endpoint de registro del backend.
 	 */
-	public AuthResponseDTO registrar(RegistroInputDTO dto) {
+	public void registrar(RegistroInputDTO dto) {
 		try {
 			Map<String, Object> requestBody = Map.of(
-					"username", dto.getEmail(),
-					"password", dto.getPassword(),
+					"email", dto.getEmail(),
+					"contrasenia", dto.getPassword(),
 					"nombre", dto.getNombre(),
-					"fechaNacimiento", dto.getFechaNacimiento().toString()
+					"apellido", dto.getApellido(),
+					"fechaDeNacimiento", dto.getFechaNacimiento().toString(),
+					"admin", false // Los usuarios que se registran no son admins
 			);
 
-			AuthResponseDTO response = webClient
+			webClient
 					.post()
-					.uri(authServiceUrl + "/auth/register")
+					.uri(authServiceUrl + "/register")
 					.bodyValue(requestBody)
 					.retrieve()
-					.bodyToMono(AuthResponseDTO.class)
+					.bodyToMono(Void.class)
 					.block();
-			return response;
 
 		} catch (WebClientResponseException e) {
 			log.error("Error al registrar: " + e.getResponseBodyAsString());

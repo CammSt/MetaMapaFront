@@ -6,6 +6,7 @@ import java.time.LocalDate;
 @Data
 public class RegistroInputDTO {
   private String nombre;
+  private String apellido;
   private LocalDate fechaNacimiento;
   private String email; // 'username' en el backend
   private String password;

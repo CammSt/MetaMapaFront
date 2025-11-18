@@ -17,10 +17,9 @@ public class RegistroService {
     this.authApiService = authApiService;
   }
 
-  public AuthResponseDTO registrarUsuario(RegistroInputDTO dto) {
+  public void registrarUsuario(RegistroInputDTO dto) {
     validarRegistro(dto);
-
-    return authApiService.registrar(dto);
+    authApiService.registrar(dto);
   }
 
   private void validarRegistro(RegistroInputDTO dto) {
@@ -28,6 +27,9 @@ public class RegistroService {
 
     if (dto.getNombre() == null || dto.getNombre().trim().isEmpty()) {
       validationException.addFieldError("nombre", "El nombre es obligatorio");
+    }
+    if (dto.getApellido() == null || dto.getApellido().trim().isEmpty()) {
+      validationException.addFieldError("apellido", "El apellido es obligatorio");
     }
     if (dto.getEmail() == null || !dto.getEmail().contains("@")) {
       validationException.addFieldError("email", "El email no es válido");
