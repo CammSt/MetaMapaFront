@@ -14,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 public class HechoApiService {
@@ -33,11 +34,32 @@ public class HechoApiService {
    * Llama al backend para obtener los hechos de una colección.
    * (Usado por WebController para la página de /facts)
    */
-  public List<HechoDTO> getHechosDeColeccion(String handleId) {
-    // Asumo que el endpoint del backend es /hechos/coleccion/{handleId}
-    // Si es diferente, ajustamos esta URL.
-    String url = hechosApiUrl + "/coleccion/" + handleId;
-    return apiClientService.getList(url, HechoDTO.class);
+  public List<HechoDTO> getHechosDeColeccion(String handleId, String modo, String fechaDesde, String fechaHasta, String categoria, String titulo) {
+
+    String urlBase = hechosApiUrl + "/coleccion/" + handleId;
+
+    // Usamos UriComponentsBuilder para añadir parámetros solo si no son nulos
+    UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(urlBase);
+
+    if (modo != null && !modo.isEmpty()) {
+      builder.queryParam("modo", modo);
+    }
+    if (fechaDesde != null && !fechaDesde.isEmpty()) {
+      builder.queryParam("fechaDesde", fechaDesde);
+    }
+    if (fechaHasta != null && !fechaHasta.isEmpty()) {
+      builder.queryParam("fechaHasta", fechaHasta);
+    }
+    if (categoria != null && !categoria.isEmpty()) {
+      builder.queryParam("categoria", categoria);
+    }
+    if (titulo != null && !titulo.isEmpty()) {
+      builder.queryParam("titulo", titulo);
+    }
+
+    String urlCompleta = builder.toUriString();
+
+    return apiClientService.getList(urlCompleta, HechoDTO.class);
   }
 
   /**

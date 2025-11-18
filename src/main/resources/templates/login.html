@@ -5,50 +5,32 @@
 
 <main class="container-fluid d-flex justify-content-center align-items-center" id="main-content" style="min-height: 80vh;">
     <div class="card shadow-sm border-0 rounded-3 p-4" style="max-width: 450px; width: 100%;">
-        <div id="login-register-container">
+        <div class="card-body" id="login-form-container">
+            <h5 class="card-title text-primary fw-bold text-center mb-4">Iniciar Sesión</h5>
 
-            <div class="card-body" id="login-form-container">
-                <h5 class="card-title text-primary fw-bold text-center mb-4">Iniciar Sesión</h5>
+            <div th:if="${param.error}" class="alert alert-danger">Usuario o contraseña inválidos.</div>
+            <div th:if="${param.logout}" class="alert alert-success">Has cerrado sesión.</div>
+            <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
 
-                <form th:action="@{/login}" method="post">
-
-                    <div class="mb-3">
-                        <label for="email" class="form-label text-muted small">Correo Electrónico</label>
-                        <input type="email" class="form-control" id="email" name="email" required placeholder="tu@email.com">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="password" class="form-label text-muted small">Contraseña</label>
-                        <input type="password" class="form-control" id="password" name="password" required placeholder="••••••••">
-                    </div>
-
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary fw-bold">Iniciar Sesión</button>
-                    </div>
-                </form>
-
-                <hr>
-                <div class="text-center mt-3">
-                    <small class="text-muted">¿No tienes cuenta?
-                        <span id="show-register" class="text-primary fw-bold" style="cursor:pointer;">Regístrate aquí</span>
-                    </small>
+            <form th:action="@{/login}" method="post">
+                <div class="mb-3">
+                    <label for="username" class="form-label text-muted small">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="username" name="username" required placeholder="tu@email.com">
                 </div>
-            </div>
-            <div class="card-body" id="register-form-container" style="display: none;">
-                <h5 class="card-title text-primary fw-bold text-center mb-2">Registro</h5>
-                <form id="register-form">
-                    <div class="mb-2"><label class="form-label text-muted small">Nombre</label><input type="text" class="form-control" required></div>
-                    <div class="mb-2"><label class="form-label text-muted small">Fecha de Nacimiento</label><input type="date" class="form-control" required></div>
-                    <div class="mb-2"><label class="form-label text-muted small">Correo Electrónico</label><input type="email" class="form-control" required></div>
-                    <div class="mb-2"><label class="form-label text-muted small">Contraseña</label><input type="password" class="form-control" required></div>
-                    <div class="mb-2"><label class="form-label text-muted small">Confirmar Contraseña</label><input type="password" class="form-control" required></div>
-                    <div class="form-check mb-3">
-                        <input type="checkbox" class="form-check-input" id="termsCheck" required>
-                        <label class="form-check-label small" for="termsCheck">Acepto los <a href="#" id="show-terms" class="link-primary">términos y condiciones</a>.</label>
-                    </div>
-                    <div class="d-grid"><button type="submit" class="btn btn-primary fw-bold">Registrarme</button></div>
-                </form>
-                <div class="text-center mt-3"><small class="text-muted">¿Ya tienes cuenta? <span id="show-login" class="text-primary fw-bold" style="cursor:pointer;">Inicia sesión</span></small></div>
+                <div class="mb-3">
+                    <label for="password" class="form-label text-muted small">Contraseña</label>
+                    <input type="password" class="form-control" id="password" name="password" required placeholder="••••••••">
+                </div>
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary fw-bold">Iniciar Sesión</button>
+                </div>
+            </form>
+
+            <hr>
+            <div class="text-center mt-3">
+                <small class="text-muted">¿No tienes cuenta?
+                    <a th:href="@{/registro}" class="text-primary fw-bold" style="cursor:pointer;">Regístrate aquí</a>
+                </small>
             </div>
         </div>
     </div>
@@ -58,25 +40,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('login');
-            const loginContainer = document.getElementById('login-form-container');
-            const registerContainer = document.getElementById('register-form-container');
-
-            document.getElementById('show-register').addEventListener('click', () => {
-                loginContainer.style.display = 'none';
-                registerContainer.style.display = 'block';
-            });
-            document.getElementById('show-login').addEventListener('click', () => {
-                registerContainer.style.display = 'none';
-                loginContainer.style.display = 'block';
-            });
-            document.getElementById('show-terms').addEventListener('click', (e) => {
-                e.preventDefault();
-                openModal(renderTermsModal);
-            });
-
-            // Los botones de login simulado ya no son necesarios aquí
-            // document.getElementById('login-contrib-btn').addEventListener('click', () => loginAs('contributor'));
-            // document.getElementById('login-admin-btn').addEventListener('click', () => loginAs('admin'));
         });
     </script>
 </div>

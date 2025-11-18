@@ -2,6 +2,8 @@ package ar.utn.da.dsi.frontend.services;
 
 import ar.utn.da.dsi.frontend.client.dto.AuthResponseDTO;
 import ar.utn.da.dsi.frontend.client.dto.RolesPermisosDTO;
+import ar.utn.da.dsi.frontend.client.dto.input.RegistroInputDTO;
+import ar.utn.da.dsi.frontend.exceptions.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,5 +81,38 @@ public class AuthService {
 		}
 	}
 
-	// (Hemos eliminado todo el código comentado de "Alumnos")
+	/**
+	 * Llama al endpoint de registro del backend.
+	 */
+	public AuthResponseDTO registrar(RegistroInputDTO dto) {
+		try {
+			Map<String, Object> requestBody = Map.of(
+					"username", dto.getEmail(),
+					"password", dto.getPassword(),
+					"nombre", dto.getNombre(),
+					"fechaNacimiento", dto.getFechaNacimiento().toString()
+			);
+
+			AuthResponseDTO response = webClient
+					.post()
+					.uri(authServiceUrl + "/auth/register")
+					.bodyValue(requestBody)
+					.retrieve()
+					.bodyToMono(AuthResponseDTO.class)
+					.block();
+			return response;
+
+		} catch (WebClientResponseException e) {
+			log.error("Error al registrar: " + e.getResponseBodyAsString());
+
+			if (e.getStatusCode() == HttpStatus.CONFLICT) {
+				throw new ValidationException("El email '" + dto.getEmail() + "' ya está registrado.");
+			}
+
+			throw new RuntimeException("Error en el servicio de registro: " + e.getMessage(), e);
+		} catch (Exception e) {
+			throw new RuntimeException("Error de conexión con el servicio de registro: " + e.getMessage(), e);
+		}
+	}
+
 }

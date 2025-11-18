@@ -19,8 +19,8 @@ public class HechoService {
     this.apiClient = apiClient;
   }
 
-  public List<HechoDTO> getHechosDeColeccion(String handleId) {
-    return apiClient.getHechosDeColeccion(handleId);
+  public List<HechoDTO> getHechosDeColeccion(String handleId, String modo, String fechaDesde, String fechaHasta, String categoria, String titulo) {
+    return apiClient.getHechosDeColeccion(handleId, modo, fechaDesde, fechaHasta, categoria, titulo);
   }
 
   public List<HechoDTO> buscarHechosPorUsuario(String userId) {
