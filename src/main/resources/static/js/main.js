@@ -4,15 +4,6 @@ const AppState = {
     currentUser: JSON.parse(sessionStorage.getItem('currentUser')) || null
 };
 
-// Función para simular el inicio de sesión de diferentes roles.
-/*function loginAs(role) {
-    const user = role === 'contributor'
-        ? { id: 1, name: 'Ana', lastName: 'Perez', role: 'contributor', birthDate: '1990-05-15', email: 'ana.perez@example.com' }
-        : { id: 99, name: 'Admin', lastName: 'Principal', role: 'admin', birthDate: '1985-01-01', email: 'admin@example.com' };
-    sessionStorage.setItem('currentUser', JSON.stringify(user));
-    window.location.href = '/';
-}*/
-
 // Función para cerrar la sesión del usuario.
 function logout() {
     sessionStorage.clear();
@@ -50,7 +41,7 @@ function renderSidebar(currentPage) {
         openModal(renderTermsModal);
     });
 }
-// --- FUNCIONES PARA RENDERIZAR MODALES (RESTAURADAS Y COMPLETAS) ---
+// --- FUNCIONES PARA RENDERIZAR MODALES  ---
 
 function openModal(modalRenderFunc, ...args) {
     const modalContainer = document.getElementById('modal-container');
@@ -162,7 +153,6 @@ function renderFactList(facts) {
     });
     addEventListenersToCards();
 
-    // 👇 Es importante llamar a la función que agrega los eventos a los nuevos botones
     addRequestDeletionEventListeners();
 }
 

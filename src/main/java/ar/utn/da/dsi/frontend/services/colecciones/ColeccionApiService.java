@@ -20,11 +20,11 @@ public class ColeccionApiService {
 	}
 
 	public List<ColeccionOutputDTO> obtenerTodas() {
-		return apiClientService.getList(coleccionesApiUrl, ColeccionOutputDTO.class);
+		return apiClientService.getListPublic(coleccionesApiUrl, ColeccionOutputDTO.class);
 	}
 
 	public ColeccionOutputDTO obtenerPorId(String id) {
-		return apiClientService.get(coleccionesApiUrl + "/" + id, ColeccionOutputDTO.class);
+		return apiClientService.getPublic(coleccionesApiUrl + "/" + id, ColeccionOutputDTO.class);
 	}
 
 	public void crear(ColeccionInputDTO dto) {

@@ -59,7 +59,7 @@ public class HechoApiService {
 
     String urlCompleta = builder.toUriString();
 
-    return apiClientService.getList(urlCompleta, HechoDTO.class);
+    return apiClientService.getListPublic(urlCompleta, HechoDTO.class);
   }
 
   /**
@@ -79,7 +79,7 @@ public class HechoApiService {
   public List<String> getAvailableCategories() {
     // Asumo que el endpoint del backend es /hechos/categorias
     String url = hechosApiUrl + "/categorias";
-    return apiClientService.getList(url, String.class);
+    return apiClientService.getListPublic(url, String.class);
   }
 
   public Map<String, String> getConsensusLabels() {
@@ -102,8 +102,13 @@ public class HechoApiService {
   }
 
   public HechoDTO crearHecho(HechoInputDTO dto) {
-    // Asumimos que el endpoint de creación es la URL base
-    return apiClientService.post(hechosApiUrl, dto, HechoDTO.class);
+    if (dto.getVisualizadorID() == null) {
+      // Usuario anónimo, usa la llamada pública
+      return apiClientService.postPublic(hechosApiUrl, dto, HechoDTO.class);
+    } else {
+      // Usuario registrado, usa la llamada autenticada
+      return apiClientService.post(hechosApiUrl, dto, HechoDTO.class);
+    }
   }
 
   public HechoDTO actualizarHecho(Long id, HechoInputDTO dto) {
@@ -115,8 +120,6 @@ public class HechoApiService {
   public void importarCsv(MultipartFile file) {
     String url = hechosApiUrl + "/importar-csv";
 
-    // Es una llamada "especial", no podemos usar executeWithTokenRetry
-    // Pero SÍ podemos usar el ApiClientService para obtener el token actual
     String accessToken = apiClientService.getAccessTokenFromSession();
     if (accessToken == null) {
       throw new RuntimeException("No hay token de acceso disponible para la subida");

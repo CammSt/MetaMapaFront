@@ -13,6 +13,6 @@ import java.util.List;
 @AllArgsConstructor
 public class RolesPermisosDTO {
 	private String username;
-	private Rol rol;
+	private RolUsuarioDTO rol;
 	private List<Permiso> permisos;
 }

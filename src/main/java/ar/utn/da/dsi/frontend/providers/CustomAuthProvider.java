@@ -55,14 +55,15 @@ public class CustomAuthProvider implements AuthenticationProvider {
 			RolesPermisosDTO rolesPermisos = externalAuthService.getRolesPermisos(authResponse.getAccessToken());
 
 			log.info("Cargando roles y permisos del usuario en sesión");
-			request.getSession().setAttribute("rol", rolesPermisos.getRol());
+			request.getSession().setAttribute("rol", rolesPermisos.getRol().getNombrePermiso());
+
 			request.getSession().setAttribute("permisos", rolesPermisos.getPermisos());
 
 			List<GrantedAuthority> authorities = new ArrayList<>();
 			rolesPermisos.getPermisos().forEach(permiso -> {
 				authorities.add(new SimpleGrantedAuthority(permiso.name()));
 			});
-			authorities.add(new SimpleGrantedAuthority("ROLE_" + rolesPermisos.getRol().name()));
+			authorities.add(new SimpleGrantedAuthority("ROLE_" + rolesPermisos.getRol().getNombrePermiso()));
 
 			return new UsernamePasswordAuthenticationToken(username, password, authorities);
 

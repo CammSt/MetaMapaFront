@@ -31,7 +31,7 @@ public class SolicitudApiClientService {
 	}
 
 	public SolicitudEliminacionOutputDTO crear(SolicitudEliminacionInputDTO dto) {
-		return apiClientService.post(solicitudesApiUrl, dto, SolicitudEliminacionOutputDTO.class);
+		return apiClientService.postPublic(solicitudesApiUrl, dto, SolicitudEliminacionOutputDTO.class);
 	}
 
 	public SolicitudEliminacionOutputDTO aceptar(Integer id, String visualizadorId) {

@@ -222,4 +222,69 @@ public class ApiClientService {
   public interface ApiCall<T> {
     T execute(String accessToken) throws Exception;
   }
+
+  /**
+   * Ejecuta una llamada HTTP GET pública (sin token)
+   */
+  public <T> T getPublic(String url, Class<T> responseType) {
+    try {
+      return webClient
+          .get()
+          .uri(url)
+          .retrieve()
+          .bodyToMono(responseType)
+          .block();
+    } catch (WebClientResponseException e) {
+      if(e.getStatusCode() == HttpStatus.NOT_FOUND){
+        throw new NotFoundException(e.getMessage());
+      }
+      throw new RuntimeException("Error en llamada al API pública: " + e.getMessage(), e);
+    } catch (Exception e) {
+      throw new RuntimeException("Error de conexión con el servicio: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Ejecuta una llamada HTTP GET pública que retorna una lista (sin token)
+   */
+  public <T> List<T> getListPublic(String url, Class<T> responseType) {
+    try {
+      return webClient
+          .get()
+          .uri(url)
+          .retrieve()
+          .bodyToFlux(responseType)
+          .collectList()
+          .block();
+    } catch (WebClientResponseException e) {
+      if(e.getStatusCode() == HttpStatus.NOT_FOUND){
+        throw new NotFoundException(e.getMessage());
+      }
+      throw new RuntimeException("Error en llamada al API pública: " + e.getMessage(), e);
+    } catch (Exception e) {
+      throw new RuntimeException("Error de conexión con el servicio: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * (AÑADIDO) Ejecuta una llamada HTTP POST pública (sin token)
+   */
+  public <T> T postPublic(String url, Object body, Class<T> responseType) {
+    try {
+      return webClient
+          .post()
+          .uri(url)
+          .bodyValue(body)
+          .retrieve()
+          .bodyToMono(responseType)
+          .block();
+    } catch (WebClientResponseException e) {
+      if(e.getStatusCode() == HttpStatus.NOT_FOUND){
+        throw new NotFoundException(e.getMessage());
+      }
+      throw new RuntimeException("Error en llamada al API pública: " + e.getMessage(), e);
+    } catch (Exception e) {
+      throw new RuntimeException("Error de conexión con el servicio: " + e.getMessage(), e);
+    }
+  }
 }
