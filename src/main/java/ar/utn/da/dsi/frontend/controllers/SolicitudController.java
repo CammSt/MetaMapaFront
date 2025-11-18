@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.lang.Nullable;
 
 @Controller
 @RequestMapping("/solicitudes")
@@ -40,10 +41,10 @@ public class SolicitudController {
   }
 
   @PostMapping("/crear")
-  public String crearSolicitud(@ModelAttribute SolicitudEliminacionInputDTO solicitudDTO, Authentication auth) {
+  public String crearSolicitud(@ModelAttribute SolicitudEliminacionInputDTO solicitudDTO, @Nullable Authentication auth) {
 
     solicitudService.crear(solicitudDTO);
 
-    return "redirect:/contributor?success=solicitud_creada";
+    return "redirect:/?success=solicitud_creada";
   }
 }

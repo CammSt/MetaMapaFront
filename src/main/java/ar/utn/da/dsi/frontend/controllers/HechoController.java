@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.lang.Nullable;
 
 @Controller
 @RequestMapping("/hechos")
@@ -31,13 +32,18 @@ public class HechoController {
   }
 
   @PostMapping("/crear")
-  public String crearHecho(@ModelAttribute HechoInputDTO hechoDTO, Authentication auth) {
-    String userId = auth.getName();
+  public String crearHecho(@ModelAttribute HechoInputDTO hechoDTO, @Nullable Authentication auth) {
+    String userId = null;
+    if (auth != null) {
+      userId = auth.getName();
+    }
+
+    // El backend debe estar preparado para aceptar un visualizadorID nulo (anónimo).
     hechoDTO.setVisualizadorID(userId);
 
     hechoService.crear(hechoDTO);
 
-    return "redirect:/contributor?success=hecho_creado";
+    return "redirect:/?success=hecho_creado";
   }
 
   @GetMapping("/{id}/editar")

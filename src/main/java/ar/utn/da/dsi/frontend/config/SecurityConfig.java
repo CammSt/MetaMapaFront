@@ -29,19 +29,35 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/login", "/registro", "/css/**", "/js/**", "/assets/**").permitAll()
-						// (AÑADIDO) Permisos específicos (Ejemplo)
+
+						//RUTAS PÚBLICAS (Permitir a TODOS)
+						.requestMatchers(
+								"/", "/facts",                   // Páginas de visualización
+								"/login", "/registro",          // Login y Registro
+								"/hechos/nuevo", "/hechos/crear",      // Enviar Hecho (Anónimo)
+								"/solicitudes/nueva", "/solicitudes/crear", // Enviar Solicitud (Anónimo)
+								"/css/**", "/js/**", "/assets/**" // Recursos estáticos
+						).permitAll()
+
+						//RUTAS DE CONTRIBUYENTE (Requieren estar registrados)
+						.requestMatchers(
+								"/contributor/**",              // Panel de Contribuyente
+								"/hechos/{id}/editar",        // Formulario de Edición
+								"/profile"                      // Ver perfil
+						).hasRole("CONTRIBUTOR") // Spring añade "ROLE_" automáticamente
+
+						//RUTAS DE ADMIN (Requieren ser ADMIN)
 						.requestMatchers("/admin/**").hasRole("ADMIN")
-						.requestMatchers("/contributor/**").hasRole("CONTRIBUTOR")
-						.requestMatchers("/hechos/nuevo").hasRole("CONTRIBUTOR")
-						.anyRequest().authenticated()
+
+						// OTRAS RUTAS
+						.anyRequest().authenticated() // Bloquea todo lo demás
 				)
 				.formLogin(form -> form
 						.loginPage("/login")
 						.usernameParameter("username")
 						.passwordParameter("password")
 						.permitAll()
-						.successHandler(successHandler)
+						.successHandler(successHandler) // Redirección por rol
 				)
 				.logout(logout -> logout
 						.logoutUrl("/logout")
