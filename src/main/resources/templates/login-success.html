@@ -10,32 +10,21 @@
 </p>
 
 <script th:inline="javascript">
-    /*<![CDATA[*/
+    // Leer los parámetros codificados del modelo de Spring
+    const userJsonEncoded = [[${userJsonEncoded}]];
+    const userRole = [[${userRole}]];
+    const accessTokenEncoded = [[${accessTokenEncoded}]];
 
-    const userRole = /*[[${userRole}]]*/ 'none';
+    //Decodificar
+    const decodedUserJson = decodeURIComponent(userJsonEncoded);
+    const decodedAccessToken = decodeURIComponent(accessTokenEncoded);
 
-    // 2. Creamos un objeto de usuario MINIMAL en el frontend
-    // NOTA: Mantenemos la estructura mínima (id, name, role) para que el JS del menú funcione.
-    let user = null;
-    if (userRole === 'admin') {
-        user = {
-            // Usamos datos genéricos, asumiendo que el profile fetch completará los detalles.
-            id: 99,
-            name: 'Administrador',
-            role: 'admin',
-        };
-    } else if (userRole === 'contributor') {
-        user = {
-            id: 1,
-            name: 'Contribuyente',
-            role: 'contributor',
-        };
-    }
+    //Guardar en Session Storage
+    sessionStorage.setItem('userJson', decodedUserJson);
+    sessionStorage.setItem('userRole', userRole);
+    sessionStorage.setItem('accessToken', decodedAccessToken);
 
-    if (user) {
-        sessionStorage.setItem('currentUser', JSON.stringify(user));
-    }
-
+    //Redireccionar al panel del usuario
     if (userRole === 'admin') {
         window.location.href = '/admin';
     } else if (userRole === 'contributor') {
@@ -44,7 +33,6 @@
         window.location.href = '/';
     }
 
-    /*]]>*/
 </script>
 </body>
 </html>

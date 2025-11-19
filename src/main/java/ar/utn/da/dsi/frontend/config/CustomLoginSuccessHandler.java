@@ -9,27 +9,47 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
+import jakarta.servlet.http.HttpSession;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
   @Component
   public class CustomLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-    String userRole = "contributor";
 
-    // Verificamos los roles (autoridades) del usuario autenticado
-      for (GrantedAuthority auth : authentication.getAuthorities()) {
-      if (auth.getAuthority().equals("ROLE_ADMIN")) {
-        userRole = "admin";
-        break;
+      HttpSession session = request.getSession(false);
+      if (session == null) {
+        response.sendRedirect("/");
+        return;
       }
-    }
 
-    String targetUrl = UriComponentsBuilder.fromPath("/login-success")
-        .queryParam("userRole", userRole)
-        .build()
-        .toUriString();
+      String userJson = (String) session.getAttribute("userJson");
+      String userRole = (String) session.getAttribute("userRole");
+      String accessToken = (String) session.getAttribute("accessToken");
+
+      if (userJson == null || userRole == null || accessToken == null) {
+        response.sendRedirect("/");
+        return;
+      }
+
+      //CODIFICAR EL TOKEN
+      String encodedUserJson = URLEncoder.encode(userJson, StandardCharsets.UTF_8);
+      String encodedAccessToken = URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
+
+      session.removeAttribute("userJson");
+      session.removeAttribute("userRole");
+      session.removeAttribute("accessToken");
+
+      //Redirigir, AÑADIENDO EL TOKEN
+      String targetUrl = UriComponentsBuilder.fromPath("/login-success")
+          .queryParam("userJson", encodedUserJson)
+          .queryParam("userRole", userRole)
+          .queryParam("accessToken", encodedAccessToken)
+          .build()
+          .toUriString();
 
       response.sendRedirect(targetUrl);
-  }
+    }
 }

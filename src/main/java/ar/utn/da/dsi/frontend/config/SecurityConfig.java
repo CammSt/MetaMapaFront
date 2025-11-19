@@ -34,6 +34,7 @@ public class SecurityConfig {
 						.requestMatchers(
 								"/", "/facts",                   // Páginas de visualización
 								"/login", "/registro",          // Login y Registro
+                "/login-success",								// Login Sucess
 								"/hechos/nuevo", "/hechos/crear",      // Enviar Hecho (Anónimo)
 								"/solicitudes/nueva", "/solicitudes/crear", // Enviar Solicitud (Anónimo)
 								"/css/**", "/js/**", "/assets/**" // Recursos estáticos

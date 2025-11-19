@@ -16,6 +16,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpSession;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,35 +36,45 @@ public class CustomAuthProvider implements AuthenticationProvider {
 		String password = authentication.getCredentials().toString();
 
 		try {
-			//Llamar a login
+			// Llamar a login (que ahora devuelve TODOS los datos)
 			AuthResponseDTO authResponse = externalAuthService.login(username, password);
 			if (authResponse == null) {
 				throw new BadCredentialsException("Usuario o contraseña inválidos");
 			}
 
-			//Guardar tokens en sesión
+			String accessToken = authResponse.getToken();
+			String rolBackend = authResponse.getRolesPermisos().getNombreRol();
+			List<String> permisos = authResponse.getRolesPermisos().getPermisos();
+
+			//Determinar el rol
+			String feRole = rolBackend.equalsIgnoreCase("ADMIN") ? "admin" : "contributor";
+
+			//CONSTRUIR OBJETO JSON COMPLETO Y DINÁMICO para sessionStorage
+			String userJson = String.format(
+					"{\"id\":%d,\"name\":\"%s\",\"lastName\":\"%s\",\"role\":\"%s\",\"email\":\"%s\",\"birthDate\":\"%s\"}",
+					authResponse.getId(),
+					authResponse.getNombre().replace("\"", "\\\""),
+					authResponse.getApellido().replace("\"", "\\\""),
+					feRole,
+					authResponse.getEmail(),
+					authResponse.getFechaDeNacimiento().toString()
+			);
+
+			//GUARDAR EN SESIÓN HTTP
 			log.info("Usuario logeado! Configurando variables de sesión");
 			ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-			HttpServletRequest request = attributes.getRequest();
+			HttpSession session = attributes.getRequest().getSession(true);
 
-			request.getSession().setAttribute("accessToken", authResponse.getToken());
-			request.getSession().setAttribute("username", username);
+			session.setAttribute("accessToken", accessToken);
+			session.setAttribute("userJson", userJson);
+			session.setAttribute("userRole", feRole);
 
-			//Obtener roles y permisos
-			log.info("Buscando roles y permisos del usuario");
-			RolesPermisosDTO rolesPermisos = externalAuthService.getRolesPermisos(authResponse.getToken());
-
-			//Guardar roles en sesión
-			log.info("Cargando roles y permisos del usuario en sesión");
-			// (CORREGIDO) Usamos el getter del DTO (String)
-			request.getSession().setAttribute("rol", rolesPermisos.getNombreRol());
-			request.getSession().setAttribute("permisos", rolesPermisos.getPermisos());
-
+			//CONSTRUIR AUTHORITIES para Spring Security
 			List<GrantedAuthority> authorities = new ArrayList<>();
-			rolesPermisos.getPermisos().forEach(permisoString -> {
+			permisos.forEach(permisoString -> {
 				authorities.add(new SimpleGrantedAuthority(permisoString));
 			});
-			authorities.add(new SimpleGrantedAuthority("ROLE_" + rolesPermisos.getNombreRol()));
+			authorities.add(new SimpleGrantedAuthority("ROLE_" + rolBackend));
 
 			return new UsernamePasswordAuthenticationToken(username, password, authorities);
 

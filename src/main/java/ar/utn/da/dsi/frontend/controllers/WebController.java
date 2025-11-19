@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.view.RedirectView;
 import java.util.List;
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Controller
 public class WebController {
@@ -111,8 +112,17 @@ public class WebController {
   }
 
   @GetMapping("/login-success")
-  public String loginSuccess(@RequestParam("userRole") String userRole, Model model) {
+  @PreAuthorize("permitAll()")
+  public String loginSuccess(
+      @RequestParam("userJson") String userJson,
+      @RequestParam("userRole") String userRole,
+      @RequestParam("accessToken") String accessToken,
+      Model model) {
+
+    model.addAttribute("userJsonEncoded", userJson);
     model.addAttribute("userRole", userRole);
+    model.addAttribute("accessTokenEncoded", accessToken);
+
     return "login-success";
   }
 }
