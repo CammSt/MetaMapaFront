@@ -35,9 +35,16 @@ public class AdminController {
 
   @GetMapping
   public String mostrarPanelAdmin(Model model, Authentication authentication) {
-    model.addAttribute("colecciones", coleccionService.obtenerTodas());
 
-    String adminId = (authentication != null) ? authentication.getName() : null;
+  try {
+    model.addAttribute("colecciones", coleccionService.obtenerTodas());
+  } catch (Exception e) {
+    model.addAttribute("colecciones", List.of());
+  }
+
+  String adminId = (authentication != null) ? authentication.getName() : null;
+
+    try {
     if (adminId != null) {
       model.addAttribute("solicitudes", solicitudService.obtenerTodas(adminId));
     } else {
@@ -47,9 +54,15 @@ public class AdminController {
     model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
     model.addAttribute("availableSources", hechoService.getAvailableSources());
 
+  } catch (Exception e) {
+    model.addAttribute("solicitudes", List.of());
+    model.addAttribute("consensusLabels", Map.of());
+    model.addAttribute("availableSources", List.of());
+  }
+
     model.addAttribute("titulo", "Panel de Administración");
     return "admin";
-  }
+}
 
   @PostMapping("/solicitudes/{id}/aprobar")
   public String aprobarSolicitud(@PathVariable("id") Integer id, Authentication authentication) {

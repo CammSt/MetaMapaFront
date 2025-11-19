@@ -7,27 +7,29 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-
+import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 
-@Component
-public class CustomLoginSuccessHandler implements AuthenticationSuccessHandler {
+  @Component
+  public class CustomLoginSuccessHandler implements AuthenticationSuccessHandler {
 
-  @Override
-  public void onAuthenticationSuccess(HttpServletRequest request,
-                                      HttpServletResponse response,
-                                      Authentication authentication) throws IOException, ServletException {
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    String userRole = "contributor";
 
     // Verificamos los roles (autoridades) del usuario autenticado
-    for (GrantedAuthority auth : authentication.getAuthorities()) {
+      for (GrantedAuthority auth : authentication.getAuthorities()) {
       if (auth.getAuthority().equals("ROLE_ADMIN")) {
-        // Si es ADMIN, lo mandamos al panel de admin
-        response.sendRedirect("/admin");
-        return;
+        userRole = "admin";
+        break;
       }
     }
 
-    // Si no es ADMIN (es CONTRIBUTOR o cualquier otro), lo mandamos al inicio
-    response.sendRedirect("/");
+    String targetUrl = UriComponentsBuilder.fromPath("/login-success")
+        .queryParam("userRole", userRole)
+        .build()
+        .toUriString();
+
+      response.sendRedirect(targetUrl);
   }
 }

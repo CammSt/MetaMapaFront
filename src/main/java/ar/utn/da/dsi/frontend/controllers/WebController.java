@@ -35,7 +35,11 @@ public class WebController {
 
   @GetMapping("/")
   public String index(Model model) {
-    model.addAttribute("colecciones", coleccionService.obtenerTodas());
+    try {
+      model.addAttribute("colecciones", coleccionService.obtenerTodas());
+    } catch (Exception e) {
+      model.addAttribute("colecciones", List.of());
+    }
     return "index";
   }
 
@@ -104,5 +108,11 @@ public class WebController {
       redirectAttributes.addFlashAttribute("registroDTO", registroDTO);
       return "redirect:/registro";
     }
+  }
+
+  @GetMapping("/login-success")
+  public String loginSuccess(@RequestParam("userRole") String userRole, Model model) {
+    model.addAttribute("userRole", userRole);
+    return "login-success";
   }
 }

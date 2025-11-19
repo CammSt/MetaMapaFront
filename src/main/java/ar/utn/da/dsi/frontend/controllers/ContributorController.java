@@ -7,6 +7,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import java.util.List;
+import java.util.ArrayList;
 
 @Controller
 @RequestMapping("/contributor")
@@ -24,8 +26,17 @@ public class ContributorController {
   public String mostrarPanelContribuyente(Model model, Authentication authentication) {
     String userId = authentication.getName();
 
-    model.addAttribute("misHechos", hechoService.buscarHechosPorUsuario(userId));
-    model.addAttribute("misSolicitudes", solicitudService.obtenerTodas(userId));
+    try {
+      model.addAttribute("misHechos", hechoService.buscarHechosPorUsuario(userId));
+    } catch (Exception e) {
+      model.addAttribute("misHechos", List.of());
+    }
+
+    try {
+      model.addAttribute("misSolicitudes", solicitudService.obtenerTodas(userId));
+    } catch (Exception e) {
+      model.addAttribute("misSolicitudes", List.of());
+    }
 
     return "contributor";
   }

@@ -67,10 +67,8 @@ public class AuthService {
 	 */
 	public RolesPermisosDTO getRolesPermisos(String accessToken) {
 		try {
-			// Usamos el método 'getWithAuth' de ApiClientService
-			// que NO intenta refrescar el token (porque aún no lo tenemos del todo)
 			RolesPermisosDTO response = apiClientService.getWithAuth(
-					authServiceUrl + "/auth/user/roles-permisos", // Asumiendo endpoint
+					authServiceUrl + "/user/roles-permisos",
 					accessToken,
 					RolesPermisosDTO.class
 			);

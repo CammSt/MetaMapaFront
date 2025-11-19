@@ -12,31 +12,34 @@
 <script th:inline="javascript">
     /*<![CDATA[*/
 
-    // 1. Recibimos el rol del usuario desde el backend (Thymeleaf)
     const userRole = /*[[${userRole}]]*/ 'none';
 
-    // 2. Creamos el objeto de usuario correspondiente en el frontend
+    // 2. Creamos un objeto de usuario MINIMAL en el frontend
+    // NOTA: Mantenemos la estructura mínima (id, name, role) para que el JS del menú funcione.
     let user = null;
     if (userRole === 'admin') {
         user = {
-            id: 99, name: 'Admin', lastName: 'Principal', role: 'admin',
-            email: 'admin@metamapa.com', birthDate: '1985-01-01'
+            // Usamos datos genéricos, asumiendo que el profile fetch completará los detalles.
+            id: 99,
+            name: 'Administrador',
+            role: 'admin',
         };
     } else if (userRole === 'contributor') {
         user = {
-            id: 1, name: 'Usuario', lastName: 'Contribuyente', role: 'contributor',
-            email: 'user@metamapa.com', birthDate: '1990-05-15'
+            id: 1,
+            name: 'Contribuyente',
+            role: 'contributor',
         };
     }
 
-    // 3. ¡El paso CLAVE! Guardamos el usuario en sessionStorage
     if (user) {
         sessionStorage.setItem('currentUser', JSON.stringify(user));
     }
 
-    // 4. Redirigimos al destino final
     if (userRole === 'admin') {
         window.location.href = '/admin';
+    } else if (userRole === 'contributor') {
+        window.location.href = '/contributor';
     } else {
         window.location.href = '/';
     }
