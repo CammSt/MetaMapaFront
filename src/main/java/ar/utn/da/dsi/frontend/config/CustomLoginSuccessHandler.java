@@ -40,7 +40,6 @@ import java.nio.charset.StandardCharsets;
 
       session.removeAttribute("userJson");
       session.removeAttribute("userRole");
-      session.removeAttribute("accessToken");
 
       //Redirigir, AÑADIENDO EL TOKEN
       String targetUrl = UriComponentsBuilder.fromPath("/login-success")

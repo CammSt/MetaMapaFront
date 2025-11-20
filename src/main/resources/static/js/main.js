@@ -1,7 +1,7 @@
 
 // Objeto para manejar el estado de la sesión.
 const AppState = {
-    currentUser: JSON.parse(sessionStorage.getItem('currentUser')) || null
+    currentUser: JSON.parse(sessionStorage.getItem('userJson')) || null
 };
 
 // Función para cerrar la sesión del usuario.

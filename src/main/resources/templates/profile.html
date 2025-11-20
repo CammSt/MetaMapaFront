@@ -7,13 +7,25 @@
     <div class="card shadow-lg border-0 rounded-3">
         <div class="card-header bg-primary text-white border-bottom-0 p-4 rounded-top-3"><h3 class="fw-bold mb-0">Mi Perfil</h3></div>
         <div class="card-body p-4">
-            <div id="alert-placeholder"></div>
-            <form id="profile-form">
+
+            <div id="alert-placeholder">
+                <div th:if="${success}" class="alert alert-success" role="alert" th:text="${success}"></div>
+                <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+            </div>
+
+            <form id="profile-form" th:object="${profileDTO}" th:action="@{/profile/update}" method="post">
                 <div class="row g-3">
-                    <div class="col-md-6"><label class="form-label">Nombre</label><input type="text" id="profile-name" name="name" class="form-control" required></div>
-                    <div class="col-md-6"><label class="form-label">Apellido</label><input type="text" id="profile-lastName" name="lastName" class="form-control" required></div>
+
+                    <div class="col-md-6"><label class="form-label">Nombre</label><input type="text" id="profile-name" th:field="*{nombre}" class="form-control" required></div>
+
+                    <div class="col-md-6"><label class="form-label">Apellido</label><input type="text" id="profile-lastName" th:field="*{apellido}" class="form-control" required></div>
+
                     <div class="col-12"><label class="form-label">Correo Electrónico</label><input type="email" id="profile-email" class="form-control" disabled></div>
-                    <div class="col-12"><label class="form-label">Fecha de Nacimiento</label><input type="date" id="profile-birthDate" name="birthDate" class="form-control" required></div>
+
+                    <div class="col-12"><label class="form-label">Fecha de Nacimiento</label><input type="date" id="profile-birthDate" th:field="*{fechaNacimiento}" class="form-control" required></div>
+
+                    <input type="hidden" id="profile-email-hidden" th:field="*{email}">
+
                     <div class="col-12 mt-4"><button type="submit" class="btn btn-primary rounded-pill px-4">Guardar Cambios</button></div>
                 </div>
             </form>
@@ -22,8 +34,25 @@
 </main>
 
 <div id="page-scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        //Leemos el userJson actualizado de la Sesión HTTP (servidor)
+        const updatedUserJson = /*[[${session.userJson}]]*/ null;
+        /*]]>*/
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+
+            //LÓGICA DE SINCRONIZACIÓN
+            // Si el servidor nos pasó un JSON actualizado (después del POST exitoso)
+            if (updatedUserJson) {
+                // Guardamos el JSON fresco en el navegador (sessionStorage)
+                sessionStorage.setItem('userJson', updatedUserJson);
+                // Actualizamos el objeto global AppState.currentUser
+                AppState.currentUser = JSON.parse(updatedUserJson);
+            }
+
+            // El resto del script usará el AppState.currentUser, que ahora tiene los datos correctos
             renderSidebar('profile');
             const user = AppState.currentUser;
 
@@ -38,11 +67,8 @@
             document.getElementById('profile-email').value = user.email || '';
             document.getElementById('profile-birthDate').value = user.birthDate || '';
 
-            document.getElementById('profile-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                alert('¡Datos guardados (simulación)!');
-                // Aquí iría la lógica para enviar los datos actualizados a la API
-            });
+            // Asignamos el valor al campo oculto para el próximo POST
+            document.getElementById('profile-email-hidden').value = user.email || '';
         });
     </script>
 </div>

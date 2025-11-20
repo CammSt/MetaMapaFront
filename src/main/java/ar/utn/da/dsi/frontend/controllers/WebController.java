@@ -19,6 +19,11 @@ import org.springframework.web.servlet.view.RedirectView;
 import java.util.List;
 import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
+import ar.utn.da.dsi.frontend.services.AuthService;
+import ar.utn.da.dsi.frontend.client.dto.AuthResponseDTO;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Controller
 public class WebController {
@@ -26,12 +31,14 @@ public class WebController {
   private final ColeccionService coleccionService;
   private final HechoService hechoService;
   private final RegistroService registroService;
+  private final AuthService authService;
 
   @Autowired
-  public WebController(ColeccionService coleccionService, HechoService hechoService, SolicitudService solicitudService, RegistroService registroService) {
+  public WebController(ColeccionService coleccionService, HechoService hechoService, SolicitudService solicitudService, RegistroService registroService, AuthService authService) {
     this.coleccionService = coleccionService;
     this.hechoService = hechoService;
     this.registroService = registroService;
+    this.authService = authService;
   }
 
   @GetMapping("/")
@@ -82,7 +89,40 @@ public class WebController {
   public String login() { return "login"; }
 
   @GetMapping("/profile")
-  public String perfilUsuario() { return "profile"; }
+  public String perfilUsuario(Model model) {
+    model.addAttribute("profileDTO", new RegistroInputDTO());
+    return "profile";
+  }
+
+  @PostMapping("/profile/update")
+  public String updateProfile(@ModelAttribute RegistroInputDTO profileDTO, RedirectAttributes redirectAttributes) {
+    try {
+      AuthResponseDTO updatedUser = authService.actualizarPerfil(profileDTO);
+
+      //Lógica de Sesión: Actualizar los datos del usuario en la sesión HTTP
+      String feRole = updatedUser.getRolesPermisos().getNombreRol().equalsIgnoreCase("ADMIN") ? "admin" : "contributor";
+      String userJson = String.format(
+          "{\"id\":%d,\"name\":\"%s\",\"lastName\":\"%s\",\"role\":\"%s\",\"email\":\"%s\",\"birthDate\":\"%s\"}",
+          updatedUser.getId(),
+          updatedUser.getNombre().replace("\"", "\\\""),
+          updatedUser.getApellido().replace("\"", "\\\""),
+          feRole,
+          updatedUser.getEmail(),
+          updatedUser.getFechaDeNacimiento().toString()
+      );
+
+      ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+      HttpServletRequest request = attributes.getRequest();
+      request.getSession().setAttribute("userJson", userJson);
+
+      redirectAttributes.addFlashAttribute("success", "Perfil actualizado correctamente.");
+      return "redirect:/profile";
+
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("error", "Error al actualizar el perfil: " + e.getMessage());
+      return "redirect:/profile";
+    }
+  }
 
   @GetMapping("/registro")
   public String mostrarFormularioRegistro(Model model) {

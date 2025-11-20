@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.lang.Nullable;
+import java.util.List;
 
 @Controller
 @RequestMapping("/hechos")
@@ -25,8 +26,11 @@ public class HechoController {
     model.addAttribute("hechoDTO", new HechoInputDTO());
     model.addAttribute("titulo", "Subir un nuevo Hecho");
     model.addAttribute("accion", "crear");
-
-    model.addAttribute("categorias", hechoService.getAvailableCategories());
+    try {
+      model.addAttribute("categorias", hechoService.getAvailableCategories());
+    } catch (Exception e) {
+      model.addAttribute("categorias", List.of());
+    }
 
     return "hecho-form";
   }

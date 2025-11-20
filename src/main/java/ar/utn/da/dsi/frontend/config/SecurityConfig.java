@@ -43,9 +43,11 @@ public class SecurityConfig {
 						//RUTAS DE CONTRIBUYENTE (Requieren estar registrados)
 						.requestMatchers(
 								"/contributor/**",              // Panel de Contribuyente
-								"/hechos/{id}/editar",        // Formulario de Edición
-								"/profile"                      // Ver perfil
+								"/hechos/{id}/editar"       		// Formulario de Edición
 						).hasRole("CONTRIBUTOR") // Spring añade "ROLE_" automáticamente
+
+						.requestMatchers("/profile")
+						.hasAnyRole("ADMIN", "CONTRIBUTOR")
 
 						//RUTAS DE ADMIN (Requieren ser ADMIN)
 						.requestMatchers("/admin/**").hasRole("ADMIN")

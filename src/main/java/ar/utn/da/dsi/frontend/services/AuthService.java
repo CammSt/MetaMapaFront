@@ -114,4 +114,33 @@ public class AuthService {
 		}
 	}
 
+	/**
+	 * Llama al endpoint de actualización de perfil del backend.
+	 */
+	public AuthResponseDTO actualizarPerfil(RegistroInputDTO dto) {
+		try {
+			Map<String, Object> requestBody = Map.of(
+					"nombre", dto.getNombre(),
+					"apellido", dto.getApellido(),
+					"fechaDeNacimiento", dto.getFechaNacimiento().toString(),
+					"email", dto.getEmail()
+			);
+
+			String url = authServiceUrl + "/user/profile";
+
+			AuthResponseDTO response = apiClientService.put(
+					url,
+					requestBody,
+					AuthResponseDTO.class
+			);
+			return response;
+
+		} catch (WebClientResponseException e) {
+			log.error("Error al actualizar perfil: " + e.getResponseBodyAsString());
+			throw new RuntimeException("Error al actualizar perfil: " + e.getMessage(), e);
+		} catch (Exception e) {
+			throw new RuntimeException("Error de conexión al actualizar perfil: " + e.getMessage(), e);
+		}
+	}
+
 }
