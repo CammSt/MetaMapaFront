@@ -160,10 +160,24 @@ public class AdminController {
 
   @GetMapping("/estadisticas")
   public String mostrarEstadisticas(Model model) {
+
+    // Asignar URLs de Exportación (son estáticas y no dependen del API call)
+    model.addAttribute("urlZipCompleto", estadisticasService.getExportUrlZipCompleto());
+    model.addAttribute("urlExportarProvinciaColeccion", estadisticasService.getExportUrlProvinciaColeccion());
+    model.addAttribute("urlExportarCategoriaHechos", estadisticasService.getExportUrlCategoriaHechos());
+    model.addAttribute("urlExportarProvinciaCategoria", estadisticasService.getExportUrlProvinciaCategoria());
+    model.addAttribute("urlExportarHoraCategoria", estadisticasService.getExportUrlHoraCategoria());
+    model.addAttribute("urlExportarSpam", estadisticasService.getExportUrlSpam());
+
     try {
-      model.addAttribute("estadisticas", estadisticasService.obtenerEstadisticasAdmin());
+
+      // Nuevas Estadísticas Específicas (2 y 5)
+      model.addAttribute("categoriaMasReportada", estadisticasService.getCategoriaMasReportada());
+      model.addAttribute("solicitudesSpam", estadisticasService.getCantidadDeSolicitudesSpam());
+
     } catch (Exception e) {
-      model.addAttribute("estadisticas", null);
+      model.addAttribute("categoriaMasReportada", null);
+      model.addAttribute("solicitudesSpam", null);
     }
 
     model.addAttribute("titulo", "Estadísticas");
