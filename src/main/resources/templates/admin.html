@@ -21,6 +21,9 @@
                                 data-bs-toggle="modal" data-bs-target="#csvImportModal">
                             <i class="bi bi-upload me-2"></i>Importar CSV
                         </button>
+                        <a th:href="@{/admin/estadisticas}" class="btn btn-warning rounded-pill px-4 fw-bold text-dark">
+                            <i class="bi bi-graph-up me-2"></i> Ver Estadísticas
+                        </a>
                     </div>
                     <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
                         <div th:if="${#lists.isEmpty(colecciones)}" class="text-center text-muted p-5">No hay colecciones para gestionar.</div>

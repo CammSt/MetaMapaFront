@@ -3,6 +3,7 @@ package ar.utn.da.dsi.frontend.controllers;
 import ar.utn.da.dsi.frontend.client.dto.input.ColeccionInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.ColeccionOutputDTO;
 import ar.utn.da.dsi.frontend.services.colecciones.ColeccionService;
+import ar.utn.da.dsi.frontend.services.estadisticas.EstadisticasService;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -26,11 +27,13 @@ public class AdminController {
   private final ColeccionService coleccionService;
   private final SolicitudService solicitudService;
   private final HechoService hechoService;
+  private final EstadisticasService estadisticasService;
 
-  public AdminController(ColeccionService coleccionService, SolicitudService solicitudService, HechoService hechoService) {
+  public AdminController(ColeccionService coleccionService, SolicitudService solicitudService, HechoService hechoService, EstadisticasService estadisticasService) {
     this.coleccionService = coleccionService;
     this.solicitudService = solicitudService;
     this.hechoService = hechoService;
+    this.estadisticasService = estadisticasService;
   }
 
   @GetMapping
@@ -157,13 +160,13 @@ public class AdminController {
 
   @GetMapping("/estadisticas")
   public String mostrarEstadisticas(Model model) {
-    // TODO: Implementar en el futuro
-    // Por ahora, creamos la página pero sin datos.
-    // Cuando el backend tenga GET /admin/estadisticas[cite: 120],
-    // aquí llamarías a un 'estadisticasService.obtenerEstadisticas()'
-    // y lo pondrías en el 'model'.
+    try {
+      model.addAttribute("estadisticas", estadisticasService.obtenerEstadisticasAdmin());
+    } catch (Exception e) {
+      model.addAttribute("estadisticas", null);
+    }
 
     model.addAttribute("titulo", "Estadísticas");
-    return "admin-estadisticas";
+    return "estadisticas";
   }
 }
