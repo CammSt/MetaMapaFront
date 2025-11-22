@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.lang.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -28,17 +29,17 @@ public class HechoApiService {
   private final String estaticaApiUrl;
   private final WebClient webClient;
   private final ObjectMapper objectMapper; // AÑADIDO
+  private final String agregadorApiUrl;
 
   @Autowired
-  public HechoApiService(ApiClientService apiClientService,
-                         @Value("${hechos.service.url}") String hechosApiUrl,
-                         @Value("${estatica.service.url}") String estaticaApiUrl) {
+  public HechoApiService(ApiClientService apiClientService, @Value("${hechos.service.url}") String hechosApiUrl, @Value("${estatica.service.url}") String estaticaApiUrl, @Value("${agregador.service.url}") String agregadorApiUrl) {
     this.apiClientService = apiClientService;
     this.hechosApiUrl = hechosApiUrl;
     this.estaticaApiUrl = estaticaApiUrl;
     this.webClient = WebClient.builder().build();
     this.objectMapper = new ObjectMapper();
     this.objectMapper.findAndRegisterModules();
+    this.agregadorApiUrl = agregadorApiUrl;
   }
 
   /**
@@ -88,9 +89,15 @@ public class HechoApiService {
    * (Usado por WebController para los filtros en la página /facts)
    */
   public List<String> getAvailableCategories() {
-    // Asumo que el endpoint del backend es /hechos/categorias
-    String url = hechosApiUrl + "/categorias";
-    return apiClientService.getListPublic(url, String.class);
+    // El endpoint del agregador es /hechos/categorias
+    String url = agregadorApiUrl + "/hechos/categorias";
+    String[] categoriasArray = apiClientService.getPublic(url, String[].class);
+
+    if (categoriasArray == null) {
+      return List.of();
+    }
+
+    return Arrays.asList(categoriasArray);
   }
 
   public Map<String, String> getConsensusLabels() {

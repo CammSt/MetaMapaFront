@@ -19,20 +19,19 @@
 
                 <div class="mb-3">
                     <label for="titulo" class="form-label">Título</label>
-                    <input type="text" id="titulo" class="form-control" th:field="*{titulo}" required>
+                    <input type="text" id="titulo" class="form-control" th:field="*{titulo}" required placeholder="Ej: Incendio en reserva ecológica">
                 </div>
 
                 <div class="mb-3">
                     <label for="descripcion" class="form-label">Descripción</label>
-                    <textarea id="descripcion" class="form-control" rows="4" th:field="*{descripcion}" required></textarea>
+                    <textarea id="descripcion" class="form-control" rows="4" th:field="*{descripcion}" required placeholder="Detalla qué sucedió..."></textarea>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="categoria" class="form-label">Categoría</label>
-
                         <select id="categoria" class="form-select" th:field="*{categoria}" required>
-                            <option value="">Seleccione...</option>
+                            <option value="">Seleccione una categoría...</option>
                             <option th:each="cat : ${categorias}"
                                     th:value="${cat}"
                                     th:text="${cat}">
@@ -45,14 +44,26 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="latitud" class="form-label">Latitud</label>
-                        <input type="number" step="any" id="latitud" class="form-control" th:field="*{latitud}" required>
+                <div class="mb-4">
+                    <label class="form-label">Ubicación (Haz clic en el mapa)</label>
+                    <div id="map-selector" style="height: 400px; width: 100%; border-radius: 8px;" class="border"></div>
+                    <div class="form-text text-primary" id="location-help">
+                        <i class="bi bi-info-circle"></i> Haz clic en el mapa para marcar la ubicación exacta.
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="longitud" class="form-label">Longitud</label>
-                        <input type="number" step="any" id="longitud" class="form-control" th:field="*{longitud}" required>
+
+                    <div class="row mt-2 g-2">
+                        <div class="col-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Lat</span>
+                                <input type="number" step="any" id="latitud" class="form-control" th:field="*{latitud}" required readonly>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Long</span>
+                                <input type="number" step="any" id="longitud" class="form-control" th:field="*{longitud}" required readonly>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -61,6 +72,7 @@
                     <input class="form-control" type="file" id="archivo" name="archivo" accept="image/*,video/*">
                     <div class="form-text">Imágenes o videos. Máx. 20MB.</div>
                 </div>
+
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                     <a th:href="@{/}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
@@ -77,6 +89,56 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('index');
+
+            // 1. Inicializar Mapa
+            const defaultLat = -34.6037;
+            const defaultLng = -58.3816;
+
+            const latInput = document.getElementById('latitud');
+            const lngInput = document.getElementById('longitud');
+
+            let currentLat = parseFloat(latInput.value);
+            let currentLng = parseFloat(lngInput.value);
+
+            // CORRECCIÓN: Validar que no sea 0 (cero) ni NaN
+            // Si es 0.0, asumimos que es un hecho nuevo sin ubicación y usamos el default.
+            let hasLocation = currentLat && currentLng && currentLat !== 0 && currentLng !== 0;
+
+            let initialCenter = [defaultLat, defaultLng];
+            let initialZoom = 10;
+
+            if (hasLocation) {
+                initialCenter = [currentLat, currentLng];
+                initialZoom = 15;
+            }
+
+            const map = L.map('map-selector').setView(initialCenter, initialZoom);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            let marker = null;
+
+            // Solo ponemos marcador si hay ubicación real (distinta de 0)
+            if (hasLocation) {
+                marker = L.marker(initialCenter).addTo(map);
+            }
+
+            // 2. Evento Click en Mapa
+            map.on('click', function(e) {
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+
+                latInput.value = lat;
+                lngInput.value = lng;
+
+                if (marker) {
+                    marker.setLatLng([lat, lng]);
+                } else {
+                    marker = L.marker([lat, lng]).addTo(map);
+                }
+            });
         });
     </script>
 </div>
