@@ -4,6 +4,7 @@ import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.HechoInputDTO;
 import ar.utn.da.dsi.frontend.exceptions.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
@@ -39,12 +40,12 @@ public class HechoService {
     return apiClient.getAvailableSources();
   }
 
-  public HechoDTO crear(HechoInputDTO dto) {
-    return apiClient.crearHecho(dto);
+  public HechoDTO crear(HechoInputDTO dto, @Nullable MultipartFile archivo) {
+    return apiClient.crearHecho(dto, archivo);
   }
 
-  public HechoDTO actualizar(Long id, HechoInputDTO dto) {
-    return apiClient.actualizarHecho(id, dto);
+  public HechoDTO actualizar(Long id, HechoInputDTO dto, @Nullable MultipartFile archivo) {
+    return apiClient.actualizarHecho(id, dto, archivo);
   }
 
   public HechoInputDTO getHechoInputDTOporId(Long id) {
@@ -65,7 +66,7 @@ public class HechoService {
 
   public void importarCsv(MultipartFile file) {
     if (file.isEmpty() || !file.getOriginalFilename().endsWith(".csv")) {
-      throw new ValidationException("Por favor, selecciona un archivo .csv válido.");
+      throw new ValidationException("Por favor, seleccioná un archivo .csv válido.");
     }
     apiClient.importarCsv(file);
   }

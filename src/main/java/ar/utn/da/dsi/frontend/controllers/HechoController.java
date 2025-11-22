@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.lang.Nullable;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Controller
@@ -36,16 +37,18 @@ public class HechoController {
   }
 
   @PostMapping("/crear")
-  public String crearHecho(@ModelAttribute HechoInputDTO hechoDTO, @Nullable Authentication auth) {
+  public String crearHecho(
+      @ModelAttribute HechoInputDTO hechoDTO,
+      @RequestParam(value = "archivo", required = false) MultipartFile archivo,
+      @Nullable Authentication auth) {
     String userId = null;
     if (auth != null) {
       userId = auth.getName();
     }
 
-    // El backend debe estar preparado para aceptar un visualizadorID nulo (anónimo).
     hechoDTO.setVisualizadorID(userId);
 
-    hechoService.crear(hechoDTO);
+    hechoService.crear(hechoDTO, archivo);
 
     return "redirect:/?success=hecho_creado";
   }
@@ -65,15 +68,18 @@ public class HechoController {
   }
 
   @PostMapping("/{id}/editar")
-  public String editarHecho(@PathVariable("id") Long id,
-                            @ModelAttribute HechoInputDTO hechoDTO,
-                            Authentication auth) {
+  public String editarHecho(
+      @PathVariable("id") Long id,
+      @ModelAttribute HechoInputDTO hechoDTO,
+      @RequestParam(value = "archivo", required = false) MultipartFile archivo,
+      Authentication auth) {
 
     String userId = auth.getName();
     hechoDTO.setVisualizadorID(userId);
 
-    hechoService.actualizar(id, hechoDTO);
+    hechoService.actualizar(id, hechoDTO, archivo);
 
     return "redirect:/contributor?success=hecho_editado";
   }
+
 }

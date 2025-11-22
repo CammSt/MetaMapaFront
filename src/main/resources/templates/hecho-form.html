@@ -10,7 +10,9 @@
         <div class="card-body p-4">
 
             <form th:object="${hechoDTO}"
-                  th:action="${accion == 'crear'} ? @{/hechos/crear} : @{/hechos/{id}/editar(id=${hechoDTO.id})}" method="post">
+                  th:action="${accion == 'crear'} ? @{/hechos/crear} : @{/hechos/{id}/editar(id=${hechoDTO.id})}"
+                  method="post"
+                  enctype="multipart/form-data">
                 <p class="text-muted small">
                     Tu sugerencia será revisada por un administrador antes de ser pública.
                 </p>
@@ -54,6 +56,11 @@
                     </div>
                 </div>
 
+                <div class="mb-4">
+                    <label for="archivo" class="form-label">Contenido Multimedia (Opcional)</label>
+                    <input class="form-control" type="file" id="archivo" name="archivo" accept="image/*,video/*">
+                    <div class="form-text">Imágenes o videos. Máx. 20MB.</div>
+                </div>
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                     <a th:href="@{/}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">

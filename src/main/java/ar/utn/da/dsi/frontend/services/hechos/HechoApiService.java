@@ -3,18 +3,22 @@ package ar.utn.da.dsi.frontend.services.hechos;
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.HechoInputDTO;
 import ar.utn.da.dsi.frontend.services.ApiClientService;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.Map;
-import org.springframework.http.HttpHeaders;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.lang.Nullable;
+
+import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 @Service
 public class HechoApiService {
@@ -23,6 +27,7 @@ public class HechoApiService {
   private final String hechosApiUrl;
   private final String estaticaApiUrl;
   private final WebClient webClient;
+  private final ObjectMapper objectMapper; // AÑADIDO
 
   @Autowired
   public HechoApiService(ApiClientService apiClientService,
@@ -32,6 +37,8 @@ public class HechoApiService {
     this.hechosApiUrl = hechosApiUrl;
     this.estaticaApiUrl = estaticaApiUrl;
     this.webClient = WebClient.builder().build();
+    this.objectMapper = new ObjectMapper();
+    this.objectMapper.findAndRegisterModules();
   }
 
   /**
@@ -105,19 +112,81 @@ public class HechoApiService {
     return apiClientService.get(url, HechoDTO.class);
   }
 
-  public HechoDTO crearHecho(HechoInputDTO dto) {
-    if (dto.getVisualizadorID() == null) {
-      // Usuario anónimo, usa la llamada pública
-      return apiClientService.postPublic(hechosApiUrl, dto, HechoDTO.class);
-    } else {
-      // Usuario registrado, usa la llamada autenticada
-      return apiClientService.post(hechosApiUrl, dto, HechoDTO.class);
+  /**
+   * CREAR HECHO DINÁMICO: Envía la solicitud como Multipart (JSON + Archivo) al endpoint /hechos.
+   */
+  public HechoDTO crearHecho(HechoInputDTO dto, @Nullable MultipartFile archivo) {
+    String url = hechosApiUrl + "/hechos"; // Endpoint: POST /hechos (DinamicaController)
+
+    try {
+      String hechoJson = objectMapper.writeValueAsString(dto);
+
+      MultipartBodyBuilder builder = new MultipartBodyBuilder();
+      // 1. Parte JSON: "hechoData" con Content-Type application/json
+      builder.part("hechoData", hechoJson, MediaType.APPLICATION_JSON);
+
+      // 2. Parte Archivo: "archivo" si existe
+      if (archivo != null && !archivo.isEmpty()) {
+        builder.part("archivo", archivo.getResource());
+      }
+
+      // Ejecutar la llamada autenticada
+      return apiClientService.executeWithToken(accessToken ->
+          webClient.post()
+              .uri(url)
+              .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+              // No es necesario setear ContentType, BodyInserters.fromMultipartData lo hace
+              .body(BodyInserters.fromMultipartData(builder.build()))
+              .retrieve()
+              .bodyToMono(HechoDTO.class)
+              .block()
+      );
+
+    } catch (Exception e) {
+      throw new RuntimeException("Error al crear Hecho en Fuente Dinámica: " + e.getMessage(), e);
     }
   }
 
-  public HechoDTO actualizarHecho(Long id, HechoInputDTO dto) {
-    String url = hechosApiUrl + "/" + id;
-    return apiClientService.put(url, dto, HechoDTO.class);
+  /**
+   * ACTUALIZAR HECHO DINÁMICO: Envía la solicitud de edición como Multipart (JSON + Archivo) al endpoint /hechos/{id}/editar.
+   */
+  public HechoDTO actualizarHecho(Long id, HechoInputDTO dto, @Nullable MultipartFile archivo) {
+    String url = hechosApiUrl + "/hechos/" + id + "/editar"; // Endpoint: PUT /hechos/{id}/editar
+
+    // Mapeamos HechoInputDTO a la estructura necesaria para EdicionInputDTO (solo los campos propuestos)
+    Map<String, Object> edicionData = new LinkedHashMap<>();
+    edicionData.put("tituloPropuesto", dto.getTitulo());
+    edicionData.put("descripcionPropuesta", dto.getDescripcion());
+    edicionData.put("categoriaPropuesta", Map.of("nombre", dto.getCategoria())); // El backend espera un objeto Categoria
+    edicionData.put("latitudPropuesta", dto.getLatitud());
+    edicionData.put("longitudPropuesta", dto.getLongitud());
+    edicionData.put("fechaAcontecimientoPropuesta", dto.getFechaAcontecimiento());
+
+    try {
+      String edicionJson = objectMapper.writeValueAsString(edicionData);
+
+      MultipartBodyBuilder builder = new MultipartBodyBuilder();
+      // Parte JSON: "edicionData" con Content-Type application/json
+      builder.part("edicionData", edicionJson, MediaType.APPLICATION_JSON);
+
+      // Parte Archivo: "archivo" si existe
+      if (archivo != null && !archivo.isEmpty()) {
+        builder.part("archivo", archivo.getResource());
+      }
+
+      return apiClientService.executeWithToken(accessToken ->
+          webClient.put()
+              .uri(url)
+              .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+              .body(BodyInserters.fromMultipartData(builder.build()))
+              .retrieve()
+              .bodyToMono(HechoDTO.class)
+              .block()
+      );
+
+    } catch (Exception e) {
+      throw new RuntimeException("Error al actualizar Hecho en Fuente Dinámica: " + e.getMessage(), e);
+    }
   }
 
   //Envía un POST multipart/form-data para importar un CSV
