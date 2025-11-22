@@ -2,6 +2,9 @@ package ar.utn.da.dsi.frontend.controllers;
 
 import ar.utn.da.dsi.frontend.client.dto.input.ColeccionInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.ColeccionOutputDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.HoraHechosPorCategoriaDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorCategoriaDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaMasHechosPorColeccionDTO;
 import ar.utn.da.dsi.frontend.services.colecciones.ColeccionService;
 import ar.utn.da.dsi.frontend.services.estadisticas.EstadisticasService;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
@@ -159,26 +162,74 @@ public class AdminController {
   }
 
   @GetMapping("/estadisticas")
-  public String mostrarEstadisticas(Model model) {
+  public String mostrarEstadisticas(
+      @RequestParam(required = false) String handleIdColeccion,
+      @RequestParam(required = false) String categoriaProvincia,
+      @RequestParam(required = false) String categoriaHora,
+      Model model) {
 
-    // Asignar URLs de Exportación (son estáticas y no dependen del API call)
+    // 1. Cargar Listas para Dropdowns
+    try {
+      model.addAttribute("colecciones", coleccionService.obtenerTodas());
+    } catch (Exception e) {
+      model.addAttribute("colecciones", List.of());
+    }
+    try {
+      model.addAttribute("categorias", hechoService.getAvailableCategories());
+    } catch (Exception e) {
+      model.addAttribute("categorias", List.of());
+    }
+
+    // 2. Cargar Métricas Fijas (2 y 5)
+    try {
+      model.addAttribute("categoriaMasReportada", estadisticasService.getCategoriaMasReportada());
+      model.addAttribute("solicitudesSpam", estadisticasService.getCantidadDeSolicitudesSpam());
+    } catch (Exception e) {
+      // Dejar como null si falla, la vista maneja el error
+    }
+
+    // 3. Cargar Métricas Parametrizadas (1, 3, 4) si los parámetros están presentes
+
+    // Métrica 1: Provincia con más hechos por Colección
+    if (handleIdColeccion != null && !handleIdColeccion.isEmpty()) {
+      try {
+        ProvinciaMasHechosPorColeccionDTO resultado = estadisticasService.getProvinciaMasHechosPorColeccion(handleIdColeccion);
+        model.addAttribute("resultadoProvinciaColeccion", resultado);
+        model.addAttribute("handleIdColeccionSeleccionada", handleIdColeccion);
+      } catch (Exception e) {
+        model.addAttribute("errorProvinciaColeccion", "Error al cargar la estadística por colección.");
+      }
+    }
+
+    // Métrica 3: Provincia con más hechos por Categoría
+    if (categoriaProvincia != null && !categoriaProvincia.isEmpty()) {
+      try {
+        ProvinciaHechosPorCategoriaDTO resultado = estadisticasService.getProvinciaMasHechosPorCategoria(categoriaProvincia);
+        model.addAttribute("resultadoProvinciaCategoria", resultado);
+        model.addAttribute("categoriaProvinciaSeleccionada", categoriaProvincia);
+      } catch (Exception e) {
+        model.addAttribute("errorProvinciaCategoria", "Error al cargar la estadística de provincia por categoría.");
+      }
+    }
+
+    // Métrica 4: Hora con más hechos por Categoría
+    if (categoriaHora != null && !categoriaHora.isEmpty()) {
+      try {
+        HoraHechosPorCategoriaDTO resultado = estadisticasService.getHoraMasHechosPorCategoria(categoriaHora);
+        model.addAttribute("resultadoHoraCategoria", resultado);
+        model.addAttribute("categoriaHoraSeleccionada", categoriaHora);
+      } catch (Exception e) {
+        model.addAttribute("errorHoraCategoria", "Error al cargar la estadística de hora por categoría.");
+      }
+    }
+
+    // 4. URLs de Exportación (necesarias para los botones)
     model.addAttribute("urlZipCompleto", estadisticasService.getExportUrlZipCompleto());
     model.addAttribute("urlExportarProvinciaColeccion", estadisticasService.getExportUrlProvinciaColeccion());
     model.addAttribute("urlExportarCategoriaHechos", estadisticasService.getExportUrlCategoriaHechos());
     model.addAttribute("urlExportarProvinciaCategoria", estadisticasService.getExportUrlProvinciaCategoria());
     model.addAttribute("urlExportarHoraCategoria", estadisticasService.getExportUrlHoraCategoria());
     model.addAttribute("urlExportarSpam", estadisticasService.getExportUrlSpam());
-
-    try {
-
-      // Nuevas Estadísticas Específicas (2 y 5)
-      model.addAttribute("categoriaMasReportada", estadisticasService.getCategoriaMasReportada());
-      model.addAttribute("solicitudesSpam", estadisticasService.getCantidadDeSolicitudesSpam());
-
-    } catch (Exception e) {
-      model.addAttribute("categoriaMasReportada", null);
-      model.addAttribute("solicitudesSpam", null);
-    }
 
     model.addAttribute("titulo", "Estadísticas");
     return "estadisticas";

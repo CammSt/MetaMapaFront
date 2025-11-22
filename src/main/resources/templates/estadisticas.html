@@ -14,14 +14,14 @@
     <div class="card shadow-lg border-0 rounded-3">
         <div class="card-body p-4">
 
-            <h4 class="fw-bold text-primary mb-3 mt-4">Métricas Específicas Solicitadas</h4>
+            <h4 class="fw-bold text-primary mb-3">Métricas Globales</h4>
             <div class="row g-4 mb-5">
 
                 <div class="col-lg-4 col-md-6">
                     <div class="card card-body text-center shadow-sm h-100 bg-light">
                         <i class="bi bi-bar-chart-fill display-4 text-secondary"></i>
                         <h1 class="display-6 fw-bold text-secondary my-2"
-                            th:text="${categoriaMasReportada != null && categoriaMasReportada.cantidadHechos != null ? #numbers.formatInteger(categoriaMasReportada.cantidadHechos, 0) : 'N/A'}">0</h1>
+                            th:text="${categoriaMasReportada != null ? #numbers.formatInteger(categoriaMasReportada.cantidadHechos, 0) : 'N/A'}">0</h1>
                         <p class="mb-0 text-muted fs-5">Categoría con más Hechos</p>
                         <span class="badge bg-secondary mt-2"
                               th:text="${categoriaMasReportada != null ? categoriaMasReportada.categoria : 'Error de Carga'}">N/A</span>
@@ -32,21 +32,127 @@
                     <div class="card card-body text-center shadow-sm h-100 bg-light">
                         <i class="bi bi-trash-fill display-4 text-dark"></i>
                         <h1 class="display-6 fw-bold text-dark my-2"
-                            th:text="${solicitudesSpam != null && solicitudesSpam.cantidadSpam != null ? #numbers.formatInteger(solicitudesSpam.cantidadSpam, 0) : 'N/A'}">0</h1>
+                            th:text="${solicitudesSpam != null ? #numbers.formatInteger(solicitudesSpam.cantidadSpam, 0) : 'N/A'}">0</h1>
                         <p class="mb-0 text-muted fs-5">Solicitudes de Spam Detectadas</p>
                     </div>
                 </div>
 
-                <div class="col-12" th:if="${categoriaMasReportada == null and solicitudesSpam == null}">
-                    <div class="alert alert-danger" role="alert">
-                        <h4 class="alert-heading">Error al Cargar Estadísticas</h4>
-                        <p>No se pudieron obtener datos del servicio de estadísticas. Verifique que el servicio agregador esté en funcionamiento y los endpoints estén accesibles.</p>
+            </div>
+            <h4 class="fw-bold text-primary mb-3 mt-4 border-top pt-4">Métricas Dinámicas</h4>
+
+            <div class="row g-4">
+
+                <div class="col-12">
+                    <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
+                        <h5 class="fw-bold text-info mb-3"><i class="bi bi-geo-alt-fill me-2"></i>Provincia con más Hechos por Colección</h5>
+                        <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
+                            <input type="hidden" name="categoriaProvincia" th:value="${categoriaProvinciaSeleccionada}" th:if="${categoriaProvinciaSeleccionada}">
+                            <input type="hidden" name="categoriaHora" th:value="${categoriaHoraSeleccionada}" th:if="${categoriaHoraSeleccionada}">
+
+                            <div class="col-md-6">
+                                <select id="handleIdColeccion" name="handleIdColeccion" class="form-select" required>
+                                    <option value="">Seleccione una Colección...</option>
+                                    <option th:each="col : ${colecciones}"
+                                            th:value="${col.handleID}"
+                                            th:text="${col.titulo}"
+                                            th:selected="${col.handleID == handleIdColeccionSeleccionada}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-grid">
+                                <button type="submit" class="btn btn-info fw-bold text-white">Consultar</button>
+                            </div>
+                        </form>
+                        <div th:if="${resultadoProvinciaColeccion != null}" class="alert alert-info mt-3">
+                            <h6 class="alert-heading fw-bold mb-1">Resultado:</h6>
+                            <p class="mb-0">La provincia con más hechos reportados en esta colección es <strong><span th:text="${resultadoProvinciaColeccion.provincia}"></span></strong> con un total de <strong><span th:text="${resultadoProvinciaColeccion.cantidadHechos}"></span></strong> hechos.</p>
+                        </div>
+                        <div th:if="${errorProvinciaColeccion}" class="alert alert-danger mt-3" th:text="${errorProvinciaColeccion}"></div>
+                        <div th:if="${handleIdColeccionSeleccionada != null and resultadoProvinciaColeccion == null and !errorProvinciaColeccion}" class="alert alert-warning mt-3">
+                            <h6 class="alert-heading fw-bold mb-1">Sin Resultados:</h6>
+                            <p class="mb-0">No se encontraron datos para esta colección o la consulta falló.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
+                        <h5 class="fw-bold text-success mb-3"><i class="bi bi-map-fill me-2"></i>Provincia con más Hechos de una Categoría</h5>
+                        <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
+                            <input type="hidden" name="handleIdColeccion" th:value="${handleIdColeccionSeleccionada}" th:if="${handleIdColeccionSeleccionada}">
+                            <input type="hidden" name="categoriaHora" th:value="${categoriaHoraSeleccionada}" th:if="${categoriaHoraSeleccionada}">
+
+                            <div class="col-md-6">
+                                <select id="categoriaProvincia" name="categoriaProvincia" class="form-select" required>
+                                    <option value="">Seleccione una Categoría...</option>
+                                    <option th:each="cat : ${categorias}"
+                                            th:value="${cat}"
+                                            th:text="${cat}"
+                                            th:selected="${cat == categoriaProvinciaSeleccionada}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-grid">
+                                <button type="submit" class="btn btn-success fw-bold text-white">Consultar</button>
+                            </div>
+                        </form>
+                        <div th:if="${resultadoProvinciaCategoria != null}" class="alert alert-success mt-3">
+                            <h6 class="alert-heading fw-bold mb-1">Resultado:</h6>
+                            <p class="mb-0">La provincia con más hechos de la categoría **<span th:text="${resultadoProvinciaCategoria.categoria}"></span>** es <strong><span th:text="${resultadoProvinciaCategoria.provincia}"></span></strong>, con <strong><span th:text="${resultadoProvinciaCategoria.cantidadHechos}"></span></strong> hechos.</p>
+                        </div>
+                        <div th:if="${errorProvinciaCategoria}" class="alert alert-danger mt-3" th:text="${errorProvinciaCategoria}"></div>
+                        <div th:if="${categoriaProvinciaSeleccionada != null and resultadoProvinciaCategoria == null and !errorProvinciaCategoria}" class="alert alert-warning mt-3">
+                            <h6 class="alert-heading fw-bold mb-1">Sin Resultados:</h6>
+                            <p class="mb-0">No se encontraron datos para esta categoría o la consulta falló.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
+                        <h5 class="fw-bold text-warning mb-3"><i class="bi bi-clock-fill me-2"></i>4. Hora de Mayor Ocurrencia por Categoría</h5>
+                        <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
+                            <input type="hidden" name="handleIdColeccion" th:value="${handleIdColeccionSeleccionada}" th:if="${handleIdColeccionSeleccionada}">
+                            <input type="hidden" name="categoriaProvincia" th:value="${categoriaProvinciaSeleccionada}" th:if="${categoriaProvinciaSeleccionada}">
+
+                            <div class="col-md-6">
+                                <select id="categoriaHora" name="categoriaHora" class="form-select" required>
+                                    <option value="">Seleccione una Categoría...</option>
+                                    <option th:each="cat : ${categorias}"
+                                            th:value="${cat}"
+                                            th:text="${cat}"
+                                            th:selected="${cat == categoriaHoraSeleccionada}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-grid">
+                                <button type="submit" class="btn btn-warning fw-bold text-white">Consultar</button>
+                            </div>
+                        </form>
+
+                        <div th:if="${resultadoHoraCategoria != null}" class="mt-3">
+                            <p class="mb-2 text-muted">Distribución horaria para la categoría **<span th:text="${resultadoHoraCategoria.categoria}"></span>**:</p>
+
+                            <div class="card card-body bg-light">
+                                <canvas id="horaChart" style="max-height: 400px;"></canvas>
+                            </div>
+
+                            <div class="alert alert-warning mt-3">
+                                <h6 class="alert-heading fw-bold mb-1">Pico de Ocurrencia:</h6>
+                                <p class="mb-0">La hora con más hechos es a las **<span th:text="${resultadoHoraCategoria.hora}"></span>** horas, con <strong><span th:text="${resultadoHoraCategoria.cantidadHechos}"></span></strong> hechos.</p>
+                            </div>
+                        </div>
+
+                        <div th:if="${errorHoraCategoria}" class="alert alert-danger mt-3" th:text="${errorHoraCategoria}"></div>
+                        <div th:if="${categoriaHoraSeleccionada != null and resultadoHoraCategoria == null and !errorHoraCategoria}" class="alert alert-warning mt-3">
+                            <h6 class="alert-heading fw-bold mb-1">Sin Resultados:</h6>
+                            <p class="mb-0">No se encontraron datos para esta categoría o la consulta falló.</p>
+                        </div>
                     </div>
                 </div>
 
             </div>
-
-            <h4 class="fw-bold text-primary mb-3 mt-4">Exportación de Reportes</h4>
+            <h4 class="fw-bold text-primary mb-3 mt-4 border-top pt-4">Exportación de Reportes</h4>
             <div class="row g-3 mb-5">
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarProvinciaColeccion}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">

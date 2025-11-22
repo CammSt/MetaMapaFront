@@ -6,6 +6,19 @@
     <div class="card shadow-lg border-0 rounded-3">
         <div class="card-header bg-primary text-white border-bottom-0 p-4 rounded-top-3"><h3 class="fw-bold mb-0">Panel de Administración</h3></div>
         <div class="card-body p-4">
+
+            <div id="alert-placeholder">
+                <div th:if="${success}" class="alert alert-success d-flex align-items-center" role="alert">
+                    <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                    <span th:if="${success.contains('procesando')}">El archivo CSV se subió correctamente!</span>
+                    <span th:unless="${success.contains('procesando')}" th:text="${success}"></span>
+                </div>
+                <div th:if="${error}" class="alert alert-danger d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                    <span th:if="${error.contains('CSV')}">Hubo un error al procesar el archivo. Por favor, revísalo e inténtalo de nuevo. Recordá que solo se admiten archivos .CSV</span>
+                    <span th:unless="${error.contains('CSV')}" th:text="${error}"></span>
+                </div>
+            </div>
             <ul class="nav nav-pills nav-justified mb-4">
                 <li class="nav-item"><button id="admin-tab-collections" class="nav-link active">Gestionar Colecciones</button></li>
                 <li class="nav-item"><button id="admin-tab-requests" class="nav-link">Revisar Solicitudes</button></li>
@@ -108,37 +121,6 @@
             </div>
         </div>
     </div>
-
-    <div class="modal fade" id="csvImportModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-
-                <form th:action="@{/admin/hechos/importar-csv}" method="post" enctype="multipart/form-data">
-
-                    <div class="modal-header">
-                        <h5 class="modal-title text-primary fw-bold">Importar desde CSV</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="text-muted small">
-                            Selecciona un archivo .csv para la carga masiva de hechos.
-                            El archivo será procesado en segundo plano.
-                        </p>
-                        <div class="mb-3">
-                            <label for="csvFile" class="form-label">Archivo CSV</label>
-                            <input class="form-control" type="file" id="csvFile" name="csvFile" accept=".csv" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Importar</button>
-                    </div>
-
-                </form>
-
-            </div>
-        </div>
-    </div>
 </main>
 
 <div id="page-scripts">
@@ -163,6 +145,30 @@
 
             const adminRequestsTableBody = document.getElementById('admin-requests-table-body');
 
+            // ---carga csv
+            const importForm = document.getElementById('csv-import-form');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const csvImportModalEl = document.getElementById('csvImportModal');
+
+            // Usamos una instancia de Modal para poder ocultarlo correctamente
+            let csvImportModal = null;
+            if (csvImportModalEl) {
+                csvImportModal = new bootstrap.Modal(csvImportModalEl, { keyboard: false, backdrop: 'static' });
+
+                if (importForm && loadingOverlay) {
+                    importForm.addEventListener('submit', function(e) {
+                        csvImportModal.hide();
+
+                        loadingOverlay.style.display = 'flex';
+
+                        setTimeout(() => {
+                            const backdrop = document.querySelector('.modal-backdrop');
+                            if (backdrop) backdrop.remove();
+                        }, 300);
+                    });
+                }
+            }
+
             // --- Lógica para los filtros de solicitudes del Admin ---
             const adminFilterType = document.getElementById('admin-filter-type');
             const adminFilterStatus = document.getElementById('admin-filter-status');
@@ -174,7 +180,7 @@
                     return;
                 }
                 requests.forEach(req => {
-                    let statusBadgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado === 'APROBADA' ? 'bg-success' : 'bg-danger');
+                    let statusBadgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' ? 'bg-success' : 'bg-danger');
                     const row = `
                         <tr>
                             <td>${req.tituloDelHechoAEliminar}</td>

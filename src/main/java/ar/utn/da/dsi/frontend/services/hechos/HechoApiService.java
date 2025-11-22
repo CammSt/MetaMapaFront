@@ -21,12 +21,16 @@ public class HechoApiService {
 
   private final ApiClientService apiClientService;
   private final String hechosApiUrl;
+  private final String estaticaApiUrl;
   private final WebClient webClient;
 
   @Autowired
-  public HechoApiService(ApiClientService apiClientService, @Value("${hechos.service.url}") String hechosApiUrl) {
+  public HechoApiService(ApiClientService apiClientService,
+                         @Value("${hechos.service.url}") String hechosApiUrl,
+                         @Value("${estatica.service.url}") String estaticaApiUrl) {
     this.apiClientService = apiClientService;
     this.hechosApiUrl = hechosApiUrl;
+    this.estaticaApiUrl = estaticaApiUrl;
     this.webClient = WebClient.builder().build();
   }
 
@@ -118,7 +122,7 @@ public class HechoApiService {
 
   //Envía un POST multipart/form-data para importar un CSV
   public void importarCsv(MultipartFile file) {
-    String url = hechosApiUrl + "/importar-csv";
+    String url = estaticaApiUrl + "/cargar-csv";
 
     String accessToken = apiClientService.getAccessTokenFromSession();
     if (accessToken == null) {
@@ -130,7 +134,7 @@ public class HechoApiService {
           .uri(url)
           .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
           .contentType(MediaType.MULTIPART_FORM_DATA)
-          .body(BodyInserters.fromMultipartData("file", file.getResource()))
+          .body(BodyInserters.fromMultipartData("archivoCSV", file.getResource()))
           .retrieve()
           .bodyToMono(Void.class)
           .block();
