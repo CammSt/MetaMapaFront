@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: layout(pageTitle='Estadísticas', content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+      th:replace="~{layout/base :: layout(pageTitle=${titulo}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
 <body>
 
 <main class="container-fluid p-4 animate__animated animate__fadeIn" id="main-content">
@@ -14,37 +14,49 @@
     <div class="card shadow-lg border-0 rounded-3">
         <div class="card-body p-4">
 
-            <h4 class="fw-bold text-primary mb-3">Métricas Globales</h4>
+            <!-- DASHBOARD: MÉTRICAS GLOBALES (2 y 5) -->
+            <h4 class="fw-bold text-primary mb-3">Métricas Globales (2 y 5)</h4>
             <div class="row g-4 mb-5">
 
-                <div class="col-lg-4 col-md-6">
-                    <div class="card card-body text-center shadow-sm h-100 bg-light">
-                        <i class="bi bi-bar-chart-fill display-4 text-secondary"></i>
-                        <h1 class="display-6 fw-bold text-secondary my-2"
-                            th:text="${categoriaMasReportada != null ? #numbers.formatInteger(categoriaMasReportada.cantidadHechos, 0) : 'N/A'}">0</h1>
-                        <p class="mb-0 text-muted fs-5">Categoría con más Hechos</p>
-                        <span class="badge bg-secondary mt-2"
-                              th:text="${categoriaMasReportada != null ? categoriaMasReportada.categoria : 'Error de Carga'}">N/A</span>
+                <!-- Métrica 2: Distribución de Categorías -->
+                <div class="col-lg-6">
+                    <div class="card card-body shadow-sm h-100 bg-white">
+                        <h5 class="fw-bold text-secondary mb-3">Distribución de Hechos por Categoría</h5>
+                        <div th:if="${distribucionCategorias != null and #lists.size(distribucionCategorias.distribucion) > 0}">
+                            <canvas id="categoriaDoughnutChart" style="max-height: 350px;"></canvas>
+                        </div>
+                        <div th:unless="${distribucionCategorias != null and #lists.size(distribucionCategorias.distribucion) > 0}" class="text-center text-muted p-5">
+                            No hay datos para el gráfico de Categorías.
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-lg-4 col-md-6">
-                    <div class="card card-body text-center shadow-sm h-100 bg-light">
-                        <i class="bi bi-trash-fill display-4 text-dark"></i>
-                        <h1 class="display-6 fw-bold text-dark my-2"
-                            th:text="${solicitudesSpam != null ? #numbers.formatInteger(solicitudesSpam.cantidadSpam, 0) : 'N/A'}">0</h1>
-                        <p class="mb-0 text-muted fs-5">Solicitudes de Spam Detectadas</p>
+                <!-- Métrica 5: Solicitudes de Spam -->
+                <div class="col-lg-6">
+                    <div class="card card-body shadow-sm h-100 bg-white">
+                        <h5 class="fw-bold text-secondary mb-3">Ratio de Solicitudes Spam (vs Total)</h5>
+                        <div th:if="${spamRatio != null and spamRatio.totalSolicitudes != null and spamRatio.totalSolicitudes > 0}">
+                            <canvas id="spamDoughnutChart" style="max-height: 350px;"></canvas>
+                            <p class="text-center small text-muted mt-3">Total de solicitudes: <span th:text="${spamRatio.totalSolicitudes}"></span></p>
+                        </div>
+                        <div th:unless="${spamRatio != null and spamRatio.totalSolicitudes != null and spamRatio.totalSolicitudes > 0}" class="text-center text-muted p-5">
+                            No hay datos para el gráfico de Spam.
+                        </div>
                     </div>
                 </div>
 
             </div>
-            <h4 class="fw-bold text-primary mb-3 mt-4 border-top pt-4">Métricas Dinámicas</h4>
+            <!-- FIN MÉTRICAS GLOBALES -->
+
+            <!-- DASHBOARD: MÉTICAS DINÁMICAS (1, 3 y 4) -->
+            <h4 class="fw-bold text-primary mb-3 mt-4 border-top pt-4">Estadísticas dinámicas</h4>
 
             <div class="row g-4">
 
+                <!-- DASHBOARD 1: PROVINCIA CON MÁS HECHOS POR COLECCIÓN -->
                 <div class="col-12">
                     <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
-                        <h5 class="fw-bold text-info mb-3"><i class="bi bi-geo-alt-fill me-2"></i>Provincia con más Hechos por Colección</h5>
+                        <h5 class="fw-bold text-info mb-3"><i class="bi bi-geo-alt-fill me-2"></i>Distribución  de hechos por Provincia según una Colección</h5>
                         <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
                             <input type="hidden" name="categoriaProvincia" th:value="${categoriaProvinciaSeleccionada}" th:if="${categoriaProvinciaSeleccionada}">
                             <input type="hidden" name="categoriaHora" th:value="${categoriaHoraSeleccionada}" th:if="${categoriaHoraSeleccionada}">
@@ -63,21 +75,24 @@
                                 <button type="submit" class="btn btn-info fw-bold text-white">Consultar</button>
                             </div>
                         </form>
-                        <div th:if="${resultadoProvinciaColeccion != null}" class="alert alert-info mt-3">
-                            <h6 class="alert-heading fw-bold mb-1">Resultado:</h6>
-                            <p class="mb-0">La provincia con más hechos reportados en esta colección es <strong><span th:text="${resultadoProvinciaColeccion.provincia}"></span></strong> con un total de <strong><span th:text="${resultadoProvinciaColeccion.cantidadHechos}"></span></strong> hechos.</p>
+
+                        <div th:if="${resultadoProvinciaColeccion != null and #lists.size(resultadoProvinciaColeccion.distribucion) > 0}" class="mt-3">
+                            <div class="card card-body bg-light">
+                                <canvas id="provinciaColeccionBarChart" style="max-height: 450px;"></canvas>
+                            </div>
+                        </div>
+                        <div th:if="${handleIdColeccionSeleccionada != null and (resultadoProvinciaColeccion == null or #lists.size(resultadoProvinciaColeccion.distribucion) == 0)}" class="alert alert-warning mt-3">
+                            <h6 class="alert-heading fw-bold mb-1">Sin Resultados:</h6>
+                            <p class="mb-0">No se encontraron datos de distribución para esta colección o la consulta falló.</p>
                         </div>
                         <div th:if="${errorProvinciaColeccion}" class="alert alert-danger mt-3" th:text="${errorProvinciaColeccion}"></div>
-                        <div th:if="${handleIdColeccionSeleccionada != null and resultadoProvinciaColeccion == null and !errorProvinciaColeccion}" class="alert alert-warning mt-3">
-                            <h6 class="alert-heading fw-bold mb-1">Sin Resultados:</h6>
-                            <p class="mb-0">No se encontraron datos para esta colección o la consulta falló.</p>
-                        </div>
                     </div>
                 </div>
 
+                <!-- DASHBOARD 3: PROVINCIA CON MÁS HECHOS DE UNA CATEGORÍA -->
                 <div class="col-12">
                     <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
-                        <h5 class="fw-bold text-success mb-3"><i class="bi bi-map-fill me-2"></i>Provincia con más Hechos de una Categoría</h5>
+                        <h5 class="fw-bold text-success mb-3"><i class="bi bi-map-fill me-2"></i>3. Distribución de hechos por Provincia según una Categoría</h5>
                         <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
                             <input type="hidden" name="handleIdColeccion" th:value="${handleIdColeccionSeleccionada}" th:if="${handleIdColeccionSeleccionada}">
                             <input type="hidden" name="categoriaHora" th:value="${categoriaHoraSeleccionada}" th:if="${categoriaHoraSeleccionada}">
@@ -96,21 +111,24 @@
                                 <button type="submit" class="btn btn-success fw-bold text-white">Consultar</button>
                             </div>
                         </form>
-                        <div th:if="${resultadoProvinciaCategoria != null}" class="alert alert-success mt-3">
-                            <h6 class="alert-heading fw-bold mb-1">Resultado:</h6>
-                            <p class="mb-0">La provincia con más hechos de la categoría **<span th:text="${resultadoProvinciaCategoria.categoria}"></span>** es <strong><span th:text="${resultadoProvinciaCategoria.provincia}"></span></strong>, con <strong><span th:text="${resultadoProvinciaCategoria.cantidadHechos}"></span></strong> hechos.</p>
+
+                        <div th:if="${resultadoProvinciaCategoria != null and #lists.size(resultadoProvinciaCategoria.distribucion) > 0}" class="mt-3">
+                            <div class="card card-body bg-light">
+                                <canvas id="provinciaCategoriaBarChart" style="max-height: 450px;"></canvas>
+                            </div>
+                        </div>
+                        <div th:if="${categoriaProvinciaSeleccionada != null and (resultadoProvinciaCategoria == null or #lists.size(resultadoProvinciaCategoria.distribucion) == 0)}" class="alert alert-warning mt-3">
+                            <h6 class="alert-heading fw-bold mb-1">Sin Resultados:</h6>
+                            <p class="mb-0">No se encontraron datos de distribución para esta categoría o la consulta falló.</p>
                         </div>
                         <div th:if="${errorProvinciaCategoria}" class="alert alert-danger mt-3" th:text="${errorProvinciaCategoria}"></div>
-                        <div th:if="${categoriaProvinciaSeleccionada != null and resultadoProvinciaCategoria == null and !errorProvinciaCategoria}" class="alert alert-warning mt-3">
-                            <h6 class="alert-heading fw-bold mb-1">Sin Resultados:</h6>
-                            <p class="mb-0">No se encontraron datos para esta categoría o la consulta falló.</p>
-                        </div>
                     </div>
                 </div>
 
+                <!-- DASHBOARD 4: HORA CON MÁS HECHOS POR CATEGORÍA -->
                 <div class="col-12">
                     <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
-                        <h5 class="fw-bold text-warning mb-3"><i class="bi bi-clock-fill me-2"></i>4. Hora de Mayor Ocurrencia por Categoría</h5>
+                        <h5 class="fw-bold text-warning mb-3"><i class="bi bi-clock-fill me-2"></i>4. Distribución de hechos por Hora según una Categoría</h5>
                         <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
                             <input type="hidden" name="handleIdColeccion" th:value="${handleIdColeccionSeleccionada}" th:if="${handleIdColeccionSeleccionada}">
                             <input type="hidden" name="categoriaProvincia" th:value="${categoriaProvinciaSeleccionada}" th:if="${categoriaProvinciaSeleccionada}">
@@ -130,58 +148,52 @@
                             </div>
                         </form>
 
-                        <div th:if="${resultadoHoraCategoria != null}" class="mt-3">
-                            <p class="mb-2 text-muted">Distribución horaria para la categoría **<span th:text="${resultadoHoraCategoria.categoria}"></span>**:</p>
-
+                        <div th:if="${resultadoHoraCategoria != null and #lists.size(resultadoHoraCategoria.distribucion) > 0}" class="mt-3">
                             <div class="card card-body bg-light">
-                                <canvas id="horaChart" style="max-height: 400px;"></canvas>
-                            </div>
-
-                            <div class="alert alert-warning mt-3">
-                                <h6 class="alert-heading fw-bold mb-1">Pico de Ocurrencia:</h6>
-                                <p class="mb-0">La hora con más hechos es a las **<span th:text="${resultadoHoraCategoria.hora}"></span>** horas, con <strong><span th:text="${resultadoHoraCategoria.cantidadHechos}"></span></strong> hechos.</p>
+                                <canvas id="horaLineChart" style="max-height: 450px;"></canvas>
                             </div>
                         </div>
-
-                        <div th:if="${errorHoraCategoria}" class="alert alert-danger mt-3" th:text="${errorHoraCategoria}"></div>
-                        <div th:if="${categoriaHoraSeleccionada != null and resultadoHoraCategoria == null and !errorHoraCategoria}" class="alert alert-warning mt-3">
+                        <div th:if="${categoriaHoraSeleccionada != null and (resultadoHoraCategoria == null or #lists.size(resultadoHoraCategoria.distribucion) == 0)}" class="alert alert-warning mt-3">
                             <h6 class="alert-heading fw-bold mb-1">Sin Resultados:</h6>
-                            <p class="mb-0">No se encontraron datos para esta categoría o la consulta falló.</p>
+                            <p class="mb-0">No se encontraron datos de distribución para esta categoría o la consulta falló.</p>
                         </div>
+                        <div th:if="${errorHoraCategoria}" class="alert alert-danger mt-3" th:text="${errorHoraCategoria}"></div>
                     </div>
                 </div>
 
             </div>
+            <!-- FIN DASHBOARDS DINÁMICOS -->
+
             <h4 class="fw-bold text-primary mb-3 mt-4 border-top pt-4">Exportación de Reportes</h4>
             <div class="row g-3 mb-5">
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarProvinciaColeccion}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-download me-2"></i> Provincia con más hechos por Colección (CSV)
+                        <i class="bi bi-download me-2"></i> Provincia por Colección - CSV
                     </a>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarCategoriaHechos}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-download me-2"></i> Categoría con más hechos (CSV)
+                        <i class="bi bi-download me-2"></i> Categoría Global - CSV
                     </a>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarProvinciaCategoria}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-download me-2"></i> Provincia con más hechos por Categoría (CSV)
+                        <i class="bi bi-download me-2"></i> Provincia por Categoría - CSV
                     </a>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarHoraCategoria}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-download me-2"></i> Hora con más hechos por Categoría (CSV)
+                        <i class="bi bi-download me-2"></i> Hora por Categoría - CSV
                     </a>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarSpam}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-download me-2"></i> Cantidad de Solicitudes Spam (CSV)
+                        <i class="bi bi-download me-2"></i> Solicitudes Spam - CSV
                     </a>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlZipCompleto}" class="btn btn-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-archive-fill me-2"></i> Exportar Reporte Completo (ZIP)
+                        <i class="bi bi-archive-fill me-2"></i> Exportar Reporte Completo - ZIP
                     </a>
                 </div>
             </div>
@@ -190,12 +202,234 @@
 </main>
 
 <div id="page-scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Datos para Gráficos
+        const distribucionCategorias = [[${distribucionCategorias}]];
+        const spamRatio = [[${spamRatio}]];
+        const resultadoProvinciaColeccion = [[${resultadoProvinciaColeccion}]];
+        const resultadoProvinciaCategoria = [[${resultadoProvinciaCategoria}]];
+        const resultadoHoraCategoria = [[${resultadoHoraCategoria}]];
+        /*]]>*/
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('admin');
+
+            // Colores base para los gráficos
+            const CHART_COLORS = {
+                primary: 'rgb(0, 128, 128)', // Teal/Primary
+                secondary: 'rgb(108, 117, 125)', // Gray/Secondary
+                info: 'rgb(23, 162, 184)', // Info
+                success: 'rgb(40, 167, 69)', // Success
+                warning: 'rgb(255, 193, 7)', // Warning
+                danger: 'rgb(220, 53, 69)', // Danger
+                lightGray: 'rgb(200, 200, 200)'
+            };
+
+            // Función para generar un array de colores semi-transparentes
+            function generateBackgroundColors(count, baseColor) {
+                const colors = [];
+                for(let i = 0; i < count; i++) {
+                    // Crea variación ligera de la opacidad o tono si es necesario
+                    colors.push(`rgba(${baseColor.substring(4, baseColor.length - 1)}, 0.6)`);
+                }
+                return colors;
+            }
+
+            // --- FUNCIÓN GENÉRICA DE DIBUJO ---
+            function drawDoughnutChart(ctxId, labels, data, title, colors) {
+                new Chart(document.getElementById(ctxId).getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                            },
+                            title: {
+                                display: true,
+                                text: title,
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += new Intl.NumberFormat('es-AR').format(context.parsed);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function drawBarChart(ctxId, labels, data, title, color) {
+                new Chart(document.getElementById(ctxId).getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Cantidad de Hechos',
+                            data: data,
+                            backgroundColor: generateBackgroundColors(labels.length, color),
+                            borderColor: color,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Hace las barras horizontales para nombres largos
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: title,
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Conteo de Hechos'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function drawLineChart(ctxId, labels, data, title, color) {
+                new Chart(document.getElementById(ctxId).getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Frecuencia de Hechos',
+                            data: data,
+                            borderColor: color,
+                            backgroundColor: `rgba(${color.substring(4, color.length - 1)}, 0.2)`,
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: title,
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Hora del Día (0h - 23h)'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Cantidad de Hechos'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+
+            // --- Métrica 2: Distribución de Categorías (Gráfico de Torta) ---
+            if (distribucionCategorias && distribucionCategorias.distribucion.length > 0) {
+                const labels = distribucionCategorias.distribucion.map(d => d.categoria);
+                const data = distribucionCategorias.distribucion.map(d => d.cantidadHechos);
+
+                // Generar colores variados
+                const backgroundColors = [
+                    CHART_COLORS.primary, CHART_COLORS.success, CHART_COLORS.warning, CHART_COLORS.danger,
+                    CHART_COLORS.info, CHART_COLORS.secondary, CHART_COLORS.lightGray
+                ];
+
+                drawDoughnutChart('categoriaDoughnutChart', labels, data, 'Hechos por Categoría (Global)', backgroundColors);
+            }
+
+            // --- Métrica 5: Ratio de Spam (Gráfico de Dona) ---
+            if (spamRatio && spamRatio.totalSolicitudes > 0) {
+                const spamCount = spamRatio.cantidadSpam;
+                const nonSpamCount = spamRatio.totalSolicitudes - spamCount;
+
+                const labels = ['Spam Detectado', 'No Spam'];
+                const data = [spamCount, nonSpamCount];
+                const colors = [CHART_COLORS.danger, CHART_COLORS.success]; // Rojo para Spam, Verde para No Spam
+
+                drawDoughnutChart('spamDoughnutChart', labels, data, 'Proporción de Solicitudes de Eliminación', colors);
+            }
+
+            // --- Métrica 1: Distribución de Provincias (Colección) (Gráfico de Barras) ---
+            if (resultadoProvinciaColeccion && resultadoProvinciaColeccion.distribucion.length > 0) {
+                const dataOrdenada = resultadoProvinciaColeccion.distribucion
+                    .sort((a, b) => b.cantidadHechos - a.cantidadHechos);
+
+                const labels = dataOrdenada.map(d => d.provincia);
+                const data = dataOrdenada.map(d => d.cantidadHechos);
+
+                drawBarChart('provinciaColeccionBarChart', labels, data,
+                    `Distribución de Hechos en Colección ${resultadoProvinciaColeccion.handleID}`,
+                    CHART_COLORS.info);
+            }
+
+            // --- Métrica 3: Distribución de Provincias (Categoría) (Gráfico de Barras) ---
+            if (resultadoProvinciaCategoria && resultadoProvinciaCategoria.distribucion.length > 0) {
+                const dataOrdenada = resultadoProvinciaCategoria.distribucion
+                    .sort((a, b) => b.cantidadHechos - a.cantidadHechos);
+
+                const labels = dataOrdenada.map(d => d.provincia);
+                const data = dataOrdenada.map(d => d.cantidadHechos);
+
+                drawBarChart('provinciaCategoriaBarChart', labels, data,
+                    `Distribución de Hechos de Categoría '${resultadoProvinciaCategoria.categoria}'`,
+                    CHART_COLORS.success);
+            }
+
+            // --- Métrica 4: Distribución Horaria (Categoría) (Gráfico de Línea) ---
+            if (resultadoHoraCategoria && resultadoHoraCategoria.distribucion.length > 0) {
+                // Generar los 24 labels de 0 a 23
+                const horas = Array.from({length: 24}, (_, i) => i);
+
+                // Crear un mapa para buscar rápidamente la cantidad por hora
+                const conteoMap = new Map(resultadoHoraCategoria.distribucion.map(item => [item.hora, item.cantidadHechos]));
+
+                // Llenar el array de datos asegurando que haya 24 puntos (0 si no hay datos)
+                const data = horas.map(h => conteoMap.get(h) || 0);
+
+                drawLineChart('horaLineChart', horas, data,
+                    `Actividad Horaria de Categoría '${resultadoHoraCategoria.categoria}'`,
+                    CHART_COLORS.warning);
+            }
         });
     </script>
 </div>
-
 </body>
 </html>

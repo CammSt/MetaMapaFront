@@ -1,9 +1,9 @@
 package ar.utn.da.dsi.frontend.services.estadisticas;
 
-import ar.utn.da.dsi.frontend.client.dto.output.CategoriaMasReportadaDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.HoraHechosPorCategoriaDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorCategoriaDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaMasHechosPorColeccionDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.CategoriaReportadaListDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.HoraHechosPorCategoriaListDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorCategoriaListDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorColeccionListDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.SolicitudSpamDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,29 +18,29 @@ public class EstadisticasService {
     this.apiClient = apiClient;
   }
 
-  //1) Provincia con más hechos por colección
-  public ProvinciaMasHechosPorColeccionDTO getProvinciaMasHechosPorColeccion(String handleId) {
-    return apiClient.getProvinciaConMasHechos(handleId);
+  // Métrica 1: Distribución de provincias por colección
+  public ProvinciaHechosPorColeccionListDTO getDistribucionProvinciasPorColeccion(String handleId) {
+    return apiClient.getDistribucionProvincias(handleId);
   }
 
-  // 2) Categoría con más hechos
-  public CategoriaMasReportadaDTO getCategoriaMasReportada() {
-    return apiClient.getCategoriaConMasHechos();
+  // Métrica 2: Distribución de categorías global
+  public CategoriaReportadaListDTO getDistribucionCategorias() {
+    return apiClient.getDistribucionCategorias();
   }
 
-  // 3) Provincia con más hechos por categoría
-  public ProvinciaHechosPorCategoriaDTO getProvinciaMasHechosPorCategoria(String categoria) {
-    return apiClient.getProvinciaConMasHechosSegunCategoria(categoria);
+  // Métrica 3: Distribución de provincias por categoría
+  public ProvinciaHechosPorCategoriaListDTO getDistribucionProvinciasPorCategoria(String categoria) {
+    return apiClient.getDistribucionProvinciasPorCategoria(categoria);
   }
 
-  // 4) Hora con más hechos por categoría
-  public HoraHechosPorCategoriaDTO getHoraMasHechosPorCategoria(String categoria) {
-    return apiClient.getHoraConMasHechosSegunCategoria(categoria);
+  // Métrica 4: Distribución de horas por categoría
+  public HoraHechosPorCategoriaListDTO getDistribucionHorasPorCategoria(String categoria) {
+    return apiClient.getDistribucionHorasPorCategoria(categoria);
   }
 
-  // 5) Cantidad de solicitudes spam
-  public SolicitudSpamDTO getCantidadDeSolicitudesSpam() {
-    return apiClient.getCantidadDeSolicitudesSpam();
+  // Métrica 5: Ratio de solicitudes spam
+  public SolicitudSpamDTO getSolicitudesSpamRatio() {
+    return apiClient.getSolicitudesSpamRatio();
   }
 
   // --- Métodos para la exportación (Devuelven URLs) ---
