@@ -2,6 +2,7 @@ package ar.utn.da.dsi.frontend.services.hechos;
 
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.HechoInputDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.EdicionOutputDTO;
 import ar.utn.da.dsi.frontend.exceptions.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -44,8 +45,40 @@ public class HechoService {
     return apiClient.crearHecho(dto, archivo);
   }
 
+  public List<HechoDTO> buscarHechosPendientes() {
+    return apiClient.getHechosPendientes();
+  }
+
+  public void aprobar(Long id) {
+    apiClient.aprobarHecho(id);
+  }
+
+  public void rechazar(Long id) {
+    apiClient.rechazarHecho(id);
+  }
+
   public HechoDTO actualizar(Long id, HechoInputDTO dto, @Nullable MultipartFile archivo) {
     return apiClient.actualizarHecho(id, dto, archivo);
+  }
+
+  public List<EdicionOutputDTO> buscarEdicionesPendientes() {
+    return apiClient.getEdicionesPendientes();
+  }
+
+  public void aceptarEdicion(Long id) {
+    apiClient.aceptarEdicion(id);
+  }
+
+  public void rechazarEdicion(Long id) {
+    apiClient.rechazarEdicion(id);
+  }
+
+  public EdicionOutputDTO buscarEdicionPorId(Long id) {
+    return apiClient.getEdicionPorId(id);
+  }
+
+  public List<EdicionOutputDTO> buscarEdicionesPorUsuario(String userId) {
+    return apiClient.getEdicionesPorUsuario(userId);
   }
 
   public HechoInputDTO getHechoInputDTOporId(Long id) {

@@ -137,16 +137,22 @@ public class ApiClientService {
    * Ejecuta una llamada HTTP PUT (Autenticada)
    */
   public <T> T put(String url, Object body, Class<T> responseType) {
-    return executeWithToken(accessToken ->
-        webClient
-            .put()
-            .uri(url)
-            .header("Authorization", "Bearer " + accessToken)
-            .bodyValue(body)
-            .retrieve()
-            .bodyToMono(responseType)
-            .block()
-    );
+    return executeWithToken(accessToken -> {
+      var requestSpec = webClient
+          .put()
+          .uri(url)
+          .header("Authorization", "Bearer " + accessToken);
+
+      // Simplemente no seteamos body, o enviamos empty.
+      if (body != null) {
+        requestSpec.bodyValue(body);
+      }
+
+      return requestSpec
+          .retrieve()
+          .bodyToMono(responseType)
+          .block();
+    });
   }
 
   /**

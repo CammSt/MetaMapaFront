@@ -111,7 +111,10 @@
                                 <td><span class="badge bg-info" th:text="${req.tipo}"></span></td>
                                 <td><span class="badge" th:classappend="${req.estado == 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' ? 'bg-success' : 'bg-danger')}" th:text="${req.estado}"></span></td>
                                 <td class="text-end">
-                                    <button th:attr="data-review-req-id=${req.nroDeSolicitud}" class="btn btn-primary btn-sm rounded-pill btn-review-request">Evaluar</button>
+                                    <button th:attr="data-review-req-id=${req.id}, data-review-req-type=${req.tipo}"
+                                            class="btn btn-primary btn-sm rounded-pill btn-review-request">
+                                        Evaluar
+                                    </button>
                                 </td>
                             </tr>
                             </tbody>
@@ -122,6 +125,37 @@
         </div>
     </div>
 </main>
+
+<div class="modal fade" id="reviewEditionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold">Revisar Propuesta de Edición</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 border-end">
+                        <h6 class="text-muted text-center">Original</h6>
+                        <div id="edition-original-content" class="p-2">Cargando...</div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary text-center">Propuesta</h6>
+                        <div id="edition-proposal-content" class="p-2">Cargando...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <form id="form-reject-edition" method="post">
+                    <button type="submit" class="btn btn-danger">Rechazar Cambios</button>
+                </form>
+                <form id="form-accept-edition" method="post">
+                    <button type="submit" class="btn btn-success fw-bold">Aceptar Cambios</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="page-scripts">
     <script th:inline="javascript">
@@ -136,31 +170,38 @@
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('admin');
 
+            // --- LÓGICA DE TABS ---
             const tabCollections = document.getElementById('admin-tab-collections');
             const tabRequests = document.getElementById('admin-tab-requests');
             const contentCollections = document.getElementById('collections-content');
             const contentRequests = document.getElementById('requests-content');
-            tabCollections.addEventListener('click', () => { tabCollections.classList.add('active'); tabRequests.classList.remove('active'); contentCollections.style.display = 'block'; contentRequests.style.display = 'none'; });
-            tabRequests.addEventListener('click', () => { tabRequests.classList.add('active'); tabCollections.classList.remove('active'); contentRequests.style.display = 'block'; contentCollections.style.display = 'none'; });
 
-            const adminRequestsTableBody = document.getElementById('admin-requests-table-body');
+            tabCollections.addEventListener('click', () => {
+                tabCollections.classList.add('active');
+                tabRequests.classList.remove('active');
+                contentCollections.style.display = 'block';
+                contentRequests.style.display = 'none';
+            });
 
-            // ---carga csv
+            tabRequests.addEventListener('click', () => {
+                tabRequests.classList.add('active');
+                tabCollections.classList.remove('active');
+                contentRequests.style.display = 'block';
+                contentCollections.style.display = 'none';
+            });
+
+            // --- LOGICA CSV IMPORT ---
             const importForm = document.getElementById('csv-import-form');
             const loadingOverlay = document.getElementById('loading-overlay');
             const csvImportModalEl = document.getElementById('csvImportModal');
-
-            // Usamos una instancia de Modal para poder ocultarlo correctamente
             let csvImportModal = null;
+
             if (csvImportModalEl) {
                 csvImportModal = new bootstrap.Modal(csvImportModalEl, { keyboard: false, backdrop: 'static' });
-
                 if (importForm && loadingOverlay) {
                     importForm.addEventListener('submit', function(e) {
                         csvImportModal.hide();
-
                         loadingOverlay.style.display = 'flex';
-
                         setTimeout(() => {
                             const backdrop = document.querySelector('.modal-backdrop');
                             if (backdrop) backdrop.remove();
@@ -169,7 +210,8 @@
                 }
             }
 
-            // --- Lógica para los filtros de solicitudes del Admin ---
+            // --- LÓGICA SOLICITUDES Y EDICIONES ---
+            const adminRequestsTableBody = document.getElementById('admin-requests-table-body');
             const adminFilterType = document.getElementById('admin-filter-type');
             const adminFilterStatus = document.getElementById('admin-filter-status');
 
@@ -179,20 +221,34 @@
                     adminRequestsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-4">No hay solicitudes que coincidan con los filtros.</td></tr>';
                     return;
                 }
+
                 requests.forEach(req => {
-                    let statusBadgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' ? 'bg-success' : 'bg-danger');
+                    let statusBadgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado === 'APROBADA' || req.estado === 'ACEPTADO' || req.estado === 'ACEPTADA' ? 'bg-success' : 'bg-danger');
+                    let actionButtons = '<span class="text-muted small">-</span>';
+
+                    if (req.estado === 'PENDIENTE') {
+                        if (req.tipo === 'Nuevo Hecho') {
+                            actionButtons = `
+                                <form action="/admin/hechos/${req.id}/aprobar" method="post" style="display:inline;"><button class="btn btn-success btn-sm rounded-pill me-1"><i class="bi bi-check-lg"></i></button></form>
+                                <form action="/admin/hechos/${req.id}/rechazar" method="post" style="display:inline;"><button class="btn btn-danger btn-sm rounded-pill"><i class="bi bi-x-lg"></i></button></form>
+                            `;
+                        } else if (req.tipo === 'Eliminación') {
+                            actionButtons = `
+                                <form action="/admin/solicitudes/${req.id}/aprobar" method="post" style="display:inline;"><button class="btn btn-success btn-sm rounded-pill me-1"><i class="bi bi-check-lg"></i></button></form>
+                                <form action="/admin/solicitudes/${req.id}/rechazar" method="post" style="display:inline;"><button class="btn btn-danger btn-sm rounded-pill"><i class="bi bi-x-lg"></i></button></form>
+                            `;
+                        } else if (req.tipo === 'Edición') {
+                            // AQUÍ ESTÁ EL BOTÓN QUE ACTIVA EL MODAL
+                            actionButtons = `<button class="btn btn-warning btn-sm rounded-pill btn-review-edition" data-edition-id="${req.id}">Evaluar</button>`;
+                        }
+                    }
+
                     const row = `
                         <tr>
                             <td>${req.tituloDelHechoAEliminar}</td>
                             <td><span class="badge bg-info">${req.tipo}</span></td>
                             <td><span class="badge ${statusBadgeClass}">${req.estado}</span></td>
-                            <td class="text-end">
-                                <button type="button" class="btn btn-primary btn-sm rounded-pill"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#reviewModal-${req.nroDeSolicitud}">
-                                    Evaluar
-                                </button>
-                            </td>
+                            <td class="text-end">${actionButtons}</td>
                         </tr>`;
                     adminRequestsTableBody.innerHTML += row;
                 });
@@ -211,8 +267,62 @@
 
             adminFilterType.addEventListener('change', applyAdminRequestFilters);
             adminFilterStatus.addEventListener('change', applyAdminRequestFilters);
+
+            // Inicializar tabla al cargar
+            applyAdminRequestFilters();
+
+            // --- EVENT LISTENER PARA EL BOTÓN DE EVALUAR EDICIÓN ---
+            // (Esto arregla que el botón "no haga nada")
+            document.addEventListener('click', function(e) {
+                // Usamos closest por si el click cae en un icono dentro del botón
+                const btn = e.target.closest('.btn-review-edition');
+
+                if (btn) {
+                    const editionId = btn.getAttribute('data-edition-id');
+                    console.log("Click detectado en Edición ID:", editionId); // DEBUG en consola
+
+                    // Llamada AJAX al endpoint que creamos en AdminController
+                    fetch(`/admin/api/ediciones/${editionId}`)
+                        .then(response => {
+                            if (!response.ok) throw new Error("Error en la respuesta del servidor");
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log("Datos recibidos:", data); // DEBUG
+
+                            // Llenar el modal con los datos recibidos
+                            const originalDiv = document.getElementById('edition-original-content');
+                            const proposalDiv = document.getElementById('edition-proposal-content');
+
+                            // Como obtener el original requiere otra llamada compleja,
+                            // por ahora mostramos un mensaje genérico o solo la propuesta.
+                            originalDiv.innerHTML = `<p class="text-muted fst-italic">Datos actuales del hecho ID ${data.idHechoOriginal}</p>`;
+
+                            proposalDiv.innerHTML = `
+                                <p><strong>Título:</strong> ${data.tituloPropuesto || '-'}</p>
+                                <p><strong>Descripción:</strong> ${data.descripcionPropuesta || '-'}</p>
+                                <p><strong>Categoría:</strong> ${data.categoriaPropuesta ? data.categoriaPropuesta.nombre : '-'}</p>
+                                <p><strong>Justificación:</strong> ${data.detalle || 'Sin detalle'}</p>
+                            `;
+
+                            // Configurar los formularios del modal para Aceptar/Rechazar
+                            document.getElementById('form-accept-edition').action = `/admin/ediciones/${editionId}/aceptar`;
+                            document.getElementById('form-reject-edition').action = `/admin/ediciones/${editionId}/rechazar`;
+
+                            // Abrir el modal
+                            const modalEl = document.getElementById('reviewEditionModal');
+                            const modal = new bootstrap.Modal(modalEl);
+                            modal.show();
+                        })
+                        .catch(err => {
+                            console.error("Error al cargar la edición:", err);
+                            alert("Error al cargar los detalles de la edición. Revisa la consola.");
+                        });
+                }
+            });
         });
     </script>
 </div>
 </body>
 </html>
+

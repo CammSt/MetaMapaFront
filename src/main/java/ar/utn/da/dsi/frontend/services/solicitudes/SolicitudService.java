@@ -41,6 +41,10 @@ public class SolicitudService {
 		return apiClient.rechazar(id, visualizadorId);
 	}
 
+	public List<SolicitudEliminacionOutputDTO> obtenerTodasParaAdmin() {
+		return apiClient.obtenerTodasParaAdmin();
+	}
+
 	private void validarSolicitud(SolicitudEliminacionInputDTO dto) {
 		ValidationException validationException = new ValidationException("Errores de validación");
 		boolean tieneErrores = false;

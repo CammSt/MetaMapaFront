@@ -23,21 +23,31 @@ public class SolicitudApiClientService {
 		this.solicitudesApiUrl = solicitudesApiUrl;
 	}
 
+	public List<SolicitudEliminacionOutputDTO> obtenerTodasParaAdmin() {
+		// Llama a GET http://localhost:8081/solicitudes (Sin params)
+		return apiClientService.executeWithToken(accessToken ->
+				apiClientService.getWebClient().get()
+						.uri(solicitudesApiUrl)
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+						.retrieve()
+						.bodyToMono(new ParameterizedTypeReference<ApiResponse<List<SolicitudEliminacionOutputDTO>>>() {})
+						.map(response -> response.getDatos())
+						.block()
+		);
+	}
+
+	// Método para Contribuyente (Mis Solicitudes)
 	public List<SolicitudEliminacionOutputDTO> obtenerTodas(String visualizadorId) {
-		String url = solicitudesApiUrl + "/mis-solicitudes"; // La URL que definimos antes
+		// Llama a /mis-solicitudes (usa el token para filtrar en backend, el visualizadorId parámetro ya no es estricto pero lo dejamos por compatibilidad)
+		String url = solicitudesApiUrl + "/mis-solicitudes";
 
 		return apiClientService.executeWithToken(accessToken ->
-				// Ojo: El webClient acá quizás lo tengas que obtener del builder o inyectar,
-				// o usar apiClientService si le agregas un método genérico para esto.
-				// Si no tenés acceso a webClient directo acá, avisame y modificamos ApiClientService.
-				// ASUMIENDO QUE INYECTASTE WebClient o que ApiClientService tiene el webClient público:
-
-				apiClientService.getWebClient().get() // Necesitarías un getter en ApiClientService
+				apiClientService.getWebClient().get()
 						.uri(url)
 						.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
 						.retrieve()
 						.bodyToMono(new ParameterizedTypeReference<ApiResponse<List<SolicitudEliminacionOutputDTO>>>() {})
-						.map(ApiResponse::getDatos)
+						.map(response -> response.getDatos())
 						.block()
 		);
 	}

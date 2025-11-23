@@ -1,6 +1,7 @@
 package ar.utn.da.dsi.frontend.controllers;
 
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.EdicionOutputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.SolicitudEliminacionOutputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.SolicitudUnificadaDTO;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
@@ -28,30 +29,15 @@ public class ContributorController {
     this.hechoService = hechoService;
   }
 
-  /*@GetMapping
-  public String mostrarPanelContribuyente(Model model, Authentication authentication) {
-    String userId = authentication.getName();
-
-    try {
-      model.addAttribute("misHechos", hechoService.buscarHechosPorUsuario(userId));
-    } catch (Exception e) {
-      model.addAttribute("misHechos", List.of());
-    }
-
-    try {
-      model.addAttribute("misSolicitudes", solicitudService.obtenerTodas(userId));
-    } catch (Exception e) {
-      model.addAttribute("misSolicitudes", List.of());
-    }
-
-    return "contributor";
-  }*/
-
   @GetMapping
   public String mostrarPanelContribuyente(Model model, Authentication authentication) {
     String userId = authentication.getName();
 
-    // 1. Traer TODOS los Hechos (Pendientes, Aceptados, Rechazados)
+    // ==========================================
+    // PASO 1: OBTENER DATOS DE LAS APIs
+    // ==========================================
+
+    // A) Traer TODOS los Hechos (Pendientes, Aceptados, Rechazados)
     List<HechoDTO> todosMisHechos = new ArrayList<>();
     try {
       todosMisHechos = hechoService.buscarHechosPorUsuario(userId);
@@ -59,44 +45,73 @@ public class ContributorController {
       System.out.println("Error buscando hechos: " + e.getMessage());
     }
 
-    // --- FILTRO NUEVO PARA LA TABLA 1 ---
-    // Solo mostramos en "Mis Hechos Publicados" los que están ACEPTADO
+    // B) Traer Solicitudes de Baja (Eliminaciones)
+    List<SolicitudEliminacionOutputDTO> misBajas = new ArrayList<>();
+    try {
+      misBajas = solicitudService.obtenerTodas(userId);
+    } catch (Exception e) {
+      System.out.println("Error buscando solicitudes de baja: " + e.getMessage());
+    }
+
+    // C) Traer Ediciones (NUEVO)
+    List<EdicionOutputDTO> misEdiciones = new ArrayList<>();
+    try {
+      misEdiciones = hechoService.buscarEdicionesPorUsuario(userId);
+    } catch (Exception e) {
+      System.out.println("Error buscando ediciones: " + e.getMessage());
+    }
+
+    // ==========================================
+    // PASO 2: PREPARAR DATOS PARA LA VISTA
+    // ==========================================
+
+    // --- TABLA 1: "Mis Hechos Publicados" ---
+    // Solo mostramos los que ya están ACEPTADO
     List<HechoDTO> hechosPublicados = todosMisHechos.stream()
         .filter(h -> "ACEPTADO".equals(h.estado()))
         .collect(Collectors.toList());
 
     model.addAttribute("misHechos", hechosPublicados);
-    // ------------------------------------
 
-    // 2. Traer Solicitudes de Baja (Eliminaciones)
-    List<SolicitudEliminacionOutputDTO> misBajas = new ArrayList<>();
-    try {
-      misBajas = solicitudService.obtenerTodas(userId);
-    } catch (Exception e) {
-      System.out.println("Error buscando solicitudes: " + e.getMessage());
-    }
 
-    // 3. UNIFICAR TODO para la pestaña "Estado de Solicitudes" (Tabla 2)
-    // Acá usamos 'todosMisHechos' porque queremos ver el estado de los pendientes también
+    // --- TABLA 2: "Estado de Solicitudes" (Lista Unificada) ---
     List<SolicitudUnificadaDTO> listaUnificada = new ArrayList<>();
 
-    // A) Convertir Hechos a SolicitudUnificada
+    // 1. Agregar CREACIONES (Nuevos Hechos)
+    // Acá usamos 'todosMisHechos' para ver también los pendientes y rechazados
     for (HechoDTO h : todosMisHechos) {
       String estadoHecho = (h.estado() != null) ? h.estado() : "EN_REVISION";
 
       listaUnificada.add(new SolicitudUnificadaDTO(
+          h.id(),
           h.titulo(),
           "Nuevo Hecho",
           estadoHecho
       ));
     }
 
-    // B) Convertir Bajas a SolicitudUnificada
+    // 2. Agregar ELIMINACIONES (Bajas)
     for (SolicitudEliminacionOutputDTO baja : misBajas) {
       listaUnificada.add(new SolicitudUnificadaDTO(
+          baja.nroDeSolicitud(),
           baja.tituloDelHechoAEliminar(),
           "Eliminación",
           baja.estado()
+      ));
+    }
+
+    // 3. Agregar EDICIONES (Modificaciones)
+    for (EdicionOutputDTO edi : misEdiciones) {
+      // Si el título propuesto es null, usamos un texto genérico
+      String tituloMostrar = (edi.getTituloPropuesto() != null)
+          ? edi.getTituloPropuesto()
+          : "Edición Hecho ID " + edi.getIdHechoOriginal();
+
+      listaUnificada.add(new SolicitudUnificadaDTO(
+          edi.getId(),
+          tituloMostrar,
+          "Edición",
+          edi.getEstado()
       ));
     }
 
