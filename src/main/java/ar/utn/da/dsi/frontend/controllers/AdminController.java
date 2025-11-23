@@ -1,25 +1,19 @@
 package ar.utn.da.dsi.frontend.controllers;
 
+import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.ColeccionInputDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.ColeccionOutputDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.HoraHechosPorCategoriaListDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorCategoriaListDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorColeccionListDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.*;
 import ar.utn.da.dsi.frontend.services.colecciones.ColeccionService;
 import ar.utn.da.dsi.frontend.services.estadisticas.EstadisticasService;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import ar.utn.da.dsi.frontend.services.solicitudes.SolicitudService;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -41,52 +35,86 @@ public class AdminController {
 
   @GetMapping
   public String mostrarPanelAdmin(Model model, Authentication authentication) {
-
+    // 1. Colecciones
     try {
       model.addAttribute("colecciones", coleccionService.obtenerTodas());
     } catch (Exception e) {
       model.addAttribute("colecciones", List.of());
     }
 
+    // 2. UNIFICAR TODO (Creación + Eliminación + Edición)
+    List<SolicitudUnificadaDTO>  listaUnificada = new ArrayList<>();
     String adminId = (authentication != null) ? authentication.getName() : null;
 
-    try {
-      if (adminId != null) {
-        model.addAttribute("solicitudes", solicitudService.obtenerTodas(adminId));
-      } else {
-        model.addAttribute("solicitudes", List.of());
-      }
+    if (adminId != null) {
+      try {
+        // A) Nuevos Hechos (Pendientes)
+        List<HechoDTO> nuevos = hechoService.buscarHechosPendientes();
+        for (HechoDTO h : nuevos) {
+          listaUnificada.add(new SolicitudUnificadaDTO(h.id(), h.titulo(), "Nuevo Hecho", "PENDIENTE"));
+        }
 
+        // B) Solicitudes de Baja
+        List<SolicitudEliminacionOutputDTO> bajas = solicitudService.obtenerTodasParaAdmin();
+        for (SolicitudEliminacionOutputDTO b : bajas) {
+          listaUnificada.add(new SolicitudUnificadaDTO(b.nroDeSolicitud(), b.tituloDelHechoAEliminar(), "Eliminación", b.estado()));
+        }
+
+        // C) Ediciones (¡AGREGADO!)
+        List<EdicionOutputDTO> ediciones = hechoService.buscarEdicionesPendientes();
+        for (EdicionOutputDTO e : ediciones) {
+          // Usamos el título propuesto o un identificador genérico
+          String titulo = (e.getTituloPropuesto() != null) ? e.getTituloPropuesto() : "Edición Hecho ID " + e.getIdHechoOriginal();
+          listaUnificada.add(new SolicitudUnificadaDTO(e.getId(), titulo, "Edición", "PENDIENTE"));
+        }
+
+      } catch (Exception e) {
+        System.out.println("Error unificando solicitudes: " + e.getMessage());
+      }
+    }
+
+    model.addAttribute("solicitudes", listaUnificada);
+
+    // Resto de atributos necesarios para la vista
+    try {
       model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
       model.addAttribute("availableSources", hechoService.getAvailableSources());
-
     } catch (Exception e) {
-      model.addAttribute("solicitudes", List.of());
-      model.addAttribute("consensusLabels", Map.of());
-      model.addAttribute("availableSources", List.of());
+      model.addAttribute("consensusLabels", null);
+      model.addAttribute("availableSources", null);
     }
 
     model.addAttribute("titulo", "Panel de Administración");
+
     return "admin";
   }
 
   @PostMapping("/solicitudes/{id}/aprobar")
   public String aprobarSolicitud(@PathVariable("id") Integer id, Authentication authentication) {
     String adminId = authentication.getName();
-
     solicitudService.aceptar(id, adminId);
-
-    return "redirect:/admin?success=aprobada";
+    return "redirect:/admin?success=solicitud_aprobada";
   }
 
   @PostMapping("/solicitudes/{id}/rechazar")
   public String rechazarSolicitud(@PathVariable("id") Integer id, Authentication authentication) {
     String adminId = authentication.getName();
-
     solicitudService.rechazar(id, adminId);
-
-    return "redirect:/admin?success=rechazada";
+    return "redirect:/admin?success=solicitud_rechazada";
   }
+
+  @PostMapping("/hechos/{id}/aprobar")
+  public String aprobarHecho(@PathVariable("id") Long id) {
+    hechoService.aprobar(id);
+    return "redirect:/admin?success=hecho_aprobado";
+  }
+
+  @PostMapping("/hechos/{id}/rechazar")
+  public String rechazarHecho(@PathVariable("id") Long id) {
+    hechoService.rechazar(id);
+    return "redirect:/admin?success=hecho_rechazado";
+  }
+
 
   @GetMapping("/colecciones/nueva")
   public String mostrarFormularioNuevaColeccion(Model model) {
@@ -159,6 +187,27 @@ public class AdminController {
     }
 
     return "redirect:/admin";
+  }
+
+  @PostMapping("/ediciones/{id}/aceptar")
+  public String aceptarEdicion(@PathVariable("id") Long id) {
+    hechoService.aceptarEdicion(id);
+    return "redirect:/admin?success=edicion_aceptada";
+  }
+
+  @PostMapping("/ediciones/{id}/rechazar")
+  public String rechazarEdicion(@PathVariable("id") Long id) {
+    hechoService.rechazarEdicion(id);
+    return "redirect:/admin?success=edicion_rechazada";
+  }
+
+  @GetMapping("/api/ediciones/{id}")
+  @ResponseBody
+  public EdicionOutputDTO getEdicionDetalle(@PathVariable Long id) {
+    return hechoService.buscarEdicionesPendientes().stream()
+        .filter(e -> e.getId().equals(id))
+        .findFirst()
+        .orElse(null);
   }
 
   @GetMapping("/estadisticas")
