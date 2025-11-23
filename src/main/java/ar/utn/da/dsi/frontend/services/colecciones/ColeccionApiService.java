@@ -14,7 +14,7 @@ public class ColeccionApiService {
 	private final String coleccionesApiUrl;
 
 	@Autowired
-	public ColeccionApiService(ApiClientService apiClientService, @Value("${colecciones.service.url}") String coleccionesApiUrl) {
+	public ColeccionApiService(ApiClientService apiClientService, @Value("${agregador.colecciones.service.url}") String coleccionesApiUrl) {
 		this.apiClientService = apiClientService;
 		this.coleccionesApiUrl = coleccionesApiUrl;
 	}

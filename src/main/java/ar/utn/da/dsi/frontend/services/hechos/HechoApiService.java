@@ -15,6 +15,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.lang.Nullable;
+import ar.utn.da.dsi.frontend.client.dto.ApiResponse;
+import org.springframework.core.ParameterizedTypeReference;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +34,7 @@ public class HechoApiService {
   private final String agregadorApiUrl;
 
   @Autowired
-  public HechoApiService(ApiClientService apiClientService, @Value("${hechos.service.url}") String hechosApiUrl, @Value("${estatica.service.url}") String estaticaApiUrl, @Value("${agregador.service.url}") String agregadorApiUrl) {
+  public HechoApiService(ApiClientService apiClientService, @Value("${dinamica.service.url}") String hechosApiUrl, @Value("${estatica.service.url}") String estaticaApiUrl, @Value("${agregador.service.url}") String agregadorApiUrl) {
     this.apiClientService = apiClientService;
     this.hechosApiUrl = hechosApiUrl;
     this.estaticaApiUrl = estaticaApiUrl;
@@ -79,9 +81,22 @@ public class HechoApiService {
    * (Usado por ContributorController para el panel "Mis Hechos")
    */
   public List<HechoDTO> getHechosPorUsuario(String userId) {
-    // Asumo que el endpoint del backend es /hechos/usuario/{userId}
-    String url = hechosApiUrl + "/usuario/" + userId;
-    return apiClientService.getList(url, HechoDTO.class);
+    String url = hechosApiUrl + "/hechos/usuario/" + userId;
+
+    // USAMOS executeWithToken PARA INYECTAR EL TOKEN AUTOMÁTICAMENTE
+    return apiClientService.executeWithToken(accessToken ->
+        webClient.get()
+            .uri(url)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+            .retrieve()
+            // ACÁ ESTÁ LA MAGIA: Le decimos que esperamos un ApiResponse que contiene una Lista
+            .bodyToMono(new ParameterizedTypeReference<ApiResponse<List<HechoDTO>>>() {})
+            .map(response -> {
+              if (response.getDatos() == null) return List.<HechoDTO>of();
+              return response.getDatos();
+            })
+            .block()
+    );
   }
 
   /**
@@ -120,34 +135,41 @@ public class HechoApiService {
   }
 
   /**
-   * CREAR HECHO DINÁMICO: Envía la solicitud como Multipart (JSON + Archivo) al endpoint /hechos.
+   * CREAR HECHO DINÁMICO: Envía la solicitud como Multipart (JSON + Archivo).
+   * Soporta usuarios logueados (con token) y anónimos (sin token).
    */
   public HechoDTO crearHecho(HechoInputDTO dto, @Nullable MultipartFile archivo) {
-    String url = hechosApiUrl + "/hechos"; // Endpoint: POST /hechos (DinamicaController)
+    String url = hechosApiUrl + "/hechos";
 
     try {
       String hechoJson = objectMapper.writeValueAsString(dto);
 
       MultipartBodyBuilder builder = new MultipartBodyBuilder();
-      // 1. Parte JSON: "hechoData" con Content-Type application/json
       builder.part("hechoData", hechoJson, MediaType.APPLICATION_JSON);
 
-      // 2. Parte Archivo: "archivo" si existe
       if (archivo != null && !archivo.isEmpty()) {
         builder.part("archivo", archivo.getResource());
       }
 
-      // Ejecutar la llamada autenticada
-      return apiClientService.executeWithToken(accessToken ->
-          webClient.post()
-              .uri(url)
-              .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-              // No es necesario setear ContentType, BodyInserters.fromMultipartData lo hace
-              .body(BodyInserters.fromMultipartData(builder.build()))
-              .retrieve()
-              .bodyToMono(HechoDTO.class)
-              .block()
-      );
+      // 1. Intentamos obtener el token de la sesión
+      String accessToken = apiClientService.getAccessTokenFromSession();
+
+      // 2. Configuramos el WebClient base (POST y Body)
+      var requestSpec = webClient.post()
+          .uri(url)
+          .contentType(MediaType.MULTIPART_FORM_DATA) // Importante para multipart
+          .body(BodyInserters.fromMultipartData(builder.build()));
+
+      // 3. Si hay token, agregamos el Header. Si no, va sin header.
+      if (accessToken != null && !accessToken.isBlank()) {
+        requestSpec.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+      }
+
+      // 4. Ejecutamos
+      return requestSpec
+          .retrieve()
+          .bodyToMono(HechoDTO.class)
+          .block();
 
     } catch (Exception e) {
       throw new RuntimeException("Error al crear Hecho en Fuente Dinámica: " + e.getMessage(), e);

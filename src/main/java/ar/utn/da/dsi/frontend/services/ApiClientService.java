@@ -2,6 +2,7 @@ package ar.utn.da.dsi.frontend.services;
 
 import ar.utn.da.dsi.frontend.exceptions.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.util.List;
 @Service
 public class ApiClientService {
 
+  @Getter
   private final WebClient webClient;
 
   public ApiClientService() {
@@ -26,9 +28,9 @@ public class ApiClientService {
   public <T> T executeWithToken(ApiCall<T> apiCall) {
     String accessToken = getAccessTokenFromSession();
 
-    if (accessToken == null) {
+    /*if (accessToken == null) {
       throw new RuntimeException("No hay token de acceso disponible");
-    }
+    }*/
 
     try {
       // Intento con el token actual

@@ -15,5 +15,6 @@ public record HechoDTO(
 		LocalDate fechaCarga,
 		double latitud,
 		double longitud,
-		boolean consensuado
+		boolean consensuado,
+		String estado
 ) {}
