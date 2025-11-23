@@ -176,155 +176,300 @@
     </div>
     </div>
 
-    <div id="page-scripts">
-        <script th:inline="javascript">
-            /*<![CDATA[*/
-            const allCollections = /*[[${colecciones}]]*/ [];
-            const consensusLabels = /*[[${consensusLabels}]]*/ {};
-            const availableSources = /*[[${availableSources}]]*/ [];
-            const allRequestsForFilter = /*[[${solicitudes}]]*/ [];
-            /*]]>*/
-        </script>
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                renderSidebar('admin');
+<div id="page-scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const allCollections = /*[[${colecciones}]]*/ [];
+        const consensusLabels = /*[[${consensusLabels}]]*/ {};
+        const availableSources = /*[[${availableSources}]]*/ {};
+        const allRequestsForFilter = /*[[${solicitudes}]]*/ [];
+        /*]]>*/
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar('admin');
 
-                // --- LÓGICA DE TABS ---
-                const tabCollections = document.getElementById('admin-tab-collections');
-                const tabRequests = document.getElementById('admin-tab-requests');
-                const contentCollections = document.getElementById('collections-content');
-                const contentRequests = document.getElementById('requests-content');
+            // --- LÓGICA DE TABS ---
+            const tabCollections = document.getElementById('admin-tab-collections');
+            const tabRequests = document.getElementById('admin-tab-requests');
+            const contentCollections = document.getElementById('collections-content');
+            const contentRequests = document.getElementById('requests-content');
 
-                tabCollections.addEventListener('click', () => {
-                    tabCollections.classList.add('active');
-                    tabRequests.classList.remove('active');
-                    contentCollections.style.display = 'block';
-                    contentRequests.style.display = 'none';
-                });
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('tab') === 'requests') {
+                tabCollections.classList.remove('active');
+                tabRequests.classList.add('active');
+                contentCollections.style.display = 'none';
+                contentRequests.style.display = 'block';
+            }
 
-                tabRequests.addEventListener('click', () => {
-                    tabRequests.classList.add('active');
-                    tabCollections.classList.remove('active');
-                    contentRequests.style.display = 'block';
-                    contentCollections.style.display = 'none';
-                });
-
-                // Inicializar tabla al cargar
-                // Se asume que la lógica de renderAdminRequestsTable ya está integrada en el servidor/código anterior.
-
-
-                // --- LÓGICA DE EVALUACIÓN Y MODAL ADMIN (Goal 3 & 4) ---
-                const resolutionModalEl = document.getElementById('adminResolutionModal');
-                const resolutionForm = document.getElementById('admin-resolution-form');
-                const statusSelect = document.getElementById('resolution-status');
-                const detalleContainer = document.getElementById('detalle-container');
-                const detalleInput = document.getElementById('detalle');
-                const modalFooter = resolutionModalEl.querySelector('.modal-footer');
-                const evaluationBlock = document.getElementById('evaluation-block');
-                const viewResolutionBlock = document.getElementById('view-resolution-block');
-
-                let resolutionModal = new bootstrap.Modal(resolutionModalEl); // Instanciar fuera del listener
-
-                // Lógica para mostrar/ocultar el detalle/motivo
-                statusSelect.addEventListener('change', function() {
-                    const value = this.value;
-                    // Usamos un atributo de datos para saber qué tipo de solicitud estamos evaluando
-                    const requestType = resolutionModalEl.getAttribute('data-current-type');
-
-                    // REGLA CLAVE: Detalle es obligatorio SÓLO para Nuevo Hecho (Rechazo o Sugerencias).
-                    const isNewHecho = requestType === 'Nuevo Hecho';
-                    const requiresDetail = isNewHecho && (value === 'RECHAZADO' || value === 'ACEPTADO_CON_SUGERENCIAS');
-
-                    if (requiresDetail) {
-                        detalleContainer.style.display = 'block';
-                        detalleInput.required = true;
-                        detalleContainer.querySelector('label').textContent = 'Detalle/Comentario (Obligatorio)';
-                    } else {
-                        detalleContainer.style.display = 'none';
-                        detalleInput.required = false;
-                        detalleContainer.querySelector('label').textContent = 'Detalle/Comentario'; // Resetear texto
-                    }
-                });
-
-
-                // Listener para abrir el modal (Evaluar / Ver Resolución)
-                document.addEventListener('click', function(e) {
-                    const btn = e.target.closest('.btn-review-modal');
-
-                    if (btn) {
-                        const requestId = btn.getAttribute('data-request-id');
-                        const requestType = btn.getAttribute('data-request-type');
-                        const isPending = btn.getAttribute('data-is-pending') === 'true';
-                        const requestEstado = btn.getAttribute('data-request-estado');
-
-                        const requestData = allRequestsForFilter.find(r => r.id == requestId && r.tipo === requestType);
-
-                        if (!requestData) {
-                            alert("No se encontró el detalle de la solicitud/edición.");
-                            return;
-                        }
-
-                        // 1. Configurar Título y Type en el modal
-                        resolutionModalEl.setAttribute('data-current-type', requestType);
-                        resolutionModalEl.querySelector('#resolution-request-details').textContent = `Hecho: ${requestData.tituloDelHechoAEliminar}`;
-
-                        // 2. Lógica de Modo (Evaluar vs. Ver Resolución)
-                        if (isPending) {
-                            // MODO EVALUAR
-                            evaluationBlock.style.display = 'block';
-                            viewResolutionBlock.style.display = 'none';
-                            modalFooter.style.display = 'flex';
-
-                            // Configurar Opciones del Selector
-                            let optionsHtml = '<option value="">Seleccione el estado...</option>';
-                            let formAction;
-
-                            if (requestType === 'Nuevo Hecho') {
-                                // 3 Estados: ACEPTADO, RECHAZADO, ACEPTADO_CON_SUGERENCIAS
-                                optionsHtml += '<option value="ACEPTADO">Aceptar</option>';
-                                optionsHtml += '<option value="RECHAZADO">Rechazar</option>';
-                                optionsHtml += '<option value="ACEPTADO_CON_SUGERENCIAS">Aceptar con Sugerencias</option>';
-                                formAction = `/admin/hechos/${requestId}/resolver`;
-                            } else {
-                                // Edición y Eliminación: Solo Aceptar/Rechazar (2 estados)
-                                optionsHtml += '<option value="ACEPTADO">Aceptar</option>';
-                                optionsHtml += '<option value="RECHAZADO">Rechazar</option>';
-                                // La URL de acción se configura por convención
-                                formAction = `/admin/${requestType.toLowerCase()}/${requestId}/resolver`;
-                            }
-
-                            statusSelect.innerHTML = optionsHtml;
-                            statusSelect.value = '';
-
-                            // Resetear Detalle (Obligatorio según el caso, ver listener change)
-                            detalleContainer.style.display = 'none';
-                            detalleInput.required = false;
-                            resolutionForm.action = formAction;
-
-                        } else {
-                            // MODO VER RESOLUCIÓN
-                            evaluationBlock.style.display = 'none';
-                            viewResolutionBlock.style.display = 'block';
-                            modalFooter.style.display = 'flex'; // Mantener footer para el botón "Cancelar"
-
-                            const status = requestEstado;
-                            const statusClass = status === 'ACEPTADO' || status === 'APROBADA' || status === 'ACEPTADO_CON_SUGERENCIAS' ? 'bg-success' : 'bg-danger';
-
-                            viewResolutionBlock.querySelector('#view-status-badge').className = `badge ${statusClass}`;
-                            viewResolutionBlock.querySelector('#view-status-badge').textContent = status;
-                            viewResolutionBlock.querySelector('#view-detalle-text').textContent = requestData.detalle || 'El administrador no proporcionó comentarios adicionales.';
-                        }
-
-                        resolutionModal.show();
-                    }
-                });
-                // --- FIN LÓGICA DE EVALUACIÓN Y MODAL ADMIN ---
-
-                // Lógica para filtros (mantenida del código anterior)
-                const adminFilterType = document.getElementById('admin-filter-type');
-                const adminFilterStatus = document.getElementById('admin-filter-status');
+            tabCollections.addEventListener('click', () => {
+                tabCollections.classList.add('active');
+                tabRequests.classList.remove('active');
+                contentCollections.style.display = 'block';
+                contentRequests.style.display = 'none';
             });
-        </script>
-    </div>
+
+            tabRequests.addEventListener('click', () => {
+                tabRequests.classList.add('active');
+                tabCollections.classList.remove('active');
+                contentRequests.style.display = 'block';
+                contentCollections.style.display = 'none';
+            });
+
+
+            // --- LÓGICA DE EVALUACIÓN Y MODAL ADMIN (Resolución y Detalle) ---
+            const resolutionModalEl = document.getElementById('adminResolutionModal');
+            const resolutionForm = document.getElementById('admin-resolution-form');
+            const statusSelect = document.getElementById('resolution-status');
+            const detalleContainer = document.getElementById('detalle-container');
+            const detalleInput = document.getElementById('detalle');
+            const evaluationBlock = document.getElementById('evaluation-block');
+            const viewResolutionBlock = document.getElementById('view-resolution-block');
+            const modalTitle = resolutionModalEl.querySelector('#resolutionModalTitle');
+            const detailContainerInModal = resolutionModalEl.querySelector('#resolution-request-details');
+
+            let resolutionModal = new bootstrap.Modal(resolutionModalEl);
+
+            // Lógica para mostrar/ocultar el detalle/motivo del modal de resolución
+            statusSelect.addEventListener('change', function() {
+                const value = this.value;
+                const requestType = resolutionModalEl.getAttribute('data-current-type');
+
+                const isNewHecho = requestType === 'Nuevo Hecho';
+                const isRechazoOSugerencia = value === 'RECHAZADO' || value === 'ACEPTADO_CON_SUGERENCIAS' || value.includes('rechazar');
+
+                const requiresDetail = isNewHecho && isRechazoOSugerencia;
+                const isVisible = isRechazoOSugerencia;
+
+                if (isVisible) {
+                    detalleContainer.style.display = 'block';
+                    detalleInput.required = requiresDetail;
+                    detalleContainer.querySelector('label').textContent = requiresDetail
+                        ? 'Detalle/Comentario (Obligatorio)'
+                        : 'Detalle/Comentario (Opcional)';
+                } else {
+                    detalleContainer.style.display = 'none';
+                    detalleInput.required = false;
+                }
+            });
+
+            // --- Función para obtener detalles completos vía AJAX (Necesaria para "Ver Solicitud") ---
+            function fetchFullDetail(id, type) {
+                let apiUrl = '';
+                if (type === 'Nuevo Hecho') {
+                    apiUrl = `/admin/api/hechos/${id}`;
+                } else if (type === 'Edición') {
+                    apiUrl = `/admin/api/ediciones/${id}`;
+                } else if (type === 'Eliminación') {
+                    apiUrl = `/admin/api/solicitudes-eliminacion/${id}`;
+                } else {
+                    throw new Error('Tipo de solicitud desconocido.');
+                }
+
+                return fetch(apiUrl).then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.message || response.statusText); });
+                    }
+                    return response.json();
+                });
+            }
+
+
+            // Listener Principal para los botones de la tabla
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.btn-evaluate, .btn-view-solicitud');
+                if (!btn) return;
+
+                const requestId = btn.getAttribute('data-request-id');
+                const requestType = btn.getAttribute('data-request-type');
+                const isEvaluate = btn.classList.contains('btn-evaluate');
+
+                const requestDataUnificada = allRequestsForFilter.find(r => r.id == requestId && r.tipo === requestType);
+
+                if (!requestDataUnificada) {
+                    alert("No se encontró el detalle de la solicitud/edición.");
+                    return;
+                }
+
+                // 1. Configurar carga inicial (siempre necesario para 'Ver Solicitud' y 'Evaluar')
+                // FIX: El botón "Ver Solicitud" ya no usa el modal de resolución, sino el modal genérico (openModal)
+
+                // --- ACCIÓN 1: VER SOLICITUD (Muestra todos los detalles en el modal genérico) ---
+                if (!isEvaluate) {
+                    // Mostrar indicador de carga en el contenedor temporal
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Cargando detalles completos...</p></div>';
+                    // Usamos openModal con un DTO básico de carga. El modal robusto lo reemplazará.
+                    openModal(renderRequestDetailModal, requestDataUnificada);
+
+                    fetchFullDetail(requestId, requestType)
+                        .then(fullDetailDTO => {
+                            const fullData = Object.assign({}, requestDataUnificada, fullDetailDTO);
+                            // Abre el modal de detalle completo (renderRequestDetailModal debe estar en main.js)
+                            openModal(renderRequestDetailModal, fullData);
+                        })
+                        .catch(error => {
+                            alert('Error al cargar los detalles: ' + error.message);
+                            console.error('Fetch Error:', error);
+                            openModal(renderRequestDetailModal, {
+                                tipo: requestType, estado: requestDataUnificada.estado,
+                                tituloDelHechoAEliminar: `Error al cargar: ${error.message}`
+                            });
+                        });
+
+                    return;
+                }
+
+
+                // --- ACCIÓN 2: EVALUAR (Solo PENDIENTE - Abre el modal de resolución simple) ---
+
+                const hechoTitle = requestDataUnificada.tituloDelHechoAEliminar || 'Sin título';
+
+                // 1. Configurar Modal para Resolución
+                evaluationBlock.style.display = 'block';
+                viewResolutionBlock.style.display = 'none';
+
+                modalTitle.textContent = `Resolver Solicitud de ${requestType}`;
+                resolutionModalEl.setAttribute('data-current-type', requestType);
+
+                // 2. Mostrar mensaje simple (cumpliendo el requisito de no mostrar detalles complejos)
+                detailContainerInModal.innerHTML = `<h6 class="text-primary fw-bold">Evaluando: ${requestType} - ${hechoTitle}</h6><p class="text-muted small">Revisa los detalles completos usando el botón "Ver Solicitud" antes de resolver.</p>`;
+
+                // 3. Configurar Opciones y Form Action
+                let optionsHtml = '<option value="">Seleccione el estado...</option>';
+
+                if (requestType === 'Nuevo Hecho') {
+                    optionsHtml += '<option value="ACEPTADO">Aprobar</option>';
+                    optionsHtml += '<option value="RECHAZADO">Rechazar</option>';
+                    optionsHtml += '<option value="ACEPTADO_CON_SUGERENCIAS">Aprobar con Sugerencias</option>';
+                    resolutionForm.action = `/hechos/${requestId}/resolver`;
+                } else if (requestType === 'Edición') {
+                    optionsHtml += '<option value="aceptar">Aprobar Edición</option>';
+                    optionsHtml += '<option value="rechazar">Rechazar Edición</option>';
+                    resolutionForm.action = `/admin/ediciones/${requestId}`;
+                } else if (requestType === 'Eliminación') {
+                    optionsHtml += '<option value="aprobar">Aprobar Eliminación</option>';
+                    optionsHtml += '<option value="rechazar">Rechazar Eliminación</option>';
+                    resolutionForm.action = `/admin/solicitudes/${requestId}`;
+                }
+
+                statusSelect.innerHTML = optionsHtml;
+                statusSelect.value = '';
+
+                // 4. Lógica de Submit para manejar los endpoints separados del backend
+                resolutionForm.onsubmit = function(event) {
+                    event.preventDefault();
+                    const selectedStatus = statusSelect.value;
+                    let finalAction = resolutionForm.action;
+
+                    if (!selectedStatus) {
+                        alert("Por favor, selecciona un estado.");
+                        return;
+                    }
+
+                    if (requestType === 'Nuevo Hecho') {
+                        const hiddenStatusInput = document.createElement('input');
+                        hiddenStatusInput.type = 'hidden';
+                        hiddenStatusInput.name = 'estado';
+                        hiddenStatusInput.value = selectedStatus;
+                        resolutionForm.appendChild(hiddenStatusInput);
+                    } else if (requestType === 'Edición' || requestType === 'Eliminación') {
+                        finalAction += `/${selectedStatus}`;
+                    }
+
+                    resolutionForm.action = finalAction;
+                    resolutionForm.onsubmit = null;
+                    resolutionForm.submit();
+                };
+
+                // Abrir el modal de resolución (FIX para el pop-up)
+                detalleInput.value = '';
+                statusSelect.dispatchEvent(new Event('change'));
+                resolutionModal.show();
+            });
+
+
+            // --- LÓGICA PARA FILTROS Y RENDERIZADO DE TABLA (FIX: Lógica de Filtrado Funcional) ---
+
+            const adminFilterType = document.getElementById('admin-filter-type');
+            const adminFilterStatus = document.getElementById('admin-filter-status');
+            const requestsTableBody = document.getElementById('admin-requests-table-body');
+
+            function renderAdminRequestsTable(requests) {
+                requestsTableBody.innerHTML = '';
+                if (requests.length === 0) {
+                    requestsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-4">No hay solicitudes que coincidan con los filtros.</td></tr>';
+                    return;
+                }
+
+                requests.forEach(req => {
+                    const statusClass = req.estado === 'PENDIENTE'
+                        ? 'bg-warning'
+                        : (req.estado.includes('APROBA') || req.estado.includes('ACEPTA') ? 'bg-success' : 'bg-danger');
+
+                    const isPending = req.estado === 'PENDIENTE';
+                    const buttonClass = isPending ? 'btn-warning' : 'btn-outline-info';
+
+                    const actionsHtml = `
+                        <button data-request-id="${req.id}"
+                                data-request-type="${req.tipo}"
+                                data-request-estado="${req.estado}"
+                                class="btn btn-sm btn-outline-info rounded-pill btn-view-solicitud me-2">
+                            Ver Solicitud
+                        </button>
+
+                        ${isPending ?
+                        `<button data-request-id="${req.id}"
+                                     data-request-type="${req.tipo}"
+                                     data-is-pending="true"
+                                     class="btn ${buttonClass} btn-sm rounded-pill btn-evaluate">
+                                Evaluar
+                            </button>` : ''}
+                    `;
+
+                    requestsTableBody.innerHTML += `
+                        <tr>
+                            <td>${req.tituloDelHechoAEliminar}</td>
+                            <td><span class="badge bg-info">${req.tipo}</span></td>
+                            <td><span class="badge ${statusClass}">${req.estado}</span></td>
+                            <td class="text-end">
+                                <div>${actionsHtml}</div>
+                            </td>
+                        </tr>`;
+                });
+            }
+
+
+            function applyAdminRequestFilters() {
+                const typeValue = adminFilterType.value;
+                const statusValue = adminFilterStatus.value;
+
+                const normalizeStatus = (status) => {
+                    if (status.includes('ACEPTAD') || status.includes('APROBADA')) return 'APROBADA';
+                    if (status.includes('RECHAZAD')) return 'RECHAZADA';
+                    return status;
+                }
+
+                const filteredRequests = allRequestsForFilter.filter(req => {
+                    const typeMatch = !typeValue || req.tipo === typeValue;
+                    const statusMatch = !statusValue || normalizeStatus(req.estado) === normalizeStatus(statusValue);
+
+                    return typeMatch && statusMatch;
+                });
+
+                renderAdminRequestsTable(filteredRequests);
+            }
+
+            // FIX: Ejecutar la función de filtro cada vez que cambie un selector
+            adminFilterType.addEventListener('change', applyAdminRequestFilters);
+            adminFilterStatus.addEventListener('change', applyAdminRequestFilters);
+
+            // Cargar la tabla al inicio
+            applyAdminRequestFilters();
+
+        });
+    </script>
+</div>
 </body>
 </html>

@@ -1,4 +1,3 @@
-
 // Objeto para manejar el estado de la sesión.
 const AppState = {
     currentUser: JSON.parse(sessionStorage.getItem('userJson')) || null
@@ -116,6 +115,123 @@ function renderFactDetailModal(container, fact) {
                         </div>
                     </div>
                     <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+                </div>
+            </div>
+        </div>`;
+}
+
+// =========================================================================================
+// FUNCIÓN CORREGIDA Y ROBUSTA: renderRequestDetailModal
+// =========================================================================================
+function renderRequestDetailModal(container, requestData) {
+
+    // --- Extracción y Normalización de Datos ---
+    const requestType = requestData.tipo || (requestData.idHechoOriginal ? 'Edición' : (requestData.motivo ? 'Eliminación' : 'Nuevo Hecho'));
+    const requestEstado = requestData.estado || 'N/A';
+    const isEdicion = requestType === 'Edición';
+    const isEliminacion = requestType === 'Eliminación';
+
+    // Campos primarios (título, descripción/motivo)
+    const titulo = requestData.titulo || requestData.tituloPropuesto || requestData.tituloDelHechoAEliminar || `Hecho ID ${requestData.idHechoOriginal || requestData.id}`;
+    const descripcionPropuesta = requestData.descripcionPropuesta || requestData.descripcion || '';
+    const motivoEliminacion = requestData.motivo || '';
+    const detalleAdmin = requestData.detalle || 'El administrador no proporcionó comentarios adicionales.';
+
+    // Campos técnicos y ubicación (normalizados)
+    const lat = requestData.latitud || requestData.latitudPropuesta;
+    const lon = requestData.longitud || requestData.longitudPropuesta;
+    const fechaAcontecimiento = requestData.fechaAcontecimiento || requestData.fechaAcontecimientoPropuesta;
+    const categoriaNombre = requestData.categoria || (requestData.categoriaPropuesta && requestData.categoriaPropuesta.nombre) || 'No especificada';
+    const contenidoMultimedia = requestData.contenidoMultimediaPropuesto || requestData.contenidoMultimedia;
+
+    // --- Contenido de la Sección de Propuesta / Detalle ---
+    let propuestaContent = '';
+
+    if (isEliminacion) {
+        propuestaContent += `<p class="fw-bold text-danger">Motivo de Eliminación:</p><p class="text-muted" style="white-space: pre-wrap;">${motivoEliminacion || 'No especificado.'}</p>`;
+        propuestaContent += `<p><strong>Título del Hecho a Eliminar:</strong> ${requestData.tituloHecho || titulo}</p>`;
+    } else {
+        // Nuevo Hecho o Edición (Muestra todos los campos técnicos)
+        propuestaContent += `<p class="fw-bold text-primary">${isEdicion ? 'Detalles de la Edición Propuesta' : 'Detalles del Nuevo Hecho'}</p>`;
+
+        // Descripción
+        propuestaContent += `<p><strong>Descripción:</strong> <span class="text-muted" style="white-space: pre-wrap;">${descripcionPropuesta || 'Sin descripción.'}</span></p>`;
+
+        propuestaContent += `<hr>`;
+        propuestaContent += `<h6 class="fw-bold">Datos Técnicos:</h6>`;
+
+        let detallesTecnicos = `<ul class="list-unstyled small">`;
+        detallesTecnicos += `<li><strong>Título:</strong> ${titulo}</li>`;
+        detallesTecnicos += `<li><strong>Categoría:</strong> <span class="badge bg-secondary">${categoriaNombre}</span></li>`;
+
+        // Ubicación
+        if (lat && lon) {
+            detallesTecnicos += `<li><strong>Ubicación:</strong> Latitud: ${lat} | Longitud: ${lon}</li>`;
+        } else {
+            detallesTecnicos += `<li><strong>Ubicación:</strong> No especificada</li>`;
+        }
+
+        // Multimedia y Fecha
+        if (fechaAcontecimiento) {
+            const formattedDate = new Date(fechaAcontecimiento).toLocaleString('es-ES');
+            detallesTecnicos += `<li><strong>Fecha del Acontecimiento:</strong> ${formattedDate}</li>`;
+        }
+        if (contenidoMultimedia) {
+            detallesTecnicos += `<li><strong>Contenido Multimedia:</strong> ${contenidoMultimedia} (Archivo adjunto)</li>`;
+        } else {
+            detallesTecnicos += `<li><strong>Contenido Multimedia:</strong> No se adjuntó archivo.</li>`;
+        }
+
+        if (requestData.idHechoOriginal) {
+            detallesTecnicos += `<li><strong>ID Hecho Original:</strong> ${requestData.idHechoOriginal}</li>`;
+        }
+        detallesTecnicos += `</ul>`;
+
+        propuestaContent += detallesTecnicos;
+    }
+
+
+    // --- Estilos y Elementos de Estado ---
+    const statusClass = requestEstado === 'PENDIENTE'
+        ? 'bg-warning'
+        : (requestEstado.includes('APROBA') || requestEstado.includes('ACEPTA') ? 'bg-success' : 'bg-danger');
+
+    const modalTitleText = (requestEstado === 'PENDIENTE' ? `Revisar Solicitud de ${requestType}` : `Detalle de Resolución de ${requestType}`);
+
+
+    // --- Construcción del HTML Final ---
+    const modalBodyHtml = `
+        <div id="request-modal-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0">Tipo: <span class="badge bg-primary">${requestType}</span></h6>
+                <h6 class="fw-bold mb-0">Estado: <span class="badge ${statusClass}">${requestEstado}</span></h6>
+            </div>
+            <hr>
+            
+            <div class="card card-body bg-light mb-3">
+                ${propuestaContent}
+            </div>
+            
+            ${requestEstado !== 'PENDIENTE' ? `<hr><h6 class="fw-bold text-info">Resolución de Administración</h6><p>${detalleAdmin}</p>` : ''}
+            
+            <small class="text-muted d-block mt-3">ID Interno de Solicitud: ${requestData.id} | Solicitante ID: ${requestData.solicitanteId || requestData.visualizadorEditor || 'N/A'}</small>
+        </div>
+    `;
+
+    container.innerHTML = `
+        <div class="modal fade" id="request-detail-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+                <div class="modal-content rounded-4 shadow-lg border-0">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold">${modalTitleText}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        ${modalBodyHtml}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
                 </div>
             </div>
         </div>`;

@@ -2,6 +2,7 @@ package ar.utn.da.dsi.frontend.controllers;
 
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.ColeccionInputDTO;
+import ar.utn.da.dsi.frontend.client.dto.input.HechoInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.*;
 import ar.utn.da.dsi.frontend.services.colecciones.ColeccionService;
 import ar.utn.da.dsi.frontend.services.estadisticas.EstadisticasService;
@@ -65,7 +66,7 @@ public class AdminController {
         for (EdicionOutputDTO e : ediciones) {
           // Usamos el título propuesto o un identificador genérico
           String titulo = (e.getTituloPropuesto() != null) ? e.getTituloPropuesto() : "Edición Hecho ID " + e.getIdHechoOriginal();
-          listaUnificada.add(new SolicitudUnificadaDTO(e.getId(), titulo, "Edición", "PENDIENTE"));
+          listaUnificada.add(new SolicitudUnificadaDTO(e.getId(), titulo, "Edición", e.getEstado())); // Usamos e.getEstado()
         }
 
       } catch (Exception e) {
@@ -89,32 +90,84 @@ public class AdminController {
     return "admin";
   }
 
+  // Se eliminó resolverSolicitudUnificada, manteniendo los métodos específicos.
+
+  // --- MÉTODOS DE RESOLUCIÓN DE SOLICITUDES DE ELIMINACIÓN ---
   @PostMapping("/solicitudes/{id}/aprobar")
   public String aprobarSolicitud(@PathVariable("id") Integer id, Authentication authentication) {
     String adminId = authentication.getName();
     solicitudService.aceptar(id, adminId);
-    return "redirect:/admin?success=solicitud_aprobada";
+    return "redirect:/admin?success=solicitud_aprobada&tab=requests";
   }
 
   @PostMapping("/solicitudes/{id}/rechazar")
   public String rechazarSolicitud(@PathVariable("id") Integer id, Authentication authentication) {
     String adminId = authentication.getName();
     solicitudService.rechazar(id, adminId);
-    return "redirect:/admin?success=solicitud_rechazada";
+    return "redirect:/admin?success=solicitud_rechazada&tab=requests";
   }
+  // -------------------------------------------------------------
 
+  // --- MÉTODOS DE RESOLUCIÓN DE NUEVOS HECHOS PENDIENTES ---
   @PostMapping("/hechos/{id}/aprobar")
   public String aprobarHecho(@PathVariable("id") Long id) {
     hechoService.aprobar(id);
-    return "redirect:/admin?success=hecho_aprobado";
+    return "redirect:/admin?success=hecho_aprobado&tab=requests";
   }
 
   @PostMapping("/hechos/{id}/rechazar")
   public String rechazarHecho(@PathVariable("id") Long id) {
     hechoService.rechazar(id);
-    return "redirect:/admin?success=hecho_rechazado";
+    return "redirect:/admin?success=hecho_rechazado&tab=requests";
+  }
+  // --------------------------------------------------------
+
+  // --- MÉTODOS DE RESOLUCIÓN DE EDICIONES ---
+  @PostMapping("/ediciones/{id}/aceptar")
+  public String aceptarEdicion(@PathVariable("id") Long id) {
+    hechoService.aceptarEdicion(id);
+    return "redirect:/admin?success=edicion_aceptada&tab=requests";
   }
 
+  @PostMapping("/ediciones/{id}/rechazar")
+  public String rechazarEdicion(@PathVariable("id") Long id) {
+    hechoService.rechazarEdicion(id);
+    return "redirect:/admin?success=edicion_rechazada&tab=requests";
+  }
+  // ------------------------------------------
+
+  // --- NUEVOS ENDPOINTS DE API PARA OBTENER DETALLES COMPLETOS (Uso Interno del Frontend) ---
+
+  /**
+   * Endpoint para obtener el DTO de Edición completo (para 'Ver Solicitud').
+   */
+  @GetMapping("/api/ediciones/{id}")
+  @ResponseBody
+  public EdicionOutputDTO getEdicionDetalle(@PathVariable Long id) {
+    // Nota: El método buscarEdicionPorId llama al backend de Dinámica
+    return hechoService.buscarEdicionPorId(id);
+  }
+
+  /**
+   * Endpoint para obtener el DTO de Hecho completo (para 'Ver Solicitud' de Nuevo Hecho).
+   */
+  @GetMapping("/api/hechos/{id}")
+  @ResponseBody
+  public HechoInputDTO getHechoDetalle(@PathVariable Long id) {
+    // Nota: getHechoInputDTOporId obtiene el hecho y lo mapea al DTO de formulario.
+    return hechoService.getHechoInputDTOporId(id);
+  }
+
+  /**
+   * Endpoint para obtener el DTO de Solicitud de Eliminación completo (para 'Ver Solicitud').
+   */
+  @GetMapping("/api/solicitudes-eliminacion/{id}")
+  @ResponseBody
+  public SolicitudEliminacionOutputDTO getSolicitudEliminacionDetalle(@PathVariable Long id, Authentication authentication) {
+    String adminId = authentication.getName();
+    return solicitudService.obtenerPorId(id.intValue(), adminId);
+  }
+  // ------------------------------------------------------------------------------------------
 
   @GetMapping("/colecciones/nueva")
   public String mostrarFormularioNuevaColeccion(Model model) {
@@ -187,27 +240,6 @@ public class AdminController {
     }
 
     return "redirect:/admin";
-  }
-
-  @PostMapping("/ediciones/{id}/aceptar")
-  public String aceptarEdicion(@PathVariable("id") Long id) {
-    hechoService.aceptarEdicion(id);
-    return "redirect:/admin?success=edicion_aceptada";
-  }
-
-  @PostMapping("/ediciones/{id}/rechazar")
-  public String rechazarEdicion(@PathVariable("id") Long id) {
-    hechoService.rechazarEdicion(id);
-    return "redirect:/admin?success=edicion_rechazada";
-  }
-
-  @GetMapping("/api/ediciones/{id}")
-  @ResponseBody
-  public EdicionOutputDTO getEdicionDetalle(@PathVariable Long id) {
-    return hechoService.buscarEdicionesPendientes().stream()
-        .filter(e -> e.getId().equals(id))
-        .findFirst()
-        .orElse(null);
   }
 
   @GetMapping("/estadisticas")

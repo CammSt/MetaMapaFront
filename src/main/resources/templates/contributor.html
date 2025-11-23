@@ -158,30 +158,14 @@
                 if (btn) {
                     const requestId = btn.getAttribute('data-request-id');
                     const requestType = btn.getAttribute('data-request-type');
-                    const requestEstado = btn.getAttribute('data-request-estado');
+                    // El requestEstado ya no es estrictamente necesario, pero se mantiene en el botón.
 
+                    // Buscamos la solicitud/edición completa en el array
                     const requestData = allMyRequests.find(r => r.id == requestId && r.tipo === requestType);
 
                     if (requestData) {
-                        const modalContainer = document.getElementById('modal-container');
-
-                        modalContainer.innerHTML = document.getElementById('request-detail-modal-html').innerHTML;
-                        const modalBody = modalContainer.querySelector('#request-modal-body');
-
-                        // Llenar el cuerpo del modal con información del DTO
-                        modalBody.innerHTML = `
-                            <h6 class="fw-bold">Tipo: <span class="badge bg-secondary">${requestType}</span></h6>
-                            <h6 class="fw-bold">Estado: <span class="badge ${requestEstado === 'PENDIENTE' ? 'bg-warning' : (requestEstado === 'APROBADA' || requestEstado === 'ACEPTADO' || requestEstado === 'ACEPTADO_CON_SUGERENCIAS' ? 'bg-success' : 'bg-danger')}">${requestEstado}</span></h6>
-                            <hr>
-                            <p><strong>Título del Hecho:</strong> ${requestData.tituloDelHechoAEliminar}</p>
-                            ${requestData.motivo ? `<p><strong>Motivo/Propuesta:</strong> ${requestData.motivo}</p>` : ''}
-                            ${requestData.detalle ? `<p class="text-info fw-bold">Comentarios de Administración (Resolución):</p><p>${requestData.detalle}</p>` : ''}
-                            ${requestData.fechaCreacionSolicitud ? `<small class="text-muted">Fecha de Solicitud: ${new Date(requestData.fechaCreacionSolicitud).toLocaleDateString('es-AR')}</small>` : ''}
-                        `;
-
-                        const modalElement = modalContainer.querySelector('.modal');
-                        const modal = new bootstrap.Modal(modalElement);
-                        modal.show();
+                        // FIX: Usar la función global openModal con la nueva función de renderizado.
+                        openModal(renderRequestDetailModal, requestData);
 
                     } else {
                         alert("No se encontró el detalle de la solicitud.");
