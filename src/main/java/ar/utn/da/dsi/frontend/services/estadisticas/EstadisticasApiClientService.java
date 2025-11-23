@@ -65,33 +65,42 @@ public class EstadisticasApiClientService {
 
   // --- Métodos de Exportación (Devuelven URL para descarga) ---
 
-  // Exportar reporte completo (ZIP) - GET /estadisticas/exportar/todas
+  private String getBaseUrlSinPrefijoEstadisticas() {
+    if (estadisticasApiUrl.endsWith("/estadisticas")) {
+      // Retorna "http://localhost:8085"
+      return estadisticasApiUrl.substring(0, estadisticasApiUrl.length() - "/estadisticas".length());
+    }
+    return estadisticasApiUrl;
+  }
+
+  // Exportar reporte completo (ZIP) - GET /exportar/zip/todas
   public String getUrlExportarReporteCompletoZIP() {
-    return estadisticasApiUrl + "/exportar/todas";
+    // Resulta en: http://localhost:8085/exportar/zip/todas
+    return getBaseUrlSinPrefijoEstadisticas() + "/exportar/zip/todas";
   }
 
-  // 1) Exportar Provincia con más hechos por Colección (CSV) - GET /estadisticas/exportar/provincia_por_coleccion
+  // 1) Exportar Provincia por Colección (CSV) - GET /exportar/csv/provincia-por-coleccion
   public String getUrlExportarProvinciaColeccion() {
-    return estadisticasApiUrl + "/exportar/provincia_por_coleccion";
+    return getBaseUrlSinPrefijoEstadisticas() + "/exportar/csv/provincia-por-coleccion";
   }
 
-  // 2) Exportar Categoría con más hechos (CSV) - GET /estadisticas/exportar/categoria_mas_hechos
+  // 2) Exportar Categoría Global (CSV) - GET /exportar/csv/categoria-mas-hechos
   public String getUrlExportarCategoriasHechos() {
-    return estadisticasApiUrl + "/exportar/categoria_mas_hechos";
+    return getBaseUrlSinPrefijoEstadisticas() + "/exportar/csv/categoria-mas-hechos";
   }
 
-  // 3) Exportar Provincia con más hechos por Categoría (CSV) - GET /estadisticas/exportar/provincia_por_categoria
+  // 3) Exportar Provincia por Categoría (CSV) - GET /exportar/csv/provincia-por-categoria
   public String getUrlExportarProvinciaCategoria() {
-    return estadisticasApiUrl + "/exportar/provincia_por_categoria";
+    return getBaseUrlSinPrefijoEstadisticas() + "/exportar/csv/provincia-por-categoria";
   }
 
-  // 4) Exportar Hora con más hechos por Categoría (CSV) - GET /estadisticas/exportar/hora_por_categoria
+  // 4) Exportar Hora por Categoría (CSV) - GET /exportar/csv/hora-por-categoria
   public String getUrlExportarHoraCategoria() {
-    return estadisticasApiUrl + "/exportar/hora_por_categoria";
+    return getBaseUrlSinPrefijoEstadisticas() + "/exportar/csv/hora-por-categoria";
   }
 
-  // 5) Exportar Cantidad de Solicitudes Spam (CSV) - GET /estadisticas/exportar/spam
+  // 5) Exportar Solicitudes Spam (CSV) - GET /exportar/csv/spam
   public String getUrlExportarSpam() {
-    return estadisticasApiUrl + "/exportar/spam";
+    return getBaseUrlSinPrefijoEstadisticas() + "/exportar/csv/spam";
   }
 }

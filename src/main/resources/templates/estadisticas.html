@@ -49,14 +49,14 @@
             <!-- FIN MÉTRICAS GLOBALES -->
 
             <!-- DASHBOARD: MÉTICAS DINÁMICAS (1, 3 y 4) -->
-            <h4 class="fw-bold text-primary mb-3 mt-4 border-top pt-4">Dashboards Dinámicos (1, 3 y 4)</h4>
+            <h4 class="fw-bold text-primary mb-3 mt-4 border-top pt-4">Estadísticas dinámicas</h4>
 
             <div class="row g-4">
 
                 <!-- DASHBOARD 1: PROVINCIA CON MÁS HECHOS POR COLECCIÓN -->
                 <div class="col-12">
                     <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
-                        <h5 class="fw-bold text-info mb-3"><i class="bi bi-geo-alt-fill me-2"></i>1. Distribución por Provincia (por Colección)</h5>
+                        <h5 class="fw-bold text-info mb-3"><i class="bi bi-geo-alt-fill me-2"></i>Distribución  de hechos por Provincia según una Colección</h5>
                         <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
                             <input type="hidden" name="categoriaProvincia" th:value="${categoriaProvinciaSeleccionada}" th:if="${categoriaProvinciaSeleccionada}">
                             <input type="hidden" name="categoriaHora" th:value="${categoriaHoraSeleccionada}" th:if="${categoriaHoraSeleccionada}">
@@ -92,7 +92,7 @@
                 <!-- DASHBOARD 3: PROVINCIA CON MÁS HECHOS DE UNA CATEGORÍA -->
                 <div class="col-12">
                     <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
-                        <h5 class="fw-bold text-success mb-3"><i class="bi bi-map-fill me-2"></i>3. Distribución por Provincia (por Categoría)</h5>
+                        <h5 class="fw-bold text-success mb-3"><i class="bi bi-map-fill me-2"></i>3. Distribución de hechos por Provincia según una Categoría</h5>
                         <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
                             <input type="hidden" name="handleIdColeccion" th:value="${handleIdColeccionSeleccionada}" th:if="${handleIdColeccionSeleccionada}">
                             <input type="hidden" name="categoriaHora" th:value="${categoriaHoraSeleccionada}" th:if="${categoriaHoraSeleccionada}">
@@ -128,7 +128,7 @@
                 <!-- DASHBOARD 4: HORA CON MÁS HECHOS POR CATEGORÍA -->
                 <div class="col-12">
                     <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
-                        <h5 class="fw-bold text-warning mb-3"><i class="bi bi-clock-fill me-2"></i>4. Distribución por Hora (por Categoría)</h5>
+                        <h5 class="fw-bold text-warning mb-3"><i class="bi bi-clock-fill me-2"></i>4. Distribución de hechos por Hora según una Categoría</h5>
                         <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
                             <input type="hidden" name="handleIdColeccion" th:value="${handleIdColeccionSeleccionada}" th:if="${handleIdColeccionSeleccionada}">
                             <input type="hidden" name="categoriaProvincia" th:value="${categoriaProvinciaSeleccionada}" th:if="${categoriaProvinciaSeleccionada}">
@@ -168,32 +168,32 @@
             <div class="row g-3 mb-5">
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarProvinciaColeccion}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-download me-2"></i> Provincia por Colección (CSV)
+                        <i class="bi bi-download me-2"></i> Provincia por Colección - CSV
                     </a>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarCategoriaHechos}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-download me-2"></i> Categoría Global (CSV)
+                        <i class="bi bi-download me-2"></i> Categoría Global - CSV
                     </a>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarProvinciaCategoria}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-download me-2"></i> Provincia por Categoría (CSV)
+                        <i class="bi bi-download me-2"></i> Provincia por Categoría - CSV
                     </a>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarHoraCategoria}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-download me-2"></i> Hora por Categoría (CSV)
+                        <i class="bi bi-download me-2"></i> Hora por Categoría - CSV
                     </a>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlExportarSpam}" class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-download me-2"></i> Solicitudes Spam (CSV)
+                        <i class="bi bi-download me-2"></i> Solicitudes Spam - CSV
                     </a>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <a th:href="${urlZipCompleto}" class="btn btn-primary w-100 py-3 fw-bold rounded-3">
-                        <i class="bi bi-archive-fill me-2"></i> Exportar Reporte Completo (ZIP)
+                        <i class="bi bi-archive-fill me-2"></i> Exportar Reporte Completo - ZIP
                     </a>
                 </div>
             </div>
