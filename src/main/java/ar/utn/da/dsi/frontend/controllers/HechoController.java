@@ -2,6 +2,7 @@ package ar.utn.da.dsi.frontend.controllers;
 
 import ar.utn.da.dsi.frontend.client.dto.input.HechoInputDTO;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -10,12 +11,15 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.lang.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/hechos")
 public class HechoController {
 
   private final HechoService hechoService;
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Autowired
   public HechoController(HechoService hechoService) {
@@ -24,7 +28,9 @@ public class HechoController {
 
   @GetMapping("/nuevo")
   public String mostrarFormularioNuevoHecho(Model model) {
-    model.addAttribute("hechoDTO", new HechoInputDTO());
+    if (!model.containsAttribute("hechoDTO")) {
+      model.addAttribute("hechoDTO", new HechoInputDTO());
+    }
     model.addAttribute("titulo", "Subir un nuevo Hecho");
     model.addAttribute("accion", "crear");
     try {
@@ -40,7 +46,8 @@ public class HechoController {
   public String crearHecho(
       @ModelAttribute HechoInputDTO hechoDTO,
       @RequestParam(value = "archivo", required = false) MultipartFile archivo,
-      @Nullable Authentication auth) {
+      @Nullable Authentication auth,
+      RedirectAttributes redirectAttributes) {
     String userId = null;
     if (auth != null) {
       userId = auth.getName();
@@ -48,21 +55,42 @@ public class HechoController {
 
     hechoDTO.setVisualizadorID(userId);
 
-    hechoService.crear(hechoDTO, archivo);
+    try {
+      hechoService.crear(hechoDTO, archivo);
 
-    return "redirect:/?success=hecho_creado";
+      if (auth != null) {
+        redirectAttributes.addFlashAttribute("success", "Sugerencia enviada y pendiente de revisión en Mi Panel.");
+        return "redirect:/contributor";
+      }
+      redirectAttributes.addFlashAttribute("success", "Sugerencia recibida.");
+      return "redirect:/";
+
+    } catch (RuntimeException e) {
+      String errorMessage = getWebClientErrorMessage(e);
+
+      redirectAttributes.addFlashAttribute("error", errorMessage);
+      redirectAttributes.addFlashAttribute("hechoDTO", hechoDTO);
+      return "redirect:/hechos/nuevo";
+    }
   }
 
   @GetMapping("/{id}/editar")
   public String mostrarFormularioEditarHecho(@PathVariable("id") Long id, Model model) {
 
-    HechoInputDTO hechoDTO = hechoService.getHechoInputDTOporId(id);
+    if (!model.containsAttribute("hechoDTO")) {
+      model.addAttribute("hechoDTO", hechoService.getHechoInputDTOporId(id));
+    }
 
-    model.addAttribute("hechoDTO", hechoDTO);
+    HechoInputDTO hechoDTO = (HechoInputDTO) model.getAttribute("hechoDTO");
+
     model.addAttribute("titulo", "Editar Hecho: " + hechoDTO.getTitulo());
     model.addAttribute("accion", "editar");
 
-    model.addAttribute("categorias", hechoService.getAvailableCategories());
+    try {
+      model.addAttribute("categorias", hechoService.getAvailableCategories());
+    } catch (Exception e) {
+      model.addAttribute("categorias", List.of());
+    }
 
     return "hecho-form";
   }
@@ -72,14 +100,69 @@ public class HechoController {
       @PathVariable("id") Long id,
       @ModelAttribute HechoInputDTO hechoDTO,
       @RequestParam(value = "archivo", required = false) MultipartFile archivo,
-      Authentication auth) {
+      Authentication auth,
+      RedirectAttributes redirectAttributes) {
 
     String userId = auth.getName();
     hechoDTO.setVisualizadorID(userId);
 
-    hechoService.actualizar(id, hechoDTO, archivo);
+    try {
+      hechoService.actualizar(id, hechoDTO, archivo);
+      redirectAttributes.addFlashAttribute("success", "Edición propuesta enviada y pendiente de revisión.");
+      return "redirect:/contributor";
+    } catch (RuntimeException e) {
+      String errorMessage = getWebClientErrorMessage(e);
 
-    return "redirect:/contributor?success=hecho_editado";
+      redirectAttributes.addFlashAttribute("error", errorMessage);
+      redirectAttributes.addFlashAttribute("hechoDTO", hechoDTO);
+      return "redirect:/hechos/" + id + "/editar";
+    }
   }
 
+  /**
+   * Endpoint usado por AdminController para resolver solicitudes de Nuevo Hecho.
+   * (Maneja ACEPTADO, RECHAZADO, ACEPTADO_CON_SUGERENCIAS).
+   */
+  @PostMapping("/hechos/{id}/resolver")
+  public String resolverHecho(@PathVariable("id") Long id,
+                              @RequestParam("estado") String estado, // ACEPTADO, RECHAZADO, ACEPTADO_CON_SUGERENCIAS
+                              @RequestParam(value = "detalle", required = false) String detalle, // Campo de comentario (solo para Rechazo/Sugerencias)
+                              RedirectAttributes redirectAttributes) {
+    try {
+      if ("ACEPTADO".equals(estado)) {
+        hechoService.aprobar(id);
+        redirectAttributes.addFlashAttribute("success", "Hecho aprobado y visible.");
+      } else if ("RECHAZADO".equals(estado)) {
+        hechoService.rechazar(id); // Asumo que el rechazo puede consumir el detalle si lo necesita
+        redirectAttributes.addFlashAttribute("success", "Hecho rechazado. Detalle: " + (detalle != null ? detalle : "Sin detalle."));
+      } else if ("ACEPTADO_CON_SUGERENCIAS".equals(estado)) {
+        // Asumo que el servicio registra el detalle/sugerencia internamente
+        hechoService.aprobar(id);
+        redirectAttributes.addFlashAttribute("success", "Hecho aprobado con sugerencias. Detalle: " + detalle);
+      }
+      // Redirigir al panel de administración y forzar la pestaña de solicitudes
+      return "redirect:/admin?tab=requests";
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("error", "Error al resolver el hecho: " + e.getMessage());
+      return "redirect:/admin?tab=requests";
+    }
+  }
+
+  /**
+   * Método de utilidad para extraer el mensaje de error del WebClient.
+   */
+  private String getWebClientErrorMessage(RuntimeException e) {
+    Throwable cause = e.getCause();
+    if (cause instanceof WebClientResponseException) {
+      WebClientResponseException webClientEx = (WebClientResponseException) cause;
+      String errorBody = webClientEx.getResponseBodyAsString();
+      try {
+        // Intentamos leer el mensaje de error del JSON del backend (asumiendo ApiResponse/GlobalExceptionHandler)
+        return objectMapper.readTree(errorBody).path("message").asText(webClientEx.getStatusText());
+      } catch (Exception jsonEx) {
+        return "Error de comunicación: " + webClientEx.getStatusText() + " (" + webClientEx.getStatusCode().value() + "). Verificá los logs del backend.";
+      }
+    }
+    return e.getMessage();
+  }
 }

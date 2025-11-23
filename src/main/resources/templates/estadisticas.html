@@ -15,7 +15,7 @@
         <div class="card-body p-4">
 
             <!-- DASHBOARD: MÉTRICAS GLOBALES (2 y 5) -->
-            <h4 class="fw-bold text-primary mb-3">Métricas Globales (2 y 5)</h4>
+            <h4 class="fw-bold text-primary mb-3">Métricas Globales</h4>
             <div class="row g-4 mb-5">
 
                 <!-- Métrica 2: Distribución de Categorías -->
@@ -49,7 +49,7 @@
             <!-- FIN MÉTRICAS GLOBALES -->
 
             <!-- DASHBOARD: MÉTICAS DINÁMICAS (1, 3 y 4) -->
-            <h4 class="fw-bold text-primary mb-3 mt-4 border-top pt-4">Estadísticas dinámicas</h4>
+            <h4 class="fw-bold text-primary mb-3 mt-4 border-top pt-4">Métricas dinámicas</h4>
 
             <div class="row g-4">
 
@@ -92,7 +92,7 @@
                 <!-- DASHBOARD 3: PROVINCIA CON MÁS HECHOS DE UNA CATEGORÍA -->
                 <div class="col-12">
                     <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
-                        <h5 class="fw-bold text-success mb-3"><i class="bi bi-map-fill me-2"></i>3. Distribución de hechos por Provincia según una Categoría</h5>
+                        <h5 class="fw-bold text-success mb-3"><i class="bi bi-map-fill me-2"></i>Distribución de hechos por Provincia según una Categoría</h5>
                         <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
                             <input type="hidden" name="handleIdColeccion" th:value="${handleIdColeccionSeleccionada}" th:if="${handleIdColeccionSeleccionada}">
                             <input type="hidden" name="categoriaHora" th:value="${categoriaHoraSeleccionada}" th:if="${categoriaHoraSeleccionada}">
@@ -128,7 +128,7 @@
                 <!-- DASHBOARD 4: HORA CON MÁS HECHOS POR CATEGORÍA -->
                 <div class="col-12">
                     <div class="card shadow-sm border-0 rounded-3 p-3 bg-white">
-                        <h5 class="fw-bold text-warning mb-3"><i class="bi bi-clock-fill me-2"></i>4. Distribución de hechos por Hora según una Categoría</h5>
+                        <h5 class="fw-bold text-warning mb-3"><i class="bi bi-clock-fill me-2"></i>Distribución de hechos por Hora según una Categoría</h5>
                         <form th:action="@{/admin/estadisticas}" method="get" class="row g-3">
                             <input type="hidden" name="handleIdColeccion" th:value="${handleIdColeccionSeleccionada}" th:if="${handleIdColeccionSeleccionada}">
                             <input type="hidden" name="categoriaProvincia" th:value="${categoriaProvinciaSeleccionada}" th:if="${categoriaProvinciaSeleccionada}">

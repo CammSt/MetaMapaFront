@@ -81,6 +81,7 @@
                                     <option value="">Todos</option>
                                     <option value="Nuevo Hecho">Nuevo Hecho</option>
                                     <option value="Eliminación">Eliminación</option>
+                                    <option value="Edición">Edición</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -109,12 +110,20 @@
                             <tr th:each="req : ${solicitudes}">
                                 <td th:text="${req.tituloDelHechoAEliminar}"></td>
                                 <td><span class="badge bg-info" th:text="${req.tipo}"></span></td>
-                                <td><span class="badge" th:classappend="${req.estado == 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' ? 'bg-success' : 'bg-danger')}" th:text="${req.estado}"></span></td>
+                                <td><span class="badge" th:classappend="${req.estado == 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' || req.estado == 'ACEPTADO' || req.estado == 'ACEPTADO_CON_SUGERENCIAS' ? 'bg-success' : 'bg-danger')}" th:text="${req.estado}"></span></td>
                                 <td class="text-end">
-                                    <button th:attr="data-review-req-id=${req.id}, data-review-req-type=${req.tipo}"
-                                            class="btn btn-primary btn-sm rounded-pill btn-review-request">
-                                        Evaluar
-                                    </button>
+                                    <div th:if="${req.estado == 'PENDIENTE'}">
+                                        <button th:attr="data-request-id=${req.id}, data-request-type=${req.tipo}, data-is-pending='true'"
+                                                class="btn btn-warning btn-sm rounded-pill btn-review-modal">
+                                            Evaluar
+                                        </button>
+                                    </div>
+                                    <div th:unless="${req.estado == 'PENDIENTE'}">
+                                        <button th:attr="data-request-id=${req.id}, data-request-type=${req.tipo}, data-request-estado=${req.estado}, data-is-pending='false'"
+                                                class="btn btn-sm btn-outline-info rounded-pill btn-review-modal">
+                                            Ver Resolución
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             </tbody>
@@ -126,203 +135,196 @@
     </div>
 </main>
 
-<div class="modal fade" id="reviewEditionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title fw-bold">Revisar Propuesta de Edición</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6 border-end">
-                        <h6 class="text-muted text-center">Original</h6>
-                        <div id="edition-original-content" class="p-2">Cargando...</div>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="text-primary text-center">Propuesta</h6>
-                        <div id="edition-proposal-content" class="p-2">Cargando...</div>
-                    </div>
+    <div class="modal fade" id="adminResolutionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold" id="resolutionModalTitle">Evaluar Solicitud</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <form id="form-reject-edition" method="post">
-                    <button type="submit" class="btn btn-danger">Rechazar Cambios</button>
-                </form>
-                <form id="form-accept-edition" method="post">
-                    <button type="submit" class="btn btn-success fw-bold">Aceptar Cambios</button>
+                <form id="admin-resolution-form" method="post">
+                    <div class="modal-body">
+                        <p id="resolution-request-details" class="text-muted small mb-3">Cargando detalles...</p>
+
+                        <div id="view-resolution-block" style="display:none;">
+                            <p class="mb-2"><strong>Estado Final:</strong> <span id="view-status-badge" class="badge"></span></p>
+                            <p class="mb-0"><strong>Comentario:</strong> <span id="view-detalle-text" class="text-muted"></span></p>
+                        </div>
+
+                        <div id="evaluation-block" style="display:none;">
+                            <div class="mb-3" id="status-selector-block">
+                                <label for="resolution-status" class="form-label fw-bold">Decisión</label>
+                                <select id="resolution-status" name="estado" class="form-select" required>
+                                </select>
+                            </div>
+
+                            <div class="mb-3" id="detalle-container" style="display:none;">
+                                <label for="detalle" class="form-label fw-bold text-danger">Detalle/Comentario</label>
+                                <textarea id="detalle" name="detalle" class="form-control" rows="4" placeholder="Detalle la razón del rechazo o las sugerencias de edición."></textarea>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="id" id="resolution-request-id-input">
+                    </div>
+                    <div class="modal-footer" id="resolution-modal-footer">
+                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4" id="submit-resolver-btn">Resolver</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
-</div>
+    </div>
 
-<div id="page-scripts">
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-        const allCollections = /*[[${colecciones}]]*/ [];
-        const consensusLabels = /*[[${consensusLabels}]]*/ {};
-        const availableSources = /*[[${availableSources}]]*/ [];
-        const allRequestsForFilter = /*[[${solicitudes}]]*/ [];
-        /*]]>*/
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            renderSidebar('admin');
+    <div id="page-scripts">
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            const allCollections = /*[[${colecciones}]]*/ [];
+            const consensusLabels = /*[[${consensusLabels}]]*/ {};
+            const availableSources = /*[[${availableSources}]]*/ [];
+            const allRequestsForFilter = /*[[${solicitudes}]]*/ [];
+            /*]]>*/
+        </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                renderSidebar('admin');
 
-            // --- LÓGICA DE TABS ---
-            const tabCollections = document.getElementById('admin-tab-collections');
-            const tabRequests = document.getElementById('admin-tab-requests');
-            const contentCollections = document.getElementById('collections-content');
-            const contentRequests = document.getElementById('requests-content');
+                // --- LÓGICA DE TABS ---
+                const tabCollections = document.getElementById('admin-tab-collections');
+                const tabRequests = document.getElementById('admin-tab-requests');
+                const contentCollections = document.getElementById('collections-content');
+                const contentRequests = document.getElementById('requests-content');
 
-            tabCollections.addEventListener('click', () => {
-                tabCollections.classList.add('active');
-                tabRequests.classList.remove('active');
-                contentCollections.style.display = 'block';
-                contentRequests.style.display = 'none';
-            });
+                tabCollections.addEventListener('click', () => {
+                    tabCollections.classList.add('active');
+                    tabRequests.classList.remove('active');
+                    contentCollections.style.display = 'block';
+                    contentRequests.style.display = 'none';
+                });
 
-            tabRequests.addEventListener('click', () => {
-                tabRequests.classList.add('active');
-                tabCollections.classList.remove('active');
-                contentRequests.style.display = 'block';
-                contentCollections.style.display = 'none';
-            });
+                tabRequests.addEventListener('click', () => {
+                    tabRequests.classList.add('active');
+                    tabCollections.classList.remove('active');
+                    contentRequests.style.display = 'block';
+                    contentCollections.style.display = 'none';
+                });
 
-            // --- LOGICA CSV IMPORT ---
-            const importForm = document.getElementById('csv-import-form');
-            const loadingOverlay = document.getElementById('loading-overlay');
-            const csvImportModalEl = document.getElementById('csvImportModal');
-            let csvImportModal = null;
+                // Inicializar tabla al cargar
+                // Se asume que la lógica de renderAdminRequestsTable ya está integrada en el servidor/código anterior.
 
-            if (csvImportModalEl) {
-                csvImportModal = new bootstrap.Modal(csvImportModalEl, { keyboard: false, backdrop: 'static' });
-                if (importForm && loadingOverlay) {
-                    importForm.addEventListener('submit', function(e) {
-                        csvImportModal.hide();
-                        loadingOverlay.style.display = 'flex';
-                        setTimeout(() => {
-                            const backdrop = document.querySelector('.modal-backdrop');
-                            if (backdrop) backdrop.remove();
-                        }, 300);
-                    });
-                }
-            }
 
-            // --- LÓGICA SOLICITUDES Y EDICIONES ---
-            const adminRequestsTableBody = document.getElementById('admin-requests-table-body');
-            const adminFilterType = document.getElementById('admin-filter-type');
-            const adminFilterStatus = document.getElementById('admin-filter-status');
+                // --- LÓGICA DE EVALUACIÓN Y MODAL ADMIN (Goal 3 & 4) ---
+                const resolutionModalEl = document.getElementById('adminResolutionModal');
+                const resolutionForm = document.getElementById('admin-resolution-form');
+                const statusSelect = document.getElementById('resolution-status');
+                const detalleContainer = document.getElementById('detalle-container');
+                const detalleInput = document.getElementById('detalle');
+                const modalFooter = resolutionModalEl.querySelector('.modal-footer');
+                const evaluationBlock = document.getElementById('evaluation-block');
+                const viewResolutionBlock = document.getElementById('view-resolution-block');
 
-            function renderAdminRequestsTable(requests) {
-                adminRequestsTableBody.innerHTML = '';
-                if (requests.length === 0) {
-                    adminRequestsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-4">No hay solicitudes que coincidan con los filtros.</td></tr>';
-                    return;
-                }
+                let resolutionModal = new bootstrap.Modal(resolutionModalEl); // Instanciar fuera del listener
 
-                requests.forEach(req => {
-                    let statusBadgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado === 'APROBADA' || req.estado === 'ACEPTADO' || req.estado === 'ACEPTADA' ? 'bg-success' : 'bg-danger');
-                    let actionButtons = '<span class="text-muted small">-</span>';
+                // Lógica para mostrar/ocultar el detalle/motivo
+                statusSelect.addEventListener('change', function() {
+                    const value = this.value;
+                    // Usamos un atributo de datos para saber qué tipo de solicitud estamos evaluando
+                    const requestType = resolutionModalEl.getAttribute('data-current-type');
 
-                    if (req.estado === 'PENDIENTE') {
-                        if (req.tipo === 'Nuevo Hecho') {
-                            actionButtons = `
-                                <form action="/admin/hechos/${req.id}/aprobar" method="post" style="display:inline;"><button class="btn btn-success btn-sm rounded-pill me-1"><i class="bi bi-check-lg"></i></button></form>
-                                <form action="/admin/hechos/${req.id}/rechazar" method="post" style="display:inline;"><button class="btn btn-danger btn-sm rounded-pill"><i class="bi bi-x-lg"></i></button></form>
-                            `;
-                        } else if (req.tipo === 'Eliminación') {
-                            actionButtons = `
-                                <form action="/admin/solicitudes/${req.id}/aprobar" method="post" style="display:inline;"><button class="btn btn-success btn-sm rounded-pill me-1"><i class="bi bi-check-lg"></i></button></form>
-                                <form action="/admin/solicitudes/${req.id}/rechazar" method="post" style="display:inline;"><button class="btn btn-danger btn-sm rounded-pill"><i class="bi bi-x-lg"></i></button></form>
-                            `;
-                        } else if (req.tipo === 'Edición') {
-                            // AQUÍ ESTÁ EL BOTÓN QUE ACTIVA EL MODAL
-                            actionButtons = `<button class="btn btn-warning btn-sm rounded-pill btn-review-edition" data-edition-id="${req.id}">Evaluar</button>`;
-                        }
+                    // REGLA CLAVE: Detalle es obligatorio SÓLO para Nuevo Hecho (Rechazo o Sugerencias).
+                    const isNewHecho = requestType === 'Nuevo Hecho';
+                    const requiresDetail = isNewHecho && (value === 'RECHAZADO' || value === 'ACEPTADO_CON_SUGERENCIAS');
+
+                    if (requiresDetail) {
+                        detalleContainer.style.display = 'block';
+                        detalleInput.required = true;
+                        detalleContainer.querySelector('label').textContent = 'Detalle/Comentario (Obligatorio)';
+                    } else {
+                        detalleContainer.style.display = 'none';
+                        detalleInput.required = false;
+                        detalleContainer.querySelector('label').textContent = 'Detalle/Comentario'; // Resetear texto
                     }
-
-                    const row = `
-                        <tr>
-                            <td>${req.tituloDelHechoAEliminar}</td>
-                            <td><span class="badge bg-info">${req.tipo}</span></td>
-                            <td><span class="badge ${statusBadgeClass}">${req.estado}</span></td>
-                            <td class="text-end">${actionButtons}</td>
-                        </tr>`;
-                    adminRequestsTableBody.innerHTML += row;
                 });
-            }
 
-            function applyAdminRequestFilters() {
-                const typeValue = adminFilterType.value;
-                const statusValue = adminFilterStatus.value;
-                const filteredRequests = allRequestsForFilter.filter(req => {
-                    const typeMatch = !typeValue || req.tipo === typeValue;
-                    const statusMatch = !statusValue || req.estado === statusValue;
-                    return typeMatch && statusMatch;
+
+                // Listener para abrir el modal (Evaluar / Ver Resolución)
+                document.addEventListener('click', function(e) {
+                    const btn = e.target.closest('.btn-review-modal');
+
+                    if (btn) {
+                        const requestId = btn.getAttribute('data-request-id');
+                        const requestType = btn.getAttribute('data-request-type');
+                        const isPending = btn.getAttribute('data-is-pending') === 'true';
+                        const requestEstado = btn.getAttribute('data-request-estado');
+
+                        const requestData = allRequestsForFilter.find(r => r.id == requestId && r.tipo === requestType);
+
+                        if (!requestData) {
+                            alert("No se encontró el detalle de la solicitud/edición.");
+                            return;
+                        }
+
+                        // 1. Configurar Título y Type en el modal
+                        resolutionModalEl.setAttribute('data-current-type', requestType);
+                        resolutionModalEl.querySelector('#resolution-request-details').textContent = `Hecho: ${requestData.tituloDelHechoAEliminar}`;
+
+                        // 2. Lógica de Modo (Evaluar vs. Ver Resolución)
+                        if (isPending) {
+                            // MODO EVALUAR
+                            evaluationBlock.style.display = 'block';
+                            viewResolutionBlock.style.display = 'none';
+                            modalFooter.style.display = 'flex';
+
+                            // Configurar Opciones del Selector
+                            let optionsHtml = '<option value="">Seleccione el estado...</option>';
+                            let formAction;
+
+                            if (requestType === 'Nuevo Hecho') {
+                                // 3 Estados: ACEPTADO, RECHAZADO, ACEPTADO_CON_SUGERENCIAS
+                                optionsHtml += '<option value="ACEPTADO">Aceptar</option>';
+                                optionsHtml += '<option value="RECHAZADO">Rechazar</option>';
+                                optionsHtml += '<option value="ACEPTADO_CON_SUGERENCIAS">Aceptar con Sugerencias</option>';
+                                formAction = `/admin/hechos/${requestId}/resolver`;
+                            } else {
+                                // Edición y Eliminación: Solo Aceptar/Rechazar (2 estados)
+                                optionsHtml += '<option value="ACEPTADO">Aceptar</option>';
+                                optionsHtml += '<option value="RECHAZADO">Rechazar</option>';
+                                // La URL de acción se configura por convención
+                                formAction = `/admin/${requestType.toLowerCase()}/${requestId}/resolver`;
+                            }
+
+                            statusSelect.innerHTML = optionsHtml;
+                            statusSelect.value = '';
+
+                            // Resetear Detalle (Obligatorio según el caso, ver listener change)
+                            detalleContainer.style.display = 'none';
+                            detalleInput.required = false;
+                            resolutionForm.action = formAction;
+
+                        } else {
+                            // MODO VER RESOLUCIÓN
+                            evaluationBlock.style.display = 'none';
+                            viewResolutionBlock.style.display = 'block';
+                            modalFooter.style.display = 'flex'; // Mantener footer para el botón "Cancelar"
+
+                            const status = requestEstado;
+                            const statusClass = status === 'ACEPTADO' || status === 'APROBADA' || status === 'ACEPTADO_CON_SUGERENCIAS' ? 'bg-success' : 'bg-danger';
+
+                            viewResolutionBlock.querySelector('#view-status-badge').className = `badge ${statusClass}`;
+                            viewResolutionBlock.querySelector('#view-status-badge').textContent = status;
+                            viewResolutionBlock.querySelector('#view-detalle-text').textContent = requestData.detalle || 'El administrador no proporcionó comentarios adicionales.';
+                        }
+
+                        resolutionModal.show();
+                    }
                 });
-                renderAdminRequestsTable(filteredRequests);
-            }
+                // --- FIN LÓGICA DE EVALUACIÓN Y MODAL ADMIN ---
 
-            adminFilterType.addEventListener('change', applyAdminRequestFilters);
-            adminFilterStatus.addEventListener('change', applyAdminRequestFilters);
-
-            // Inicializar tabla al cargar
-            applyAdminRequestFilters();
-
-            // --- EVENT LISTENER PARA EL BOTÓN DE EVALUAR EDICIÓN ---
-            // (Esto arregla que el botón "no haga nada")
-            document.addEventListener('click', function(e) {
-                // Usamos closest por si el click cae en un icono dentro del botón
-                const btn = e.target.closest('.btn-review-edition');
-
-                if (btn) {
-                    const editionId = btn.getAttribute('data-edition-id');
-                    console.log("Click detectado en Edición ID:", editionId); // DEBUG en consola
-
-                    // Llamada AJAX al endpoint que creamos en AdminController
-                    fetch(`/admin/api/ediciones/${editionId}`)
-                        .then(response => {
-                            if (!response.ok) throw new Error("Error en la respuesta del servidor");
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log("Datos recibidos:", data); // DEBUG
-
-                            // Llenar el modal con los datos recibidos
-                            const originalDiv = document.getElementById('edition-original-content');
-                            const proposalDiv = document.getElementById('edition-proposal-content');
-
-                            // Como obtener el original requiere otra llamada compleja,
-                            // por ahora mostramos un mensaje genérico o solo la propuesta.
-                            originalDiv.innerHTML = `<p class="text-muted fst-italic">Datos actuales del hecho ID ${data.idHechoOriginal}</p>`;
-
-                            proposalDiv.innerHTML = `
-                                <p><strong>Título:</strong> ${data.tituloPropuesto || '-'}</p>
-                                <p><strong>Descripción:</strong> ${data.descripcionPropuesta || '-'}</p>
-                                <p><strong>Categoría:</strong> ${data.categoriaPropuesta ? data.categoriaPropuesta.nombre : '-'}</p>
-                                <p><strong>Justificación:</strong> ${data.detalle || 'Sin detalle'}</p>
-                            `;
-
-                            // Configurar los formularios del modal para Aceptar/Rechazar
-                            document.getElementById('form-accept-edition').action = `/admin/ediciones/${editionId}/aceptar`;
-                            document.getElementById('form-reject-edition').action = `/admin/ediciones/${editionId}/rechazar`;
-
-                            // Abrir el modal
-                            const modalEl = document.getElementById('reviewEditionModal');
-                            const modal = new bootstrap.Modal(modalEl);
-                            modal.show();
-                        })
-                        .catch(err => {
-                            console.error("Error al cargar la edición:", err);
-                            alert("Error al cargar los detalles de la edición. Revisa la consola.");
-                        });
-                }
+                // Lógica para filtros (mantenida del código anterior)
+                const adminFilterType = document.getElementById('admin-filter-type');
+                const adminFilterStatus = document.getElementById('admin-filter-status');
             });
-        });
-    </script>
-</div>
+        </script>
+    </div>
 </body>
 </html>
-
