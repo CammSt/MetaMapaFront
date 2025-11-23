@@ -1,9 +1,9 @@
 package ar.utn.da.dsi.frontend.services.estadisticas;
 
-import ar.utn.da.dsi.frontend.client.dto.output.CategoriaMasReportadaDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaMasHechosPorColeccionDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorCategoriaDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.HoraHechosPorCategoriaDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.CategoriaReportadaListDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorColeccionListDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorCategoriaListDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.HoraHechosPorCategoriaListDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.SolicitudSpamDTO;
 import ar.utn.da.dsi.frontend.services.ApiClientService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,37 +24,42 @@ public class EstadisticasApiClientService {
   }
   // --- Nuevas Métricas Específicas (Corresponden a /estadisticas/* en el agregador) ---
 
-  // 1) Provincia con más hechos por colección
-  public ProvinciaMasHechosPorColeccionDTO getProvinciaConMasHechos(String handleId) {
-    String url = estadisticasApiUrl + "/" + handleId + "/provincia-mas-hechos";
-    return apiClientService.get(url, ProvinciaMasHechosPorColeccionDTO.class);
+  // Métrica 1: Distribución de provincias por colección
+  // GET /estadisticas/{handleId}/distribucion-provincias
+  public ProvinciaHechosPorColeccionListDTO getDistribucionProvincias(String handleId) {
+    String url = estadisticasApiUrl + "/" + handleId + "/distribucion-provincias";
+    return apiClientService.get(url, ProvinciaHechosPorColeccionListDTO.class);
   }
 
-  // 2) Categoría con más hechos
-  public CategoriaMasReportadaDTO getCategoriaConMasHechos() {
-    String url = estadisticasApiUrl + "/categoria-mas-reportada";
-    return apiClientService.get(url, CategoriaMasReportadaDTO.class);
+  // Métrica 2: Distribución de categorías global
+  // GET /estadisticas/distribucion-categorias
+  public CategoriaReportadaListDTO getDistribucionCategorias() {
+    String url = estadisticasApiUrl + "/distribucion-categorias";
+    return apiClientService.get(url, CategoriaReportadaListDTO.class);
   }
 
-  // 3) Provincia con más hechos por categoría
-  public ProvinciaHechosPorCategoriaDTO getProvinciaConMasHechosSegunCategoria(String categoria) {
-    String url = UriComponentsBuilder.fromHttpUrl(estadisticasApiUrl + "/provincia-mas-hechos-por-categoria")
+  // Métrica 3: Distribución de provincias por categoría
+  // GET /estadisticas/distribucion-provincias-por-categoria?categoria={nombre}
+  public ProvinciaHechosPorCategoriaListDTO getDistribucionProvinciasPorCategoria(String categoria) {
+    String url = UriComponentsBuilder.fromHttpUrl(estadisticasApiUrl + "/distribucion-provincias-por-categoria")
         .queryParam("categoria", categoria)
         .toUriString();
-    return apiClientService.get(url, ProvinciaHechosPorCategoriaDTO.class);
+    return apiClientService.get(url, ProvinciaHechosPorCategoriaListDTO.class);
   }
 
-  // 4) Hora con más hechos por categoría
-  public HoraHechosPorCategoriaDTO getHoraConMasHechosSegunCategoria(String categoria) {
-    String url = UriComponentsBuilder.fromHttpUrl(estadisticasApiUrl + "/hora-mas-hechos")
+  // Métrica 4: Distribución de horas por categoría
+  // GET /estadisticas/distribucion-horas-por-categoria?categoria={nombre}
+  public HoraHechosPorCategoriaListDTO getDistribucionHorasPorCategoria(String categoria) {
+    String url = UriComponentsBuilder.fromHttpUrl(estadisticasApiUrl + "/distribucion-horas-por-categoria")
         .queryParam("categoria", categoria)
         .toUriString();
-    return apiClientService.get(url, HoraHechosPorCategoriaDTO.class);
+    return apiClientService.get(url, HoraHechosPorCategoriaListDTO.class);
   }
 
-  // 5) Cantidad de solicitudes spam
-  public SolicitudSpamDTO getCantidadDeSolicitudesSpam() {
-    String url = estadisticasApiUrl + "/solicitudes-spam";
+  // Métrica 5: Ratio de solicitudes de spam
+  // GET /estadisticas/solicitudes-spam-ratio
+  public SolicitudSpamDTO getSolicitudesSpamRatio() {
+    String url = estadisticasApiUrl + "/solicitudes-spam-ratio";
     return apiClientService.get(url, SolicitudSpamDTO.class);
   }
 

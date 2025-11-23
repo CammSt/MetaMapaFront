@@ -2,9 +2,9 @@ package ar.utn.da.dsi.frontend.controllers;
 
 import ar.utn.da.dsi.frontend.client.dto.input.ColeccionInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.ColeccionOutputDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.HoraHechosPorCategoriaDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorCategoriaDTO;
-import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaMasHechosPorColeccionDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.HoraHechosPorCategoriaListDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorCategoriaListDTO;
+import ar.utn.da.dsi.frontend.client.dto.output.ProvinciaHechosPorColeccionListDTO;
 import ar.utn.da.dsi.frontend.services.colecciones.ColeccionService;
 import ar.utn.da.dsi.frontend.services.estadisticas.EstadisticasService;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
@@ -182,48 +182,48 @@ public class AdminController {
 
     // 2. Cargar Métricas Fijas (2 y 5)
     try {
-      model.addAttribute("categoriaMasReportada", estadisticasService.getCategoriaMasReportada());
-      model.addAttribute("solicitudesSpam", estadisticasService.getCantidadDeSolicitudesSpam());
+      model.addAttribute("distribucionCategorias", estadisticasService.getDistribucionCategorias());
+      model.addAttribute("spamRatio", estadisticasService.getSolicitudesSpamRatio());
     } catch (Exception e) {
       // Dejar como null si falla, la vista maneja el error
     }
 
     // 3. Cargar Métricas Parametrizadas (1, 3, 4) si los parámetros están presentes
 
-    // Métrica 1: Provincia con más hechos por Colección
+    // Métrica 1: Distribución de provincias por colección
     if (handleIdColeccion != null && !handleIdColeccion.isEmpty()) {
       try {
-        ProvinciaMasHechosPorColeccionDTO resultado = estadisticasService.getProvinciaMasHechosPorColeccion(handleIdColeccion);
+        ProvinciaHechosPorColeccionListDTO resultado = estadisticasService.getDistribucionProvinciasPorColeccion(handleIdColeccion);
         model.addAttribute("resultadoProvinciaColeccion", resultado);
         model.addAttribute("handleIdColeccionSeleccionada", handleIdColeccion);
       } catch (Exception e) {
-        model.addAttribute("errorProvinciaColeccion", "Error al cargar la estadística por colección.");
+        model.addAttribute("errorProvinciaColeccion", "Error al cargar la distribución de hechos por colección. Asegúrese de que existen datos calculados.");
       }
     }
 
-    // Métrica 3: Provincia con más hechos por Categoría
+    // Métrica 3: Distribución de provincias por categoría
     if (categoriaProvincia != null && !categoriaProvincia.isEmpty()) {
       try {
-        ProvinciaHechosPorCategoriaDTO resultado = estadisticasService.getProvinciaMasHechosPorCategoria(categoriaProvincia);
+        ProvinciaHechosPorCategoriaListDTO resultado = estadisticasService.getDistribucionProvinciasPorCategoria(categoriaProvincia);
         model.addAttribute("resultadoProvinciaCategoria", resultado);
         model.addAttribute("categoriaProvinciaSeleccionada", categoriaProvincia);
       } catch (Exception e) {
-        model.addAttribute("errorProvinciaCategoria", "Error al cargar la estadística de provincia por categoría.");
+        model.addAttribute("errorProvinciaCategoria", "Error al cargar la distribución de provincia por categoría. Asegúrese de que existen datos calculados.");
       }
     }
 
-    // Métrica 4: Hora con más hechos por Categoría
+    // Métrica 4: Distribución de horas por categoría
     if (categoriaHora != null && !categoriaHora.isEmpty()) {
       try {
-        HoraHechosPorCategoriaDTO resultado = estadisticasService.getHoraMasHechosPorCategoria(categoriaHora);
+        HoraHechosPorCategoriaListDTO resultado = estadisticasService.getDistribucionHorasPorCategoria(categoriaHora);
         model.addAttribute("resultadoHoraCategoria", resultado);
         model.addAttribute("categoriaHoraSeleccionada", categoriaHora);
       } catch (Exception e) {
-        model.addAttribute("errorHoraCategoria", "Error al cargar la estadística de hora por categoría.");
+        model.addAttribute("errorHoraCategoria", "Error al cargar la distribución de hora por categoría. Asegúrese de que existen datos calculados.");
       }
     }
 
-    // 4. URLs de Exportación (necesarias para los botones)
+    // 4. URLs de Exportación
     model.addAttribute("urlZipCompleto", estadisticasService.getExportUrlZipCompleto());
     model.addAttribute("urlExportarProvinciaColeccion", estadisticasService.getExportUrlProvinciaColeccion());
     model.addAttribute("urlExportarCategoriaHechos", estadisticasService.getExportUrlCategoriaHechos());
