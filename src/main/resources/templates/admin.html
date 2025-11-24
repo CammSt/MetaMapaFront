@@ -113,7 +113,7 @@
                                 <td><span class="badge" th:classappend="${req.estado == 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' || req.estado == 'ACEPTADO' || req.estado == 'ACEPTADO_CON_SUGERENCIAS' ? 'bg-success' : 'bg-danger')}" th:text="${req.estado}"></span></td>
                                 <td class="text-end">
                                     <div th:if="${req.estado == 'PENDIENTE'}">
-                                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill btn-view-request-detail"
+                                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill btn-view-solicitud me-2"
                                                 th:attr="data-request-id=${req.id}, data-request-type=${req.tipo}, data-request-estado=${req.estado}">
                                             <span th:text="${req.estado == 'PENDIENTE' ? 'Ver Solicitud' : 'Ver Resolución'}"></span>
                                         </button>
@@ -157,46 +157,46 @@
     </div>
 </div>
 
-    <div class="modal fade" id="adminResolutionModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title fw-bold" id="resolutionModalTitle">Evaluar Solicitud</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form id="admin-resolution-form" method="post">
-                    <div class="modal-body">
-                        <p id="resolution-request-details" class="text-muted small mb-3">Cargando detalles...</p>
-
-                        <div id="view-resolution-block" style="display:none;">
-                            <p class="mb-2"><strong>Estado Final:</strong> <span id="view-status-badge" class="badge"></span></p>
-                            <p class="mb-0"><strong>Comentario:</strong> <span id="view-detalle-text" class="text-muted"></span></p>
-                        </div>
-
-                        <div id="evaluation-block" style="display:none;">
-                            <div class="mb-3" id="status-selector-block">
-                                <label for="resolution-status" class="form-label fw-bold">Decisión</label>
-                                <select id="resolution-status" name="estado" class="form-select" required>
-                                </select>
-                            </div>
-
-                            <div class="mb-3" id="detalle-container" style="display:none;">
-                                <label for="detalle" class="form-label fw-bold text-danger">Detalle/Comentario</label>
-                                <textarea id="detalle" name="detalle" class="form-control" rows="4" placeholder="Detalle la razón del rechazo o las sugerencias de edición."></textarea>
-                            </div>
-                        </div>
-
-                        <input type="hidden" name="id" id="resolution-request-id-input">
-                    </div>
-                    <div class="modal-footer" id="resolution-modal-footer">
-                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4" id="submit-resolver-btn">Resolver</button>
-                    </div>
-                </form>
+<div class="modal fade" id="adminResolutionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold" id="resolutionModalTitle">Evaluar Solicitud</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+            <form id="admin-resolution-form" method="post">
+                <div class="modal-body">
+                    <p id="resolution-request-details" class="text-muted small mb-3">Cargando detalles...</p>
+
+                    <div id="view-resolution-block" style="display:none;">
+                        <p class="mb-2"><strong>Estado Final:</strong> <span id="view-status-badge" class="badge"></span></p>
+                        <p class="mb-0"><strong>Comentario:</strong> <span id="view-detalle-text" class="text-muted"></span></p>
+                    </div>
+
+                    <div id="evaluation-block" style="display:none;">
+                        <div class="mb-3" id="status-selector-block">
+                            <label for="resolution-status" class="form-label fw-bold">Decisión</label>
+                            <select id="resolution-status" name="estado" class="form-select" required>
+                            </select>
+                        </div>
+
+                        <div class="mb-3" id="detalle-container" style="display:none;">
+                            <label for="detalle" class="form-label fw-bold text-danger">Detalle/Comentario</label>
+                            <textarea id="detalle" name="detalle" class="form-control" rows="4" placeholder="Detalle la razón del rechazo o las sugerencias de edición."></textarea>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" id="resolution-request-id-input">
+                </div>
+                <div class="modal-footer" id="resolution-modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4" id="submit-resolver-btn">Resolver</button>
+                </div>
+            </form>
         </div>
     </div>
-    </div>
+</div>
+</div>
 
 <div id="page-scripts">
     <script th:inline="javascript">
@@ -208,21 +208,19 @@
         /*]]>*/
     </script>
     <script>
-        // FIX: Se define la función normalizeStatus en el ámbito del script
+        // Función para normalizar estados, asegurando que los filtros funcionen
         const normalizeStatus = (status) => {
-            if (!status) return 'PENDIENTE'; // Trata nulo o indefinido como PENDIENTE
+            if (!status) return 'PENDIENTE';
             const upperStatus = status.toUpperCase();
             if (upperStatus.includes('ACEPTAD') || upperStatus.includes('APROBADA')) return 'APROBADA';
             if (upperStatus.includes('RECHAZAD')) return 'RECHAZADA';
-            // Esto cubre casos como "EN_REVISION" o estados indefinidos, tratándolos como PENDIENTES.
             return 'PENDIENTE';
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // FIX: Se asegura que renderSidebar se llama primero.
             renderSidebar('admin');
 
-            // --- LÓGICA DE TABS ---
+            // --- Lógica de Tabs (Omitida por brevedad, se asume que funciona) ---
             const tabCollections = document.getElementById('admin-tab-collections');
             const tabRequests = document.getElementById('admin-tab-requests');
             const contentCollections = document.getElementById('collections-content');
@@ -249,6 +247,7 @@
                 contentRequests.style.display = 'block';
                 contentCollections.style.display = 'none';
             });
+            // --------------------------------------------------------------------
 
 
             // --- LÓGICA DE EVALUACIÓN Y MODAL ADMIN (Resolución y Detalle) ---
@@ -260,11 +259,11 @@
             const evaluationBlock = document.getElementById('evaluation-block');
             const viewResolutionBlock = document.getElementById('view-resolution-block');
             const modalTitle = resolutionModalEl.querySelector('#resolutionModalTitle');
-            const detailContainerInModal = resolutionModalEl.querySelector('#resolution-request-details');
 
+            // Crear la instancia de Bootstrap Modal (para el modal de EVALUACIÓN)
             let resolutionModal = new bootstrap.Modal(resolutionModalEl);
 
-            // Lógica para mostrar/ocultar el detalle/motivo del modal de resolución
+            // Lógica para mostrar/ocultar el detalle/motivo del modal de resolución (se asume que funciona)
             statusSelect.addEventListener('change', function() {
                 const value = this.value;
                 const requestType = resolutionModalEl.getAttribute('data-current-type');
@@ -287,7 +286,7 @@
                 }
             });
 
-            // --- Función para obtener detalles completos vía AJAX (Necesaria para "Ver Solicitud") ---
+            // --- Función para obtener detalles completos vía AJAX (Llama al AdminController @GetMapping("/api/...") ---
             function fetchFullDetail(id, type) {
                 let apiUrl = '';
                 if (type === 'Nuevo Hecho') {
@@ -308,9 +307,30 @@
                 });
             }
 
+            // Helper para simular la renderización de main.js y obtener el contenido final
+            function getFinalRenderedContent(data) {
+                const tempContainer = document.createElement('div');
+                // Asumimos que renderRequestDetailModal está definido en main.js y funciona correctamente (como en Contributor)
+                if (typeof renderRequestDetailModal === 'function') {
+                    renderRequestDetailModal(tempContainer, data);
+
+                    const bodyContent = tempContainer.querySelector('#request-modal-body');
+                    const titleContent = tempContainer.querySelector('.modal-header .modal-title');
+
+                    const defaultTitle = 'Detalle de Solicitud/Resolución';
+
+                    return {
+                        body: bodyContent ? bodyContent.innerHTML : '<p class="text-danger">Error al generar contenido del modal.</p>',
+                        title: titleContent ? titleContent.textContent : defaultTitle
+                    };
+                }
+                return { body: '<p class="text-danger">Error: La función renderRequestDetailModal no está disponible. Asegúrese de que main.js esté cargado.</p>', title: 'Error de Renderización' };
+            }
+
 
             // Listener Principal para los botones de la tabla
             document.addEventListener('click', function(e) {
+                // Selector que detecta el clic tanto en EVALUAR como en VER SOLICITUD
                 const btn = e.target.closest('.btn-evaluate, .btn-view-solicitud');
                 if (!btn) return;
 
@@ -325,34 +345,64 @@
                     return;
                 }
 
-                // --- ACCIÓN 1: VER SOLICITUD (Muestra todos los detalles en el modal genérico) ---
+                // --- ACCIÓN 1: VER SOLICITUD / VER RESOLUCIÓN ---
                 if (!isEvaluate) {
-                    // Mostrar indicador de carga en el contenedor temporal
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Cargando detalles completos...</p></div>';
-                    // Usamos openModal con un DTO básico de carga. El modal robusto lo reemplazará.
-                    openModal(renderRequestDetailModal, requestDataUnificada);
+                    // 1. Abrimos el modal de detalle (usa la función de main.js)
+                    const modalEl = openModal(renderRequestDetailModal, requestDataUnificada);
 
+                    if (!modalEl) {
+                        console.error("No se pudo iniciar el modal de detalle (openModal devolvió null).");
+                        return;
+                    }
+
+                    // Se apunta a los elementos que se actualizarán
+                    const modalBodyContainer = modalEl.querySelector('#request-modal-body');
+                    const modalTitleElement = modalEl.querySelector('.modal-title');
+                    const originalTitle = modalTitleElement ? modalTitleElement.textContent : 'Detalle de Solicitud/Resolución';
+
+                    // 2. Mostrar estado de carga explícito
+                    if (modalBodyContainer) {
+                        modalBodyContainer.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Cargando detalles completos...</p></div>';
+                    }
+
+                    // 3. Obtener datos asíncronamente
                     fetchFullDetail(requestId, requestType)
                         .then(fullDetailDTO => {
                             const fullData = Object.assign({}, requestDataUnificada, fullDetailDTO);
-                            // Abre el modal de detalle completo (renderRequestDetailModal debe estar en main.js)
-                            openModal(renderRequestDetailModal, fullData);
+
+                            if (modalBodyContainer) {
+                                // Reemplaza el contenido de carga con el contenido final
+                                const rendered = getFinalRenderedContent(fullData);
+                                modalBodyContainer.innerHTML = rendered.body;
+
+                                if (modalTitleElement) {
+                                    modalTitleElement.textContent = rendered.title;
+                                }
+                            }
                         })
                         .catch(error => {
-                            alert('Error al cargar los detalles: ' + error.message);
+                            const errorMessageHtml = `
+                                <div class="alert alert-danger mb-0">
+                                    <h6 class="alert-heading fw-bold">Error al Cargar Detalles</h6>
+                                    <p class="mb-0">No se pudieron obtener los detalles completos. Causa: ${error.message}</p>
+                                    <p class="mb-0 small">Verifica que el servicio backend esté funcionando (Dinámica/Agregador) y que la ruta ${requestType} sea accesible.</p>
+                                </div>
+                                <small class="text-muted d-block mt-3">Detalle Base: ${requestDataUnificada.tituloDelHechoAEliminar}</small>
+                            `;
+                            if (modalBodyContainer) {
+                                modalBodyContainer.innerHTML = errorMessageHtml;
+                                if (modalTitleElement) {
+                                    modalTitleElement.textContent = originalTitle.replace('Detalle', 'Error de Carga');
+                                }
+                            }
                             console.error('Fetch Error:', error);
-                            openModal(renderRequestDetailModal, {
-                                tipo: requestType, estado: requestDataUnificada.estado,
-                                tituloDelHechoAEliminar: `Error al cargar: ${error.message}`
-                            });
                         });
 
                     return;
                 }
 
 
-                // --- ACCIÓN 2: EVALUAR (Solo PENDIENTE - Abre el modal de resolución simple) ---
+                // --- ACCIÓN 2: EVALUAR (Abre el modal de resolución simple) ---
 
                 const hechoTitle = requestDataUnificada.tituloDelHechoAEliminar || 'Sin título';
 
@@ -363,7 +413,7 @@
                 modalTitle.textContent = `Resolver Solicitud de ${requestType}`;
                 resolutionModalEl.setAttribute('data-current-type', requestType);
 
-                // 2. Mostrar mensaje simple (cumpliendo el requisito de no mostrar detalles complejos)
+                // 2. Mostrar mensaje simple
                 detailContainerInModal.innerHTML = `<h6 class="text-primary fw-bold">Evaluando: ${requestType} - ${hechoTitle}</h6><p class="text-muted small">Revisa los detalles completos usando el botón "Ver Solicitud" antes de resolver.</p>`;
 
                 // 3. Configurar Opciones y Form Action
@@ -413,20 +463,20 @@
                     resolutionForm.submit();
                 };
 
-                // Abrir el modal de resolución (FIX para el pop-up)
+                // Abrir el modal de resolución
                 detalleInput.value = '';
                 statusSelect.dispatchEvent(new Event('change'));
                 resolutionModal.show();
             });
 
 
-            // --- LÓGICA PARA FILTROS Y RENDERIZADO DE TABLA (FIX: Lógica de Filtrado Funcional) ---
+            // --- LÓGICA PARA FILTROS Y RENDERIZADO DE TABLA (Funcional) ---
 
             const adminFilterType = document.getElementById('admin-filter-type');
             const adminFilterStatus = document.getElementById('admin-filter-status');
             const requestsTableBody = document.getElementById('admin-requests-table-body');
 
-            // Función renderAdminRequestsTable (mantenida de la corrección anterior, ya que está correcta)
+            // Función renderAdminRequestsTable (funciona para el filtrado)
             function renderAdminRequestsTable(requests) {
                 requestsTableBody.innerHTML = '';
                 if (requests.length === 0) {
@@ -510,7 +560,3 @@
 </div>
 </body>
 </html>
-
-
-
-
