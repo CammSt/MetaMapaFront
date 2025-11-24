@@ -1,12 +1,15 @@
 package ar.utn.da.dsi.frontend.client.dto.output;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record SolicitudEliminacionOutputDTO(
-		Long nroDeSolicitud,
-		String nombreHecho,
-		String tituloDelHechoAEliminar,
-		String estado,
-		String motivo,
-		LocalDateTime fechaCreacionSolicitud
+		@JsonProperty("id") Long nroDeSolicitud, // Mapeamos 'id' del JSON a 'nroDeSolicitud'
+		@JsonProperty("nombreHecho") String nombreHecho,
+		@JsonProperty("tituloDelHechoAEliminar") String tituloDelHechoAEliminar,
+		@JsonProperty("estado") String estado,
+		@JsonProperty("motivo") String motivo,
+		@JsonProperty("fechaCreacionSolicitud") LocalDateTime fechaCreacionSolicitud
 ) {}

@@ -1,562 +1,354 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/base :: layout(pageTitle='Administración', content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
-<body>
-<main class="container-fluid p-4 animate__animated animate__fadeIn" id="main-content">
-    <div class="card shadow-lg border-0 rounded-3">
-        <div class="card-header bg-primary text-white border-bottom-0 p-4 rounded-top-3"><h3 class="fw-bold mb-0">Panel de Administración</h3></div>
-        <div class="card-body p-4">
+    <body>
+        <main id="main-content">
+            <div class="container-fluid p-4 animate__animated animate__fadeIn" >
+                <div class="card shadow-lg border-0 rounded-3">
+                    <div class="card-header bg-primary text-white border-bottom-0 p-4 rounded-top-3"><h3 class="fw-bold mb-0">Panel de Administración</h3></div>
+                    <div class="card-body p-4">
 
-            <div id="alert-placeholder">
-                <div th:if="${success}" class="alert alert-success d-flex align-items-center" role="alert">
-                    <i class="bi bi-check-circle-fill me-2 fs-5"></i>
-                    <span th:if="${success.contains('procesando')}">El archivo CSV se subió correctamente!</span>
-                    <span th:unless="${success.contains('procesando')}" th:text="${success}"></span>
-                </div>
-                <div th:if="${error}" class="alert alert-danger d-flex align-items-center" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-                    <span th:if="${error.contains('CSV')}">Hubo un error al procesar el archivo. Por favor, revísalo e inténtalo de nuevo. Recordá que solo se admiten archivos .CSV</span>
-                    <span th:unless="${error.contains('CSV')}" th:text="${error}"></span>
-                </div>
-            </div>
-            <ul class="nav nav-pills nav-justified mb-4">
-                <li class="nav-item"><button id="admin-tab-collections" class="nav-link active">Gestionar Colecciones</button></li>
-                <li class="nav-item"><button id="admin-tab-requests" class="nav-link">Revisar Solicitudes</button></li>
-            </ul>
-
-            <div id="admin-tab-content-wrapper">
-                <div id="collections-content">
-                    <div class="d-flex gap-2 mb-4">
-                        <a th:href="@{/admin/colecciones/nueva}" class="btn btn-success rounded-pill px-4 fw-bold">
-                            + Nueva Colección
-                        </a>
-                        <button type="button" class="btn btn-info rounded-pill px-4 fw-bold text-white"
-                                data-bs-toggle="modal" data-bs-target="#csvImportModal">
-                            <i class="bi bi-upload me-2"></i>Importar CSV
-                        </button>
-                        <a th:href="@{/admin/estadisticas}" class="btn btn-warning rounded-pill px-4 fw-bold text-dark">
-                            <i class="bi bi-graph-up me-2"></i> Ver Estadísticas
-                        </a>
-                    </div>
-                    <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
-                        <div th:if="${#lists.isEmpty(colecciones)}" class="text-center text-muted p-5">No hay colecciones para gestionar.</div>
-                        <table th:unless="${#lists.isEmpty(colecciones)}" class="table table-striped table-hover mb-0">
-                            <thead class="bg-light">
-                            <tr>
-                                <th class="text-secondary fw-bold">Título</th>
-                                <th class="text-secondary fw-bold">Fuente</th>
-                                <th class="text-end text-secondary fw-bold">Acciones</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr th:each="col : ${colecciones}">
-                                <td th:text="${col.titulo()}"></td>
-                                <td><span class="badge bg-secondary">Carga Manual</span></td>
-                                <td class="text-end">
-
-                                    <a th:href="@{/admin/colecciones/{id}/editar(id=${col.handleID()})}" class="btn btn-primary btn-sm rounded-pill">
-                                        Editar
-                                    </a>
-
-                                    <form th:action="@{/admin/colecciones/{id}/eliminar(id=${col.handleID()})}" method="post" class="d-inline"
-                                          onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta colección?');">
-                                        <button type="submit" class="btn btn-danger btn-sm rounded-pill">
-                                            Eliminar
-                                        </button>
-                                    </form>
-
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="requests-content" style="display: none;">
-                    <div class="card card-body mb-3 bg-light border-0">
-                        <div class="row g-3 align-items-center">
-                            <div class="col-md-6">
-                                <label class="form-label small">Filtrar por tipo</label>
-                                <select class="form-select form-select-sm" id="admin-filter-type">
-                                    <option value="">Todos</option>
-                                    <option value="Nuevo Hecho">Nuevo Hecho</option>
-                                    <option value="Eliminación">Eliminación</option>
-                                    <option value="Edición">Edición</option>
-                                </select>
+                        <div id="alert-placeholder">
+                            <div th:if="${success}" class="alert alert-success d-flex align-items-center" role="alert">
+                                <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                                <span th:text="${success}"></span>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label small">Filtrar por estado</label>
-                                <select class="form-select form-select-sm" id="admin-filter-status">
-                                    <option value="">Todos</option>
-                                    <option value="PENDIENTE">Pendiente</option>
-                                    <option value="APROBADA">Aprobada</option>
-                                    <option value="RECHAZADA">Rechazada</option>
-                                </select>
+                            <div th:if="${error}" class="alert alert-danger d-flex align-items-center" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                                <span th:text="${error}"></span>
                             </div>
                         </div>
-                    </div>
-                    <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
-                        <div th:if="${#lists.isEmpty(solicitudes)}" class="text-center text-muted p-5">No hay solicitudes pendientes.</div>
-                        <table th:unless="${#lists.isEmpty(solicitudes)}" class="table table-striped table-hover mb-0">
-                            <thead class="bg-light">
-                            <tr>
-                                <th class="text-secondary fw-bold">Título</th>
-                                <th class="text-secondary fw-bold">Tipo</th>
-                                <th class="text-secondary fw-bold">Estado</th>
-                                <th class="text-end text-secondary fw-bold">Acciones</th>
-                            </tr>
-                            </thead>
-                            <tbody id="admin-requests-table-body">
-                            <tr th:each="req : ${solicitudes}">
-                                <td th:text="${req.tituloDelHechoAEliminar}"></td>
-                                <td><span class="badge bg-info" th:text="${req.tipo}"></span></td>
-                                <td><span class="badge" th:classappend="${req.estado == 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' || req.estado == 'ACEPTADO' || req.estado == 'ACEPTADO_CON_SUGERENCIAS' ? 'bg-success' : 'bg-danger')}" th:text="${req.estado}"></span></td>
-                                <td class="text-end">
-                                    <div th:if="${req.estado == 'PENDIENTE'}">
-                                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill btn-view-solicitud me-2"
-                                                th:attr="data-request-id=${req.id}, data-request-type=${req.tipo}, data-request-estado=${req.estado}">
-                                            <span th:text="${req.estado == 'PENDIENTE' ? 'Ver Solicitud' : 'Ver Resolución'}"></span>
-                                        </button>
-                                        <button th:attr="data-request-id=${req.id}, data-request-type=${req.tipo}, data-is-pending='true'"
-                                                class="btn btn-warning btn-sm rounded-pill btn-evaluate">
-                                            Evaluar
-                                        </button>
-                                    </div>
-                                    <div th:unless="${req.estado == 'PENDIENTE'}">
-                                        <button th:attr="data-request-id=${req.id}, data-request-type=${req.tipo}, data-request-estado=${req.estado}, data-is-pending='false'"
-                                                class="btn btn-sm btn-outline-info rounded-pill btn-view-solicitud">
-                                            Ver Resolución
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</main>
 
-<div id="request-detail-modal-html" style="display: none;">
-    <div class="modal fade" id="request-detail-modal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fw-bold">Detalle de Solicitud/Resolución</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4" id="request-modal-body">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                        <ul class="nav nav-pills nav-justified mb-4">
+                            <li class="nav-item"><button id="admin-tab-collections" class="nav-link active">Gestionar Colecciones</button></li>
+                            <li class="nav-item"><button id="admin-tab-requests" class="nav-link">Revisar Solicitudes</button></li>
+                        </ul>
 
-<div class="modal fade" id="adminResolutionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title fw-bold" id="resolutionModalTitle">Evaluar Solicitud</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="admin-resolution-form" method="post">
-                <div class="modal-body">
-                    <p id="resolution-request-details" class="text-muted small mb-3">Cargando detalles...</p>
+                        <div id="admin-tab-content-wrapper">
 
-                    <div id="view-resolution-block" style="display:none;">
-                        <p class="mb-2"><strong>Estado Final:</strong> <span id="view-status-badge" class="badge"></span></p>
-                        <p class="mb-0"><strong>Comentario:</strong> <span id="view-detalle-text" class="text-muted"></span></p>
-                    </div>
-
-                    <div id="evaluation-block" style="display:none;">
-                        <div class="mb-3" id="status-selector-block">
-                            <label for="resolution-status" class="form-label fw-bold">Decisión</label>
-                            <select id="resolution-status" name="estado" class="form-select" required>
-                            </select>
-                        </div>
-
-                        <div class="mb-3" id="detalle-container" style="display:none;">
-                            <label for="detalle" class="form-label fw-bold text-danger">Detalle/Comentario</label>
-                            <textarea id="detalle" name="detalle" class="form-control" rows="4" placeholder="Detalle la razón del rechazo o las sugerencias de edición."></textarea>
-                        </div>
-                    </div>
-
-                    <input type="hidden" name="id" id="resolution-request-id-input">
-                </div>
-                <div class="modal-footer" id="resolution-modal-footer">
-                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4" id="submit-resolver-btn">Resolver</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-</div>
-
-<div id="page-scripts">
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-        const allCollections = /*[[${colecciones}]]*/ [];
-        const consensusLabels = /*[[${consensusLabels}]]*/ {};
-        const availableSources = /*[[${availableSources}]]*/ {};
-        const allRequestsForFilter = /*[[${solicitudes}]]*/ [];
-        /*]]>*/
-    </script>
-    <script>
-        // Función para normalizar estados, asegurando que los filtros funcionen
-        const normalizeStatus = (status) => {
-            if (!status) return 'PENDIENTE';
-            const upperStatus = status.toUpperCase();
-            if (upperStatus.includes('ACEPTAD') || upperStatus.includes('APROBADA')) return 'APROBADA';
-            if (upperStatus.includes('RECHAZAD')) return 'RECHAZADA';
-            return 'PENDIENTE';
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            renderSidebar('admin');
-
-            // --- Lógica de Tabs (Omitida por brevedad, se asume que funciona) ---
-            const tabCollections = document.getElementById('admin-tab-collections');
-            const tabRequests = document.getElementById('admin-tab-requests');
-            const contentCollections = document.getElementById('collections-content');
-            const contentRequests = document.getElementById('requests-content');
-
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('tab') === 'requests') {
-                tabCollections.classList.remove('active');
-                tabRequests.classList.add('active');
-                contentCollections.style.display = 'none';
-                contentRequests.style.display = 'block';
-            }
-
-            tabCollections.addEventListener('click', () => {
-                tabCollections.classList.add('active');
-                tabRequests.classList.remove('active');
-                contentCollections.style.display = 'block';
-                contentRequests.style.display = 'none';
-            });
-
-            tabRequests.addEventListener('click', () => {
-                tabRequests.classList.add('active');
-                tabCollections.classList.remove('active');
-                contentRequests.style.display = 'block';
-                contentCollections.style.display = 'none';
-            });
-            // --------------------------------------------------------------------
-
-
-            // --- LÓGICA DE EVALUACIÓN Y MODAL ADMIN (Resolución y Detalle) ---
-            const resolutionModalEl = document.getElementById('adminResolutionModal');
-            const resolutionForm = document.getElementById('admin-resolution-form');
-            const statusSelect = document.getElementById('resolution-status');
-            const detalleContainer = document.getElementById('detalle-container');
-            const detalleInput = document.getElementById('detalle');
-            const evaluationBlock = document.getElementById('evaluation-block');
-            const viewResolutionBlock = document.getElementById('view-resolution-block');
-            const modalTitle = resolutionModalEl.querySelector('#resolutionModalTitle');
-
-            // Crear la instancia de Bootstrap Modal (para el modal de EVALUACIÓN)
-            let resolutionModal = new bootstrap.Modal(resolutionModalEl);
-
-            // Lógica para mostrar/ocultar el detalle/motivo del modal de resolución (se asume que funciona)
-            statusSelect.addEventListener('change', function() {
-                const value = this.value;
-                const requestType = resolutionModalEl.getAttribute('data-current-type');
-
-                const isNewHecho = requestType === 'Nuevo Hecho';
-                const isRechazoOSugerencia = value === 'RECHAZADO' || value === 'ACEPTADO_CON_SUGERENCIAS' || value.includes('rechazar');
-
-                const requiresDetail = isNewHecho && isRechazoOSugerencia;
-                const isVisible = isRechazoOSugerencia;
-
-                if (isVisible) {
-                    detalleContainer.style.display = 'block';
-                    detalleInput.required = requiresDetail;
-                    detalleContainer.querySelector('label').textContent = requiresDetail
-                        ? 'Detalle/Comentario (Obligatorio)'
-                        : 'Detalle/Comentario (Opcional)';
-                } else {
-                    detalleContainer.style.display = 'none';
-                    detalleInput.required = false;
-                }
-            });
-
-            // --- Función para obtener detalles completos vía AJAX (Llama al AdminController @GetMapping("/api/...") ---
-            function fetchFullDetail(id, type) {
-                let apiUrl = '';
-                if (type === 'Nuevo Hecho') {
-                    apiUrl = `/admin/api/hechos/${id}`;
-                } else if (type === 'Edición') {
-                    apiUrl = `/admin/api/ediciones/${id}`;
-                } else if (type === 'Eliminación') {
-                    apiUrl = `/admin/api/solicitudes-eliminacion/${id}`;
-                } else {
-                    throw new Error('Tipo de solicitud desconocido.');
-                }
-
-                return fetch(apiUrl).then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => { throw new Error(err.message || response.statusText); });
-                    }
-                    return response.json();
-                });
-            }
-
-            // Helper para simular la renderización de main.js y obtener el contenido final
-            function getFinalRenderedContent(data) {
-                const tempContainer = document.createElement('div');
-                // Asumimos que renderRequestDetailModal está definido en main.js y funciona correctamente (como en Contributor)
-                if (typeof renderRequestDetailModal === 'function') {
-                    renderRequestDetailModal(tempContainer, data);
-
-                    const bodyContent = tempContainer.querySelector('#request-modal-body');
-                    const titleContent = tempContainer.querySelector('.modal-header .modal-title');
-
-                    const defaultTitle = 'Detalle de Solicitud/Resolución';
-
-                    return {
-                        body: bodyContent ? bodyContent.innerHTML : '<p class="text-danger">Error al generar contenido del modal.</p>',
-                        title: titleContent ? titleContent.textContent : defaultTitle
-                    };
-                }
-                return { body: '<p class="text-danger">Error: La función renderRequestDetailModal no está disponible. Asegúrese de que main.js esté cargado.</p>', title: 'Error de Renderización' };
-            }
-
-
-            // Listener Principal para los botones de la tabla
-            document.addEventListener('click', function(e) {
-                // Selector que detecta el clic tanto en EVALUAR como en VER SOLICITUD
-                const btn = e.target.closest('.btn-evaluate, .btn-view-solicitud');
-                if (!btn) return;
-
-                const requestId = btn.getAttribute('data-request-id');
-                const requestType = btn.getAttribute('data-request-type');
-                const isEvaluate = btn.classList.contains('btn-evaluate');
-
-                const requestDataUnificada = allRequestsForFilter.find(r => r.id == requestId && r.tipo === requestType);
-
-                if (!requestDataUnificada) {
-                    alert("No se encontró el detalle de la solicitud/edición.");
-                    return;
-                }
-
-                // --- ACCIÓN 1: VER SOLICITUD / VER RESOLUCIÓN ---
-                if (!isEvaluate) {
-                    // 1. Abrimos el modal de detalle (usa la función de main.js)
-                    const modalEl = openModal(renderRequestDetailModal, requestDataUnificada);
-
-                    if (!modalEl) {
-                        console.error("No se pudo iniciar el modal de detalle (openModal devolvió null).");
-                        return;
-                    }
-
-                    // Se apunta a los elementos que se actualizarán
-                    const modalBodyContainer = modalEl.querySelector('#request-modal-body');
-                    const modalTitleElement = modalEl.querySelector('.modal-title');
-                    const originalTitle = modalTitleElement ? modalTitleElement.textContent : 'Detalle de Solicitud/Resolución';
-
-                    // 2. Mostrar estado de carga explícito
-                    if (modalBodyContainer) {
-                        modalBodyContainer.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Cargando detalles completos...</p></div>';
-                    }
-
-                    // 3. Obtener datos asíncronamente
-                    fetchFullDetail(requestId, requestType)
-                        .then(fullDetailDTO => {
-                            const fullData = Object.assign({}, requestDataUnificada, fullDetailDTO);
-
-                            if (modalBodyContainer) {
-                                // Reemplaza el contenido de carga con el contenido final
-                                const rendered = getFinalRenderedContent(fullData);
-                                modalBodyContainer.innerHTML = rendered.body;
-
-                                if (modalTitleElement) {
-                                    modalTitleElement.textContent = rendered.title;
-                                }
-                            }
-                        })
-                        .catch(error => {
-                            const errorMessageHtml = `
-                                <div class="alert alert-danger mb-0">
-                                    <h6 class="alert-heading fw-bold">Error al Cargar Detalles</h6>
-                                    <p class="mb-0">No se pudieron obtener los detalles completos. Causa: ${error.message}</p>
-                                    <p class="mb-0 small">Verifica que el servicio backend esté funcionando (Dinámica/Agregador) y que la ruta ${requestType} sea accesible.</p>
+                            <div id="collections-content">
+                                <div class="d-flex gap-2 mb-4">
+                                    <a th:href="@{/admin/colecciones/nueva}" class="btn btn-success rounded-pill px-4 fw-bold">+ Nueva Colección</a>
+                                    <button type="button" class="btn btn-info rounded-pill px-4 fw-bold text-white" data-bs-toggle="modal" data-bs-target="#csvImportModal">
+                                        <i class="bi bi-upload me-2"></i>Importar CSV
+                                    </button>
+                                    <a th:href="@{/admin/estadisticas}" class="btn btn-warning rounded-pill px-4 fw-bold text-dark"><i class="bi bi-graph-up me-2"></i> Ver Estadísticas</a>
                                 </div>
-                                <small class="text-muted d-block mt-3">Detalle Base: ${requestDataUnificada.tituloDelHechoAEliminar}</small>
-                            `;
-                            if (modalBodyContainer) {
-                                modalBodyContainer.innerHTML = errorMessageHtml;
-                                if (modalTitleElement) {
-                                    modalTitleElement.textContent = originalTitle.replace('Detalle', 'Error de Carga');
-                                }
+
+                                <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
+                                    <div th:if="${#lists.isEmpty(colecciones)}" class="text-center text-muted p-5">No hay colecciones para gestionar.</div>
+                                    <table th:unless="${#lists.isEmpty(colecciones)}" class="table table-striped table-hover mb-0">
+                                        <thead class="bg-light">
+                                        <tr>
+                                            <th class="text-secondary fw-bold">Título</th>
+                                            <th class="text-secondary fw-bold">Fuente</th>
+                                            <th class="text-end text-secondary fw-bold">Acciones</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr th:each="col : ${colecciones}">
+                                            <td th:text="${col.titulo}"></td>
+                                            <td><span class="badge bg-secondary">Carga Manual</span></td>
+                                            <td class="text-end">
+                                                <a th:href="@{/admin/colecciones/{id}/editar(id=${col.handleID})}" class="btn btn-primary btn-sm rounded-pill">Editar</a>
+                                                <form th:action="@{/admin/colecciones/{id}/eliminar(id=${col.handleID})}" method="post" class="d-inline" onsubmit="return confirm('¿Estás seguro?');">
+                                                    <button type="submit" class="btn btn-danger btn-sm rounded-pill">Eliminar</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div id="requests-content" style="display: none;">
+                                <div class="card card-body mb-3 bg-light border-0">
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-md-6">
+                                            <label class="form-label small">Filtrar por tipo</label>
+                                            <select class="form-select form-select-sm" id="admin-filter-type">
+                                                <option value="">Todos</option>
+                                                <option value="Nuevo Hecho">Nuevo Hecho</option>
+                                                <option value="Eliminación">Eliminación</option>
+                                                <option value="Edición">Edición</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label small">Filtrar por estado</label>
+                                            <select class="form-select form-select-sm" id="admin-filter-status">
+                                                <option value="">Todos</option>
+                                                <option value="PENDIENTE">Pendiente</option>
+                                                <option value="APROBADA">Aprobada</option>
+                                                <option value="RECHAZADA">Rechazada</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
+                                    <table class="table table-striped table-hover mb-0">
+                                        <thead class="bg-light">
+                                        <tr>
+                                            <th class="text-secondary fw-bold">Título</th>
+                                            <th class="text-secondary fw-bold">Tipo</th>
+                                            <th class="text-secondary fw-bold">Estado</th>
+                                            <th class="text-end text-secondary fw-bold">Acciones</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="admin-requests-table-body">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal fade" id="evaluationModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title fw-bold" id="modalTitle">Evaluación</h5> <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div id="modalContent">Cargando...</div> </div>
+                            <div class="modal-footer bg-light">
+                                <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+
+                                <form id="formReject" method="post" style="display:inline;"> <button type="submit" class="btn btn-danger rounded-pill fw-bold px-4">
+                                    <i class="bi bi-x-circle me-2"></i>Rechazar
+                                </button>
+                                </form>
+
+                                <form id="formApprove" method="post" style="display:inline;"> <button type="submit" class="btn btn-success rounded-pill fw-bold px-4">
+                                    <i class="bi bi-check-circle me-2"></i>Aprobar
+                                </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <div id="page-scripts">
+            <script th:inline="javascript">
+                /*<![CDATA[*/
+                const allCollections = /*[[${colecciones}]]*/ [];
+                const allRequests = /*[[${solicitudes}]]*/ [];
+                /*]]>*/
+            </script>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    renderSidebar('admin');
+
+                    const modal = document.getElementById('evaluationModal');
+                    document.body.appendChild(modal); // mueve el modal al body en runtime
+
+                    // --- TABS ---
+                    const tabCollections = document.getElementById('admin-tab-collections');
+                    const tabRequests = document.getElementById('admin-tab-requests');
+                    const contentCollections = document.getElementById('collections-content');
+                    const contentRequests = document.getElementById('requests-content');
+
+                    tabCollections.addEventListener('click', () => {
+                        tabCollections.classList.add('active'); tabRequests.classList.remove('active');
+                        contentCollections.style.display = 'block'; contentRequests.style.display = 'none';
+                    });
+                    tabRequests.addEventListener('click', () => {
+                        tabRequests.classList.add('active'); tabCollections.classList.remove('active');
+                        contentRequests.style.display = 'block'; contentCollections.style.display = 'none';
+                    });
+
+                    // --- TABLA Y FILTROS ---
+                    const tableBody = document.getElementById('admin-requests-table-body');
+                    const filterType = document.getElementById('admin-filter-type');
+                    const filterStatus = document.getElementById('admin-filter-status');
+
+                    function renderTable(requests) {
+                        tableBody.innerHTML = '';
+                        if (!requests || requests.length === 0) {
+                            tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-3">No hay solicitudes pendientes.</td></tr>';
+                            return;
+                        }
+
+                        console.log("requests to render:", requests);
+
+                        requests.forEach(req => {
+                            let badgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado === 'APROBADA' ? 'bg-success' : 'bg-danger');
+                            let actionBtn = '-';
+
+                            if (req.estado === 'PENDIENTE') {
+                                actionBtn = `<button class="btn btn-primary btn-sm rounded-pill btn-view-detail"
+                                data-id="${req.id}"
+                                data-type="${req.tipo}"
+                                data-title="${req.tituloDelHechoAEliminar}">
+                                <i class="bi bi-eye me-1"></i> Ver Detalle
+                             </button>`;
                             }
-                            console.error('Fetch Error:', error);
-                        });
 
-                    return;
-                }
-
-
-                // --- ACCIÓN 2: EVALUAR (Abre el modal de resolución simple) ---
-
-                const hechoTitle = requestDataUnificada.tituloDelHechoAEliminar || 'Sin título';
-
-                // 1. Configurar Modal para Resolución
-                evaluationBlock.style.display = 'block';
-                viewResolutionBlock.style.display = 'none';
-
-                modalTitle.textContent = `Resolver Solicitud de ${requestType}`;
-                resolutionModalEl.setAttribute('data-current-type', requestType);
-
-                // 2. Mostrar mensaje simple
-                detailContainerInModal.innerHTML = `<h6 class="text-primary fw-bold">Evaluando: ${requestType} - ${hechoTitle}</h6><p class="text-muted small">Revisa los detalles completos usando el botón "Ver Solicitud" antes de resolver.</p>`;
-
-                // 3. Configurar Opciones y Form Action
-                let optionsHtml = '<option value="">Seleccione el estado...</option>';
-
-                if (requestType === 'Nuevo Hecho') {
-                    optionsHtml += '<option value="ACEPTADO">Aprobar</option>';
-                    optionsHtml += '<option value="RECHAZADO">Rechazar</option>';
-                    optionsHtml += '<option value="ACEPTADO_CON_SUGERENCIAS">Aprobar con Sugerencias</option>';
-                    resolutionForm.action = `/hechos/${requestId}/resolver`;
-                } else if (requestType === 'Edición') {
-                    optionsHtml += '<option value="aceptar">Aprobar Edición</option>';
-                    optionsHtml += '<option value="rechazar">Rechazar Edición</option>';
-                    resolutionForm.action = `/admin/ediciones/${requestId}`;
-                } else if (requestType === 'Eliminación') {
-                    optionsHtml += '<option value="aprobar">Aprobar Eliminación</option>';
-                    optionsHtml += '<option value="rechazar">Rechazar Eliminación</option>';
-                    resolutionForm.action = `/admin/solicitudes/${requestId}`;
-                }
-
-                statusSelect.innerHTML = optionsHtml;
-                statusSelect.value = '';
-
-                // 4. Lógica de Submit para manejar los endpoints separados del backend
-                resolutionForm.onsubmit = function(event) {
-                    event.preventDefault();
-                    const selectedStatus = statusSelect.value;
-                    let finalAction = resolutionForm.action;
-
-                    if (!selectedStatus) {
-                        alert("Por favor, selecciona un estado.");
-                        return;
-                    }
-
-                    if (requestType === 'Nuevo Hecho') {
-                        const hiddenStatusInput = document.createElement('input');
-                        hiddenStatusInput.type = 'hidden';
-                        hiddenStatusInput.name = 'estado';
-                        hiddenStatusInput.value = selectedStatus;
-                        resolutionForm.appendChild(hiddenStatusInput);
-                    } else if (requestType === 'Edición' || requestType === 'Eliminación') {
-                        finalAction += `/${selectedStatus}`;
-                    }
-
-                    resolutionForm.action = finalAction;
-                    resolutionForm.onsubmit = null;
-                    resolutionForm.submit();
-                };
-
-                // Abrir el modal de resolución
-                detalleInput.value = '';
-                statusSelect.dispatchEvent(new Event('change'));
-                resolutionModal.show();
-            });
-
-
-            // --- LÓGICA PARA FILTROS Y RENDERIZADO DE TABLA (Funcional) ---
-
-            const adminFilterType = document.getElementById('admin-filter-type');
-            const adminFilterStatus = document.getElementById('admin-filter-status');
-            const requestsTableBody = document.getElementById('admin-requests-table-body');
-
-            // Función renderAdminRequestsTable (funciona para el filtrado)
-            function renderAdminRequestsTable(requests) {
-                requestsTableBody.innerHTML = '';
-                if (requests.length === 0) {
-                    requestsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-4">No hay solicitudes que coincidan con los filtros.</td></tr>';
-                    return;
-                }
-
-                requests.forEach(req => {
-                    const normalizedStatus = normalizeStatus(req.estado);
-
-                    const statusClass = normalizedStatus === 'PENDIENTE'
-                        ? 'bg-warning'
-                        : (normalizedStatus === 'APROBADA' ? 'bg-success' : 'bg-danger');
-
-                    const isPending = normalizedStatus === 'PENDIENTE';
-                    const buttonClass = isPending ? 'btn-warning' : 'btn-outline-info';
-
-                    const viewButtonText = isPending ? 'Ver Solicitud' : 'Ver Resolución';
-
-
-                    const actionsHtml = `
-                    <button data-request-id="${req.id}"
-                            data-request-type="${req.tipo}"
-                            data-request-estado="${req.estado}"
-                            class="btn btn-sm btn-outline-info rounded-pill btn-view-solicitud me-2">
-                        ${viewButtonText}
-                    </button>
-
-                    ${isPending ?
-                        `<button data-request-id="${req.id}"
-                             data-request-type="${req.tipo}"
-                             data-is-pending="true"
-                             class="btn ${buttonClass} btn-sm rounded-pill btn-evaluate">
-                        Evaluar
-                    </button>` : ''}
-                `;
-
-                    requestsTableBody.innerHTML += `
+                            tableBody.innerHTML += `
                     <tr>
-                        <td>${req.tituloDelHechoAEliminar}</td>
-                        <td><span class="badge bg-info">${req.tipo}</span></td>
-                        <td><span class="badge ${statusClass}">${req.estado}</span></td>
-                        <td class="text-end">
-                            <div>${actionsHtml}</div>
-                        </td>
+                        <td class="fw-bold">${req.tituloDelHechoAEliminar || 'Sin título'}</td>
+                        <td><span class="badge bg-info text-dark">${req.tipo}</span></td>
+                        <td><span class="badge ${badgeClass}">${req.estado}</span></td>
+                        <td class="text-end">${actionBtn}</td>
                     </tr>`;
+                        });
+                    }
+
+                    function applyFilters() {
+                        const type = filterType.value;
+                        const status = filterStatus.value;
+                        const filtered = allRequests.filter(req => {
+                            return (!type || req.tipo === type) && (!status || req.estado === status);
+                        });
+                        renderTable(filtered);
+                    }
+
+                    filterType.addEventListener('change', applyFilters);
+                    filterStatus.addEventListener('change', applyFilters);
+                    renderTable(allRequests);
+
+                    // --- LOGICA DEL MODAL ---
+                    document.addEventListener('click', function(e) {
+                        const btn = e.target.closest('.btn-view-detail');
+                        if (btn) {
+                            const id = btn.getAttribute('data-id');
+                            const tipo = btn.getAttribute('data-type');
+                            const titulo = btn.getAttribute('data-title');
+
+                            // Validar ID antes de llamar
+                            if (!id || id === 'null') {
+                                alert("Error: Esta solicitud tiene un ID inválido y no se puede procesar.");
+                                return;
+                            }
+
+                            const modalTitle = document.getElementById('modalTitle');
+                            const modalContent = document.getElementById('modalContent');
+                            const formApprove = document.getElementById('formApprove');
+                            const formReject = document.getElementById('formReject');
+
+                            modalTitle.textContent = `Evaluando: ${tipo}`;
+                            modalContent.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary"></div><p class="mt-2">Cargando detalles...</p></div>';
+
+                            // Configurar Actions
+                            if (tipo === 'Nuevo Hecho') {
+                                formApprove.action = `/admin/hechos/${id}/aprobar`;
+                                formReject.action = `/admin/hechos/${id}/rechazar`;
+                            } else if (tipo === 'Eliminación') {
+                                formApprove.action = `/admin/solicitudes/${id}/aprobar`;
+                                formReject.action = `/admin/solicitudes/${id}/rechazar`;
+                            } else if (tipo === 'Edición') {
+                                formApprove.action = `/admin/ediciones/${id}/aceptar`;
+                                formReject.action = `/admin/ediciones/${id}/rechazar`;
+                            }
+
+                            // Mostrar Modal
+                            const modal = new bootstrap.Modal(document.getElementById('evaluationModal'));
+                            modal.show();
+
+                            // Llamada AJAX
+                            fetch(`/admin/api/solicitudes/${id}/detalle?tipo=${encodeURIComponent(tipo)}`)
+                                .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                                .then(({ status, body }) => {
+
+                                    // Si el backend devolvió error
+                                    if (status >= 400) {
+                                        throw new Error(body.error || "Error desconocido en el servidor");
+                                    }
+
+                                    const data = body;
+                                    let html = '';
+
+                                    // 1. LÓGICA NUEVO HECHO (CON MAPA)
+                                    if (tipo === 'Nuevo Hecho') {
+                                        const fecha = data.fechaAcontecimiento ? new Date(data.fechaAcontecimiento).toLocaleString() : '-';
+
+                                        html = `
+                                            <div class="alert alert-info border-0 shadow-sm mb-3"><i class="bi bi-info-circle me-2"></i>Propuesta de creación</div>
+                                            <h4 class="text-primary fw-bold mb-3">${data.titulo || 'Sin título'}</h4>
+                                            <p class="lead fs-6">${data.descripcion || 'Sin descripción'}</p>
+
+                                            <div class="row g-2 small text-muted mb-3">
+                                                <div class="col-6"><strong>Categoría:</strong> <span class="badge bg-secondary">${data.categoria}</span></div>
+                                                <div class="col-6"><strong>Fecha:</strong> ${fecha}</div>
+                                            </div>
+
+                                            <div class="card border-0">
+                                                <div class="card-header bg-white fw-bold small text-muted">Ubicación Geográfica</div>
+                                                <div class="card-body p-0">
+                                                     <div id="modal-map-container" style="height: 250px; width: 100%; background: #eee; border-radius: 0 0 8px 8px;"></div>
+                                                </div>
+                                            </div>`;
+                                    }
+                                    // 2. LÓGICA ELIMINACIÓN
+                                    else if (tipo === 'Eliminación') {
+                                        html = `
+                                            <div class="alert alert-danger border-0 shadow-sm mb-3"><i class="bi bi-trash3 me-2"></i>Solicitud de Baja</div>
+                                            <p>Se solicita eliminar: <strong>${data.tituloDelHechoAEliminar}</strong></p>
+                                            <div class="card border-danger"><div class="card-body text-danger p-3">
+                                                <strong>Motivo:</strong><br> ${data.motivo}
+                                            </div></div>`;
+                                    }
+                                    // 3. LÓGICA EDICIÓN
+                                    else if (tipo === 'Edición') {
+                                        const orig = data.original || {};
+                                        const prop = data.propuesta || {};
+
+                                        // Helper para comparar
+                                        const isDiff = (a, b) => a !== b ? 'text-success fw-bold' : '';
+
+                                        html = `
+                                            <div class="alert alert-warning border-0 shadow-sm mb-3"><i class="bi bi-pencil me-2"></i>Propuesta de Edición</div>
+                                            <div class="row g-0 border rounded">
+                                                <div class="col-6 border-end bg-light p-3">
+                                                    <h6 class="text-center text-muted small fw-bold text-uppercase">Original</h6>
+                                                    <div class="mb-2"><small class="fw-bold">Título:</small><div>${orig.titulo || '-'}</div></div>
+                                                    <div class="mb-2"><small class="fw-bold">Descripción:</small><div class="small">${orig.descripcion || '-'}</div></div>
+                                                    <div class="mb-2"><small class="fw-bold">Categoría:</small><div class="small">${orig.categoria || '-'}</div></div>
+                                                </div>
+                                                <div class="col-6 bg-white p-3">
+                                                    <h6 class="text-center text-primary small fw-bold text-uppercase">Propuesta</h6>
+                                                    <div class="mb-2"><small class="fw-bold">Título:</small><div class="${isDiff(orig.titulo, prop.tituloPropuesto)}">${prop.tituloPropuesto || orig.titulo}</div></div>
+                                                    <div class="mb-2"><small class="fw-bold">Descripción:</small><div class="${isDiff(orig.descripcion, prop.descripcionPropuesta)} small">${prop.descripcionPropuesta || orig.descripcion}</div></div>
+                                                    <div class="mb-2"><small class="fw-bold">Categoría:</small><div class="${isDiff(orig.categoria, prop.categoriaPropuestaNombre)} small">${prop.categoriaPropuestaNombre || orig.categoria}</div></div>
+                                                </div>
+                                            </div>`;
+                                    }
+
+                                    // 4. INYECTAR HTML EN EL MODAL
+                                    modalContent.innerHTML = html;
+
+                                    // 5. INICIALIZAR MAPA (Solo si es Nuevo Hecho y ya insertamos el HTML)
+                                    if (tipo === 'Nuevo Hecho') {
+                                        setTimeout(() => {
+                                            if (data.latitud && data.longitud) {
+                                                // Verificar si ya existe mapa previo y limpiarlo si es necesario (aunque el innerHTML lo borra)
+                                                const map = L.map('modal-map-container').setView([data.latitud, data.longitud], 15);
+
+                                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                                    attribution: '© OpenStreetMap contributors'
+                                                }).addTo(map);
+
+                                                L.marker([data.latitud, data.longitud]).addTo(map)
+                                                    .bindPopup(`<b>${data.titulo}</b>`).openPopup();
+
+                                                // Truco para que se renderice bien al estar dentro de un modal
+                                                map.invalidateSize();
+                                            } else {
+                                                document.getElementById('modal-map-container').innerHTML =
+                                                    '<div class="d-flex align-items-center justify-content-center h-100 text-muted">Ubicación no disponible</div>';
+                                            }
+                                        }, 300); // Delay para asegurar que el div es visible
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error(err);
+                                    modalContent.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i> ${err.message}</div>`;
+                                });
+                        }
+                    });
                 });
-            }
-
-
-            function applyAdminRequestFilters() {
-                const typeValue = adminFilterType.value;
-                const statusValue = adminFilterStatus.value;
-
-                const filteredRequests = allRequestsForFilter.filter(req => {
-                    // 1. Filtro por Tipo
-                    const typeMatch = !typeValue || req.tipo === typeValue;
-
-                    // 2. Filtro por Estado
-                    if (!statusValue) return typeMatch;
-
-                    // Comparamos el estado normalizado del request con el valor limpio del filtro.
-                    const requestNormalizedStatus = normalizeStatus(req.estado);
-                    const statusMatch = requestNormalizedStatus === statusValue;
-
-                    return typeMatch && statusMatch;
-                });
-
-                renderAdminRequestsTable(filteredRequests);
-            }
-
-            // Ejecutar la función de filtro cada vez que cambie un selector
-            adminFilterType.addEventListener('change', applyAdminRequestFilters);
-            adminFilterStatus.addEventListener('change', applyAdminRequestFilters);
-
-            // Cargar la tabla al inicio
-            applyAdminRequestFilters();
-
-        });
-    </script>
-</div>
-</body>
+            </script>
+        </div>
+    </body>
 </html>

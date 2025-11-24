@@ -7,14 +7,17 @@ import ar.utn.da.dsi.frontend.client.dto.output.*;
 import ar.utn.da.dsi.frontend.services.colecciones.ColeccionService;
 import ar.utn.da.dsi.frontend.services.estadisticas.EstadisticasService;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
+import ar.utn.da.dsi.frontend.services.solicitudes.SolicitudService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import ar.utn.da.dsi.frontend.services.solicitudes.SolicitudService;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,40 +46,61 @@ public class AdminController {
       model.addAttribute("colecciones", List.of());
     }
 
-    // 2. UNIFICAR TODO (Creación + Eliminación + Edición)
-    List<SolicitudUnificadaDTO>  listaUnificada = new ArrayList<>();
+    // 2. UNIFICAR SOLICITUDES (USANDO HISTORIAL COMPLETO)
+    List<SolicitudUnificadaDTO> listaUnificada = new ArrayList<>();
     String adminId = (authentication != null) ? authentication.getName() : null;
 
     if (adminId != null) {
+      // A) TODOS los Hechos (Nuevos, Aprobados, Rechazados)
       try {
-        // A) Nuevos Hechos (Pendientes)
-        List<HechoDTO> nuevos = hechoService.buscarHechosPendientes();
-        for (HechoDTO h : nuevos) {
-          listaUnificada.add(new SolicitudUnificadaDTO(h.id(), h.titulo(), "Nuevo Hecho", "PENDIENTE"));
+        // CAMBIO CLAVE: Usamos buscarHistorialHechos() en lugar de buscarHechosPendientes()
+        List<HechoDTO> todosHechos = hechoService.buscarHistorialHechos();
+        if (todosHechos != null) {
+          for (HechoDTO h : todosHechos) {
+            if (h.getId() != null) {
+              // El estado ya viene en el DTO (PENDIENTE, ACEPTADO, RECHAZADO)
+              listaUnificada.add(new SolicitudUnificadaDTO(h.getId(), h.getTitulo(), "Nuevo Hecho", h.getEstado()));
+            }
+          }
         }
-
-        // B) Solicitudes de Baja
-        List<SolicitudEliminacionOutputDTO> bajas = solicitudService.obtenerTodasParaAdmin();
-        for (SolicitudEliminacionOutputDTO b : bajas) {
-          listaUnificada.add(new SolicitudUnificadaDTO(b.nroDeSolicitud(), b.tituloDelHechoAEliminar(), "Eliminación", b.estado()));
-        }
-
-        // C) Ediciones (¡AGREGADO!)
-        List<EdicionOutputDTO> ediciones = hechoService.buscarEdicionesPendientes();
-        for (EdicionOutputDTO e : ediciones) {
-          // Usamos el título propuesto o un identificador genérico
-          String titulo = (e.getTituloPropuesto() != null) ? e.getTituloPropuesto() : "Edición Hecho ID " + e.getIdHechoOriginal();
-          listaUnificada.add(new SolicitudUnificadaDTO(e.getId(), titulo, "Edición", e.getEstado()));
-        }
-
       } catch (Exception e) {
-        System.out.println("Error unificando solicitudes: " + e.getMessage());
+        System.out.println("Error historial hechos: " + e.getMessage());
+      }
+
+      // B) Solicitudes de Baja (Ya trae todas)
+      try {
+        List<SolicitudEliminacionOutputDTO> bajas = solicitudService.obtenerTodasParaAdmin();
+        if (bajas != null) {
+          for (SolicitudEliminacionOutputDTO b : bajas) {
+            if (b.nroDeSolicitud() != null) {
+              listaUnificada.add(new SolicitudUnificadaDTO(b.nroDeSolicitud(), b.tituloDelHechoAEliminar(), "Eliminación", b.estado()));
+            }
+          }
+        }
+      } catch (Exception e) {
+        System.out.println("Error historial bajas: " + e.getMessage());
+      }
+
+      // C) TODAS las Ediciones
+      try {
+        // CAMBIO CLAVE: Usamos buscarHistorialEdiciones() en lugar de buscarEdicionesPendientes()
+        List<EdicionOutputDTO> ediciones = hechoService.buscarHistorialEdiciones();
+        if (ediciones != null) {
+          for (EdicionOutputDTO e : ediciones) {
+            if (e.getId() != null) {
+              String titulo = (e.getTituloPropuesto() != null) ? e.getTituloPropuesto() : "Edición Hecho ID " + e.getIdHechoOriginal();
+              listaUnificada.add(new SolicitudUnificadaDTO(e.getId(), titulo, "Edición", e.getEstado()));
+            }
+          }
+        }
+      } catch (Exception e) {
+        System.out.println("Error historial ediciones: " + e.getMessage());
       }
     }
 
     model.addAttribute("solicitudes", listaUnificada);
 
-    // Resto de atributos necesarios para la vista
+    // Datos auxiliares
     try {
       model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
       model.addAttribute("availableSources", hechoService.getAvailableSources());
@@ -86,232 +110,145 @@ public class AdminController {
     }
 
     model.addAttribute("titulo", "Panel de Administración");
-
     return "admin";
   }
 
-  // Se eliminó resolverSolicitudUnificada, manteniendo los métodos específicos.
+  // --- ENDPOINT MODAL (UNIFICADO) ---
+  @GetMapping("/api/solicitudes/{id}/detalle")
+  @ResponseBody
+  public ResponseEntity<?> getDetalleUnificado(@PathVariable Long id, @RequestParam String tipo) {
+    try {
+      if ("Nuevo Hecho".equals(tipo)) {
+        return ResponseEntity.ok(hechoService.getHechoInputDTOporId(id));
+      }
+      else if ("Eliminación".equals(tipo)) {
+        return ResponseEntity.ok(solicitudService.obtenerPorId(id.intValue(), "admin"));
+      }
+      else if ("Edición".equals(tipo)) {
+        EdicionOutputDTO edicion = hechoService.buscarEdicionPorId(id);
+        if (edicion == null) return ResponseEntity.notFound().build();
 
-  // --- MÉTODOS DE RESOLUCIÓN DE SOLICITUDES DE ELIMINACIÓN ---
+        HechoInputDTO original = new HechoInputDTO();
+        try {
+          if (edicion.getIdHechoOriginal() != null) {
+            original = hechoService.getHechoInputDTOporId(edicion.getIdHechoOriginal());
+          }
+        } catch (Exception e) {
+          original.setTitulo("No disponible");
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("propuesta", edicion);
+        response.put("original", original);
+        return ResponseEntity.ok(response);
+      }
+      return ResponseEntity.badRequest().body(Map.of("error", "Tipo desconocido"));
+    } catch (Exception e) {
+      return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+    }
+  }
+
+  // --- ACTIONS Y COLECCIONES (MANTENIDOS) ---
   @PostMapping("/solicitudes/{id}/aprobar")
-  public String aprobarSolicitud(@PathVariable("id") Integer id, Authentication authentication) {
-    String adminId = authentication.getName();
-    solicitudService.aceptar(id, adminId);
-    return "redirect:/admin?success=solicitud_aprobada&tab=requests";
+  public String aprobarSolicitud(@PathVariable("id") Integer id, Authentication auth) {
+    solicitudService.aceptar(id, auth.getName());
+    return "redirect:/admin?success=solicitud_aprobada";
   }
-
   @PostMapping("/solicitudes/{id}/rechazar")
-  public String rechazarSolicitud(@PathVariable("id") Integer id, Authentication authentication) {
-    String adminId = authentication.getName();
-    solicitudService.rechazar(id, adminId);
-    return "redirect:/admin?success=solicitud_rechazada&tab=requests";
+  public String rechazarSolicitud(@PathVariable("id") Integer id, Authentication auth) {
+    solicitudService.rechazar(id, auth.getName());
+    return "redirect:/admin?success=solicitud_rechazada";
   }
-  // -------------------------------------------------------------
-
-  // --- MÉTODOS DE RESOLUCIÓN DE NUEVOS HECHOS PENDIENTES ---
   @PostMapping("/hechos/{id}/aprobar")
   public String aprobarHecho(@PathVariable("id") Long id) {
     hechoService.aprobar(id);
-    return "redirect:/admin?success=hecho_aprobado&tab=requests";
+    return "redirect:/admin?success=hecho_aprobado";
   }
-
   @PostMapping("/hechos/{id}/rechazar")
   public String rechazarHecho(@PathVariable("id") Long id) {
     hechoService.rechazar(id);
-    return "redirect:/admin?success=hecho_rechazado&tab=requests";
+    return "redirect:/admin?success=hecho_rechazado";
   }
-  // --------------------------------------------------------
-
-  // --- MÉTODOS DE RESOLUCIÓN DE EDICIONES ---
   @PostMapping("/ediciones/{id}/aceptar")
   public String aceptarEdicion(@PathVariable("id") Long id) {
     hechoService.aceptarEdicion(id);
-    return "redirect:/admin?success=edicion_aceptada&tab=requests";
+    return "redirect:/admin?success=edicion_aceptada";
   }
-
   @PostMapping("/ediciones/{id}/rechazar")
   public String rechazarEdicion(@PathVariable("id") Long id) {
     hechoService.rechazarEdicion(id);
-    return "redirect:/admin?success=edicion_rechazada&tab=requests";
+    return "redirect:/admin?success=edicion_rechazada";
   }
-  // ------------------------------------------
-
-  // --- NUEVOS ENDPOINTS DE API PARA OBTENER DETALLES COMPLETOS (Uso Interno del Frontend) ---
-
-  /**
-   * Endpoint para obtener el DTO de Edición completo (para 'Ver Solicitud').
-   */
-  @GetMapping("/api/ediciones/{id}")
-  @ResponseBody
-  public EdicionOutputDTO getEdicionDetalle(@PathVariable Long id) {
-    // Nota: El método buscarEdicionPorId llama al backend de Dinámica
-    return hechoService.buscarEdicionPorId(id);
-  }
-
-  /**
-   * Endpoint para obtener el DTO de Hecho completo (para 'Ver Solicitud' de Nuevo Hecho).
-   */
-  @GetMapping("/api/hechos/{id}")
-  @ResponseBody
-  public HechoInputDTO getHechoDetalle(@PathVariable Long id) {
-    // Nota: getHechoInputDTOporId obtiene el hecho y lo mapea al DTO de formulario.
-    return hechoService.getHechoInputDTOporId(id);
-  }
-
-  /**
-   * Endpoint para obtener el DTO de Solicitud de Eliminación completo (para 'Ver Solicitud').
-   */
-  @GetMapping("/api/solicitudes-eliminacion/{id}")
-  @ResponseBody
-  public SolicitudEliminacionOutputDTO getSolicitudEliminacionDetalle(@PathVariable Long id, Authentication authentication) {
-    String adminId = authentication.getName();
-    return solicitudService.obtenerPorId(id.intValue(), adminId);
-  }
-  // ------------------------------------------------------------------------------------------
 
   @GetMapping("/colecciones/nueva")
   public String mostrarFormularioNuevaColeccion(Model model) {
     model.addAttribute("coleccionDTO", new ColeccionInputDTO());
     model.addAttribute("titulo", "Crear Nueva Colección");
     model.addAttribute("accion", "crear");
-
     model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
-
     return "admin-coleccion-form";
   }
-
   @PostMapping("/colecciones/crear")
-  public String crearColeccion(@ModelAttribute ColeccionInputDTO coleccionDTO, Authentication auth) {
-    String adminId = auth.getName();
-    coleccionDTO.setVisualizadorID(adminId);
-
-    coleccionService.crear(coleccionDTO);
-
+  public String crearColeccion(@ModelAttribute ColeccionInputDTO dto, Authentication auth) {
+    dto.setVisualizadorID(auth.getName());
+    coleccionService.crear(dto);
     return "redirect:/admin?success=coleccion_creada";
   }
-
   @GetMapping("/colecciones/{id}/editar")
   public String mostrarFormularioEditarColeccion(@PathVariable("id") String id, Model model) {
-    ColeccionOutputDTO dtoOutput = coleccionService.obtenerPorId(id);
-    ColeccionInputDTO dtoInput = new ColeccionInputDTO();
-    dtoInput.setTitulo(dtoOutput.titulo());
-    dtoInput.setDescripcion(dtoOutput.descripcion());
-    // dtoInput.setAlgoritmoConsenso(dtoOutput.algoritmoConsenso()); // OutputDTO no lo tiene
-    dtoInput.setHandleID(dtoOutput.handleID());
-
-    model.addAttribute("coleccionDTO", dtoInput);
-    model.addAttribute("titulo", "Editar Colección: " + dtoOutput.titulo());
+    ColeccionOutputDTO out = coleccionService.obtenerPorId(id);
+    ColeccionInputDTO in = new ColeccionInputDTO();
+    in.setTitulo(out.titulo());
+    in.setDescripcion(out.descripcion());
+    in.setHandleID(out.handleID());
+    model.addAttribute("coleccionDTO", in);
+    model.addAttribute("titulo", "Editar Colección");
     model.addAttribute("accion", "editar");
     model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
-
     return "admin-coleccion-form";
   }
-
   @PostMapping("/colecciones/{id}/editar")
-  public String editarColeccion(@PathVariable("id") String id,
-                                @ModelAttribute ColeccionInputDTO coleccionDTO,
-                                Authentication auth) {
-
-    String adminId = auth.getName();
-    coleccionDTO.setVisualizadorID(adminId);
-
-    coleccionService.actualizar(id, coleccionDTO);
-
+  public String editarColeccion(@PathVariable("id") String id, @ModelAttribute ColeccionInputDTO dto, Authentication auth) {
+    dto.setVisualizadorID(auth.getName());
+    coleccionService.actualizar(id, dto);
     return "redirect:/admin?success=coleccion_editada";
   }
-
   @PostMapping("/colecciones/{id}/eliminar")
   public String eliminarColeccion(@PathVariable("id") String id, Authentication auth) {
-    String adminId = auth.getName();
-
-    coleccionService.eliminar(id, adminId);
-
+    coleccionService.eliminar(id, auth.getName());
     return "redirect:/admin?success=coleccion_eliminada";
   }
-
   @PostMapping("/hechos/importar-csv")
-  public String importarHechosCsv(@RequestParam("csvFile") MultipartFile file, RedirectAttributes redirectAttributes) {
-
+  public String importarCsv(@RequestParam("csvFile") MultipartFile file, RedirectAttributes attr) {
     try {
       hechoService.importarCsv(file);
-      redirectAttributes.addFlashAttribute("success", "El archivo CSV se está procesando.");
+      attr.addFlashAttribute("success", "CSV procesándose.");
     } catch (Exception e) {
-      redirectAttributes.addFlashAttribute("error", "Error al subir: " + e.getMessage());
+      attr.addFlashAttribute("error", "Error: " + e.getMessage());
     }
-
     return "redirect:/admin";
   }
-
   @GetMapping("/estadisticas")
-  public String mostrarEstadisticas(
-      @RequestParam(required = false) String handleIdColeccion,
-      @RequestParam(required = false) String categoriaProvincia,
-      @RequestParam(required = false) String categoriaHora,
-      Model model) {
+  public String mostrarEstadisticas(@RequestParam(required = false) String handleIdColeccion, @RequestParam(required = false) String categoriaProvincia, @RequestParam(required = false) String categoriaHora, Model model) {
+    try { model.addAttribute("colecciones", coleccionService.obtenerTodas()); } catch (Exception e) { model.addAttribute("colecciones", List.of()); }
+    try { model.addAttribute("categorias", hechoService.getAvailableCategories()); } catch (Exception e) { model.addAttribute("categorias", List.of()); }
+    try { model.addAttribute("distribucionCategorias", estadisticasService.getDistribucionCategorias()); model.addAttribute("spamRatio", estadisticasService.getSolicitudesSpamRatio()); } catch (Exception e) {}
 
-    // 1. Cargar Listas para Dropdowns
-    try {
-      model.addAttribute("colecciones", coleccionService.obtenerTodas());
-    } catch (Exception e) {
-      model.addAttribute("colecciones", List.of());
-    }
-    try {
-      model.addAttribute("categorias", hechoService.getAvailableCategories());
-    } catch (Exception e) {
-      model.addAttribute("categorias", List.of());
-    }
-
-    // 2. Cargar Métricas Fijas (2 y 5)
-    try {
-      model.addAttribute("distribucionCategorias", estadisticasService.getDistribucionCategorias());
-      model.addAttribute("spamRatio", estadisticasService.getSolicitudesSpamRatio());
-    } catch (Exception e) {
-      // Dejar como null si falla, la vista maneja el error
-    }
-
-    // 3. Cargar Métricas Parametrizadas (1, 3, 4) si los parámetros están presentes
-
-    // Métrica 1: Distribución de provincias por colección
     if (handleIdColeccion != null && !handleIdColeccion.isEmpty()) {
-      try {
-        ProvinciaHechosPorColeccionListDTO resultado = estadisticasService.getDistribucionProvinciasPorColeccion(handleIdColeccion);
-        model.addAttribute("resultadoProvinciaColeccion", resultado);
-        model.addAttribute("handleIdColeccionSeleccionada", handleIdColeccion);
-      } catch (Exception e) {
-        model.addAttribute("errorProvinciaColeccion", "Error al cargar la distribución de hechos por colección. Asegúrese de que existen datos calculados.");
-      }
+      try { model.addAttribute("resultadoProvinciaColeccion", estadisticasService.getDistribucionProvinciasPorColeccion(handleIdColeccion)); model.addAttribute("handleIdColeccionSeleccionada", handleIdColeccion); } catch (Exception e) {}
     }
-
-    // Métrica 3: Distribución de provincias por categoría
     if (categoriaProvincia != null && !categoriaProvincia.isEmpty()) {
-      try {
-        ProvinciaHechosPorCategoriaListDTO resultado = estadisticasService.getDistribucionProvinciasPorCategoria(categoriaProvincia);
-        model.addAttribute("resultadoProvinciaCategoria", resultado);
-        model.addAttribute("categoriaProvinciaSeleccionada", categoriaProvincia);
-      } catch (Exception e) {
-        model.addAttribute("errorProvinciaCategoria", "Error al cargar la distribución de provincia por categoría. Asegúrese de que existen datos calculados.");
-      }
+      try { model.addAttribute("resultadoProvinciaCategoria", estadisticasService.getDistribucionProvinciasPorCategoria(categoriaProvincia)); model.addAttribute("categoriaProvinciaSeleccionada", categoriaProvincia); } catch (Exception e) {}
     }
-
-    // Métrica 4: Distribución de horas por categoría
     if (categoriaHora != null && !categoriaHora.isEmpty()) {
-      try {
-        HoraHechosPorCategoriaListDTO resultado = estadisticasService.getDistribucionHorasPorCategoria(categoriaHora);
-        model.addAttribute("resultadoHoraCategoria", resultado);
-        model.addAttribute("categoriaHoraSeleccionada", categoriaHora);
-      } catch (Exception e) {
-        model.addAttribute("errorHoraCategoria", "Error al cargar la distribución de hora por categoría. Asegúrese de que existen datos calculados.");
-      }
+      try { model.addAttribute("resultadoHoraCategoria", estadisticasService.getDistribucionHorasPorCategoria(categoriaHora)); model.addAttribute("categoriaHoraSeleccionada", categoriaHora); } catch (Exception e) {}
     }
-
-    // 4. URLs de Exportación
     model.addAttribute("urlZipCompleto", estadisticasService.getExportUrlZipCompleto());
     model.addAttribute("urlExportarProvinciaColeccion", estadisticasService.getExportUrlProvinciaColeccion());
     model.addAttribute("urlExportarCategoriaHechos", estadisticasService.getExportUrlCategoriaHechos());
     model.addAttribute("urlExportarProvinciaCategoria", estadisticasService.getExportUrlProvinciaCategoria());
     model.addAttribute("urlExportarHoraCategoria", estadisticasService.getExportUrlHoraCategoria());
     model.addAttribute("urlExportarSpam", estadisticasService.getExportUrlSpam());
-
     model.addAttribute("titulo", "Estadísticas");
     return "estadisticas";
   }

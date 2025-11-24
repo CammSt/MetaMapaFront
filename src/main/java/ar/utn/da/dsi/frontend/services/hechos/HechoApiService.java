@@ -45,6 +45,30 @@ public class HechoApiService {
     this.agregadorApiUrl = agregadorApiUrl;
   }
 
+  public List<HechoDTO> getHistorialHechos() {
+    String url = dinamicaUrl + "/hechos/historial";
+    return apiClientService.executeWithToken(accessToken ->
+        webClient.get().uri(url)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+            .retrieve()
+            .bodyToMono(new ParameterizedTypeReference<ApiResponse<List<HechoDTO>>>() {})
+            .map(r -> r.getDatos() != null ? r.getDatos() : List.<HechoDTO>of())
+            .block()
+    );
+  }
+
+  public List<EdicionOutputDTO> getHistorialEdiciones() {
+    String url = dinamicaUrl + "/ediciones/historial";
+    return apiClientService.executeWithToken(accessToken ->
+        webClient.get().uri(url)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+            .retrieve()
+            .bodyToMono(new ParameterizedTypeReference<ApiResponse<List<EdicionOutputDTO>>>() {})
+            .map(r -> r.getDatos() != null ? r.getDatos() : List.<EdicionOutputDTO>of())
+            .block()
+    );
+  }
+
   /**
    * Llama al backend para obtener los hechos de una colección.
    * Mapea filtros a los endpoints específicos del Agregador.
@@ -174,8 +198,22 @@ public class HechoApiService {
   }
 
   public HechoDTO getHechoPorId(Long id) {
-    String url = dinamicaUrl + "/" + id;
-    return apiClientService.get(url, HechoDTO.class);
+    String url = dinamicaUrl + "/hechos/" + id;
+
+    try {
+      return apiClientService.executeWithToken(accessToken ->
+          webClient.get()
+              .uri(url)
+              .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+              .retrieve()
+              .bodyToMono(new ParameterizedTypeReference<ApiResponse<HechoDTO>>() {})
+              .map(response -> response.getDatos())
+              .block()
+      );
+    } catch (Exception e) {
+      System.out.println("Error al buscar hecho por ID " + id + ": " + e.getMessage());
+      return null;
+    }
   }
 
   /**
@@ -360,16 +398,16 @@ public class HechoApiService {
     );
   }
 
-  public EdicionOutputDTO getEdicionPorId(Long idEdicion) {
-    // URL: http://localhost:8082/dinamica/ediciones/{id}
-    String url = dinamicaUrl + "/ediciones/" + idEdicion;
+  public EdicionOutputDTO buscarEdicionPorId(Long id) {
+    String url = dinamicaUrl + "/ediciones/" + id; // e.g. http://localhost:8082/dinamica/ediciones/{id}
 
     return apiClientService.executeWithToken(accessToken ->
         apiClientService.getWebClient().get()
             .uri(url)
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
             .retrieve()
-            .bodyToMono(EdicionOutputDTO.class)
+            .bodyToMono(new ParameterizedTypeReference<ApiResponse<EdicionOutputDTO>>() {})
+            .map(apiResp -> apiResp.getDatos())   // <-- DESempaquetar "datos"
             .block()
     );
   }

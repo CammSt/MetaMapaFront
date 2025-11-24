@@ -6,8 +6,6 @@ import ar.utn.da.dsi.frontend.client.dto.output.SolicitudEliminacionOutputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.SolicitudUnificadaDTO;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
 import ar.utn.da.dsi.frontend.services.solicitudes.SolicitudService;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,11 +31,6 @@ public class ContributorController {
   public String mostrarPanelContribuyente(Model model, Authentication authentication) {
     String userId = authentication.getName();
 
-    // ==========================================
-    // PASO 1: OBTENER DATOS DE LAS APIs
-    // ==========================================
-
-    // A) Traer TODOS los Hechos (Pendientes, Aceptados, Rechazados)
     List<HechoDTO> todosMisHechos = new ArrayList<>();
     try {
       todosMisHechos = hechoService.buscarHechosPorUsuario(userId);
@@ -45,7 +38,6 @@ public class ContributorController {
       System.out.println("Error buscando hechos: " + e.getMessage());
     }
 
-    // B) Traer Solicitudes de Baja (Eliminaciones)
     List<SolicitudEliminacionOutputDTO> misBajas = new ArrayList<>();
     try {
       misBajas = solicitudService.obtenerTodas(userId);
@@ -53,7 +45,6 @@ public class ContributorController {
       System.out.println("Error buscando solicitudes de baja: " + e.getMessage());
     }
 
-    // C) Traer Ediciones (NUEVO)
     List<EdicionOutputDTO> misEdiciones = new ArrayList<>();
     try {
       misEdiciones = hechoService.buscarEdicionesPorUsuario(userId);
@@ -61,14 +52,10 @@ public class ContributorController {
       System.out.println("Error buscando ediciones: " + e.getMessage());
     }
 
-    // ==========================================
-    // PASO 2: PREPARAR DATOS PARA LA VISTA
-    // ==========================================
-
     // --- TABLA 1: "Mis Hechos Publicados" ---
-    // Solo mostramos los que ya están ACEPTADO
+    // USAMOS GETTERS AQUÍ
     List<HechoDTO> hechosPublicados = todosMisHechos.stream()
-        .filter(h -> "ACEPTADO".equals(h.estado()))
+        .filter(h -> "ACEPTADO".equals(h.getEstado()))
         .collect(Collectors.toList());
 
     model.addAttribute("misHechos", hechosPublicados);
@@ -78,13 +65,13 @@ public class ContributorController {
     List<SolicitudUnificadaDTO> listaUnificada = new ArrayList<>();
 
     // 1. Agregar CREACIONES (Nuevos Hechos)
-    // Acá usamos 'todosMisHechos' para ver también los pendientes y rechazados
     for (HechoDTO h : todosMisHechos) {
-      String estadoHecho = (h.estado() != null) ? h.estado() : "EN_REVISION";
+      // USAMOS GETTERS AQUÍ
+      String estadoHecho = (h.getEstado() != null) ? h.getEstado() : "EN_REVISION";
 
       listaUnificada.add(new SolicitudUnificadaDTO(
-          h.id(),
-          h.titulo(),
+          h.getId(),
+          h.getTitulo(),
           "Nuevo Hecho",
           estadoHecho
       ));
@@ -102,7 +89,6 @@ public class ContributorController {
 
     // 3. Agregar EDICIONES (Modificaciones)
     for (EdicionOutputDTO edi : misEdiciones) {
-      // Si el título propuesto es null, usamos un texto genérico
       String tituloMostrar = (edi.getTituloPropuesto() != null)
           ? edi.getTituloPropuesto()
           : "Edición Hecho ID " + edi.getIdHechoOriginal();

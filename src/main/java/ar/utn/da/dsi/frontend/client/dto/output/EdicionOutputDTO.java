@@ -1,36 +1,58 @@
 package ar.utn.da.dsi.frontend.client.dto.output;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class EdicionOutputDTO {
+	@JsonProperty("id")
 	private Long id;
+
+	@JsonProperty("idHechoOriginal")
 	private Long idHechoOriginal;
+
+	@JsonProperty("tituloPropuesto")
 	private String tituloPropuesto;
+
+	@JsonProperty("descripcionPropuesta")
 	private String descripcionPropuesta;
 
-	// Mapeamos la categoría anidada para que no rompa
-	private CategoriaDto categoriaPropuesta;
+	// CAMBIO: Recibimos los campos planos del backend
+	@JsonProperty("categoriaPropuestaId")
+	private Long categoriaPropuestaId;
 
+	@JsonProperty("categoriaPropuestaNombre")
+	private String categoriaPropuestaNombre;
+
+	@JsonProperty("latitudPropuesta")
 	private Double latitudPropuesta;
+
+	@JsonProperty("longitudPropuesta")
 	private Double longitudPropuesta;
+
+	@JsonProperty("fechaAcontecimientoPropuesta")
 	private LocalDateTime fechaAcontecimientoPropuesta;
+
+	@JsonProperty("contenidoMultimediaPropuesto")
 	private String contenidoMultimediaPropuesto;
+
+	@JsonProperty("visualizadorEditor") // Puede venir como visualizadorEditor o visualizadorEditorId, checkea el JSON si falla
 	private String visualizadorEditor;
+
+	@JsonProperty("fechaEdicion")
 	private LocalDate fechaEdicion;
-	private String estado; // PENDIENTE, APROBADA...
+
+	@JsonProperty("estado")
+	private String estado;
+
+	@JsonProperty("detalle")
 	private String detalle;
 
-	// Helper para obtener el nombre directo en el HTML
 	public String getNombreCategoria() {
-		return categoriaPropuesta != null ? categoriaPropuesta.getNombre() : "";
-	}
-
-	@Data
-	public static class CategoriaDto {
-		private Long id;
-		private String nombre;
+		return categoriaPropuestaNombre != null ? categoriaPropuestaNombre : "";
 	}
 }

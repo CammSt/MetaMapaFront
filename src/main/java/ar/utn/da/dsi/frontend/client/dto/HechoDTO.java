@@ -1,20 +1,51 @@
 package ar.utn.da.dsi.frontend.client.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class HechoDTO {
+	@JsonProperty("id")
+	private Long id;
 
-public record HechoDTO(
-		Long id,
-		Long userId,
-		String collectionHandle,
-		String titulo,
-		String descripcion,
-		String categoria,
-		LocalDateTime fechaAcontecimiento,
-		LocalDate fechaCarga,
-		double latitud,
-		double longitud,
-		boolean consensuado,
-		String estado
-) {}
+	@JsonProperty("userId")
+	private Long userId;
+
+	@JsonProperty("collectionHandle")
+	private String collectionHandle;
+
+	@JsonProperty("titulo")
+	private String titulo;
+
+	@JsonProperty("descripcion")
+	private String descripcion;
+
+	@JsonProperty("categoria")
+	private String categoria;
+
+	@JsonProperty("fechaAcontecimiento")
+	private LocalDateTime fechaAcontecimiento;
+
+	@JsonProperty("fechaCarga")
+	private LocalDate fechaCarga;
+
+	@JsonProperty("latitud")
+	private Double latitud;
+
+	@JsonProperty("longitud")
+	private Double longitud;
+
+	@JsonProperty("consensuado")
+	private boolean consensuado;
+
+	@JsonProperty("estado")
+	private String estado;
+}

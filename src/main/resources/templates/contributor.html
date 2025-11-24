@@ -108,70 +108,82 @@
 <div id="page-scripts">
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const allMyFacts = /*[[${misHechos}]]*/ [];
-        // AÑADIDO: Pasamos la lista completa de solicitudes a JavaScript
-        const allMyRequests = /*[[${misSolicitudes}]]*/ [];
+        const myFacts = /*[[${misHechos}]]*/ [];
+        const myRequests = /*[[${misSolicitudes}]]*/ [];
         /*]]>*/
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('contributor');
 
-            // Lógica para pestañas y filtros (filtrado por JS)
-            const tabFacts = document.getElementById('contrib-tab-my-facts');
-            const tabRequests = document.getElementById('contrib-tab-my-requests');
-            const contentFacts = document.getElementById('my-facts-content');
-            const contentRequests = document.getElementById('my-requests-content');
-            tabFacts.addEventListener('click', () => { tabFacts.classList.add('active'); tabRequests.classList.remove('active'); contentFacts.style.display = 'block'; contentRequests.style.display = 'none'; });
-            tabRequests.addEventListener('click', () => { tabRequests.classList.add('active'); tabFacts.classList.remove('active'); contentRequests.style.display = 'block'; contentFacts.style.display = 'none'; });
+            // --- TABLA 1: MIS HECHOS (Solo búsqueda por título) ---
+            const factsTable = document.getElementById('my-facts-body');
+            const searchInput = document.getElementById('search-fact-input');
 
+            function renderMyFacts(list) {
+                factsTable.innerHTML = '';
+                if (!list.length) {
+                    factsTable.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No tienes hechos publicados.</td></tr>';
+                    return;
+                }
+                list.forEach(f => {
+                    // Botón Editar corregido
+                    const editBtn = `<a href="/hechos/${f.id}/editar" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-pencil"></i> Editar</a>`;
 
-            // --- LÓGICA DE FILTROS Y TABLA (MANTENIDO) ---
-            const filterType = document.getElementById('filter-request-type');
-            const filterStatus = document.getElementById('filter-request-status');
-            const requestsTableBody = document.getElementById('requests-table-body');
-
-            // Función que se ejecuta cada vez que un filtro cambia
-            function applyRequestFilters() {
-                const typeValue = filterType.value;
-                const statusValue = filterStatus.value;
-
-                const filteredRequests = allMyRequests.filter(req => {
-                    const typeMatch = !typeValue || req.tipo === typeValue;
-                    const statusMatch = !statusValue || req.estado === statusValue;
-                    return typeMatch && statusMatch;
+                    factsTable.innerHTML += `
+                        <tr>
+                            <td>${f.titulo}</td>
+                            <td>${f.categoria}</td>
+                            <td>${new Date(f.fechaAcontecimiento).toLocaleDateString()}</td>
+                            <td class="text-end">${editBtn}</td>
+                        </tr>`;
                 });
-
-                // Esta parte se omite ya que requeria reescribir la tabla en JS
-
             }
 
-            filterType.addEventListener('change', applyRequestFilters);
-            filterStatus.addEventListener('change', applyRequestFilters);
-            // --- FIN LÓGICA DE FILTROS ---
-
-
-            // --- LÓGICA DE DETALLE DE SOLICITUD (CONTRIBUYENTE) ---
-            document.addEventListener('click', function(e) {
-                const btn = e.target.closest('.btn-view-request-detail');
-
-                if (btn) {
-                    const requestId = btn.getAttribute('data-request-id');
-                    const requestType = btn.getAttribute('data-request-type');
-                    // El requestEstado ya no es estrictamente necesario, pero se mantiene en el botón.
-
-                    // Buscamos la solicitud/edición completa en el array
-                    const requestData = allMyRequests.find(r => r.id == requestId && r.tipo === requestType);
-
-                    if (requestData) {
-                        // FIX: Usar la función global openModal con la nueva función de renderizado.
-                        openModal(renderRequestDetailModal, requestData);
-
-                    } else {
-                        alert("No se encontró el detalle de la solicitud.");
-                    }
-                }
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = myFacts.filter(f => f.titulo.toLowerCase().includes(term));
+                renderMyFacts(filtered);
             });
+            renderMyFacts(myFacts);
+
+
+            // --- TABLA 2: ESTADO SOLICITUDES (Filtros) ---
+            const reqTable = document.getElementById('requests-table-body');
+            const filterType = document.getElementById('filter-request-type');
+            const filterStatus = document.getElementById('filter-request-status');
+
+            function renderMyRequests(list) {
+                reqTable.innerHTML = '';
+                if (!list.length) {
+                    reqTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay solicitudes.</td></tr>';
+                    return;
+                }
+                list.forEach(r => {
+                    const st = r.estado ? r.estado.toUpperCase() : 'PENDIENTE';
+                    const badge = st === 'PENDIENTE' ? 'bg-warning' : (st.includes('ACEPT') ? 'bg-success' : 'bg-danger');
+
+                    reqTable.innerHTML += `
+                        <tr>
+                            <td>${r.tituloDelHechoAEliminar}</td>
+                            <td>${r.tipo}</td>
+                            <td><span class="badge ${badge}">${r.estado}</span></td>
+                        </tr>`;
+                });
+            }
+
+            function applyReqFilters() {
+                const t = filterType.value;
+                const s = filterStatus.value;
+                const filtered = myRequests.filter(r => {
+                    return (!t || r.tipo === t) && (!s || (r.estado && r.estado.toUpperCase() === s));
+                });
+                renderMyRequests(filtered);
+            }
+
+            filterType.addEventListener('change', applyReqFilters);
+            filterStatus.addEventListener('change', applyReqFilters);
+            renderMyRequests(myRequests);
         });
     </script>
 </div>

@@ -3,7 +3,6 @@ package ar.utn.da.dsi.frontend.services.hechos;
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.HechoInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.EdicionOutputDTO;
-import ar.utn.da.dsi.frontend.exceptions.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -20,6 +19,16 @@ public class HechoService {
   public HechoService(HechoApiService apiClient) {
     this.apiClient = apiClient;
   }
+
+  // --- MÉTODOS PARA HISTORIAL (TRAZABILIDAD) ---
+  public List<HechoDTO> buscarHistorialHechos() {
+    return apiClient.getHistorialHechos();
+  }
+
+  public List<EdicionOutputDTO> buscarHistorialEdiciones() {
+    return apiClient.getHistorialEdiciones();
+  }
+  // --------------------------------------------
 
   public List<HechoDTO> getHechosDeColeccion(String handleId, String modo, String fechaDesde, String fechaHasta, String categoria, String titulo) {
     return apiClient.getHechosDeColeccion(handleId, modo, fechaDesde, fechaHasta, categoria, titulo);
@@ -41,8 +50,37 @@ public class HechoService {
     return apiClient.getAvailableSources();
   }
 
-  public HechoDTO crear(HechoInputDTO dto, @Nullable MultipartFile archivo) {
-    return apiClient.crearHecho(dto, archivo);
+  public void crear(HechoInputDTO dto, @Nullable MultipartFile archivo) {
+    apiClient.crearHecho(dto, archivo);
+  }
+
+  public HechoInputDTO getHechoInputDTOporId(Long id) {
+    HechoDTO dtoApi = apiClient.getHechoPorId(id);
+
+    HechoInputDTO dtoForm = new HechoInputDTO();
+    if (dtoApi != null) {
+      dtoForm.setId(dtoApi.getId()); // .getId()
+      dtoForm.setTitulo(dtoApi.getTitulo()); // .getTitulo()
+      dtoForm.setDescripcion(dtoApi.getDescripcion());
+      dtoForm.setCategoria(dtoApi.getCategoria());
+      dtoForm.setFechaAcontecimiento(dtoApi.getFechaAcontecimiento());
+      dtoForm.setLatitud(dtoApi.getLatitud());
+      dtoForm.setLongitud(dtoApi.getLongitud());
+      dtoForm.setCollectionHandle(dtoApi.getCollectionHandle());
+
+      if (dtoApi.getUserId() != null) {
+        dtoForm.setVisualizadorID(String.valueOf(dtoApi.getUserId()));
+      }
+    }
+    return dtoForm;
+  }
+
+  public HechoDTO actualizar(Long id, HechoInputDTO dto, @Nullable MultipartFile archivo) {
+    return apiClient.actualizarHecho(id, dto, archivo);
+  }
+
+  public void importarCsv(MultipartFile file) {
+    apiClient.importarCsv(file);
   }
 
   public List<HechoDTO> buscarHechosPendientes() {
@@ -55,10 +93,6 @@ public class HechoService {
 
   public void rechazar(Long id) {
     apiClient.rechazarHecho(id);
-  }
-
-  public HechoDTO actualizar(Long id, HechoInputDTO dto, @Nullable MultipartFile archivo) {
-    return apiClient.actualizarHecho(id, dto, archivo);
   }
 
   public List<EdicionOutputDTO> buscarEdicionesPendientes() {
@@ -74,33 +108,10 @@ public class HechoService {
   }
 
   public EdicionOutputDTO buscarEdicionPorId(Long id) {
-    return apiClient.getEdicionPorId(id);
+    return apiClient.buscarEdicionPorId(id);
   }
 
   public List<EdicionOutputDTO> buscarEdicionesPorUsuario(String userId) {
     return apiClient.getEdicionesPorUsuario(userId);
-  }
-
-  public HechoInputDTO getHechoInputDTOporId(Long id) {
-    HechoDTO dtoApi = apiClient.getHechoPorId(id);
-
-    HechoInputDTO dtoForm = new HechoInputDTO();
-    dtoForm.setId(dtoApi.id());
-    dtoForm.setTitulo(dtoApi.titulo());
-    dtoForm.setDescripcion(dtoApi.descripcion());
-    dtoForm.setCategoria(dtoApi.categoria());
-    dtoForm.setFechaAcontecimiento(dtoApi.fechaAcontecimiento());
-    dtoForm.setLatitud(dtoApi.latitud());
-    dtoForm.setLongitud(dtoApi.longitud());
-    dtoForm.setCollectionHandle(dtoApi.collectionHandle());
-
-    return dtoForm;
-  }
-
-  public void importarCsv(MultipartFile file) {
-    if (file.isEmpty() || !file.getOriginalFilename().endsWith(".csv")) {
-      throw new ValidationException("Por favor, seleccioná un archivo .csv válido.");
-    }
-    apiClient.importarCsv(file);
   }
 }
