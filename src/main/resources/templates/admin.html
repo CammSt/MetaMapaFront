@@ -50,7 +50,7 @@
                                             <td th:text="${col.titulo}"></td>
                                             <td><span class="badge bg-secondary">Carga Manual</span></td>
                                             <td class="text-end">
-                                                <a th:href="@{/admin/colecciones/{id}/editar(id=${col.handleID})}" class="btn btn-primary btn-sm rounded-pill">Editar</a>
+                                                <a th:href="@{/admin/colecciones/{id}/editar-completo(id=${col.handleID})}" class="btn btn-primary btn-sm rounded-pill">Editar Colección</a>
                                                 <form th:action="@{/admin/colecciones/{id}/eliminar(id=${col.handleID})}" method="post" class="d-inline" onsubmit="return confirm('¿Estás seguro?');">
                                                     <button type="submit" class="btn btn-danger btn-sm rounded-pill">Eliminar</button>
                                                 </form>
@@ -107,21 +107,36 @@
                     <div class="modal-dialog modal-lg modal-dialog-centered">
                         <div class="modal-content border-0 shadow-lg">
                             <div class="modal-header bg-primary text-white">
-                                <h5 class="modal-title fw-bold" id="modalTitle">Evaluación</h5> <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                <h5 class="modal-title fw-bold" id="modalTitle">Evaluación</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body p-4">
-                                <div id="modalContent">Cargando...</div> </div>
+                                <div id="modalContent">Cargando...</div>
+                                <!-- Textarea para sugerencia -->
+                                <div id="sugerencia-container" class="mt-3" style="display:none;">
+                                    <label for="inputSugerencia" class="form-label fw-bold">Sugerencia del admin</label>
+                                    <textarea id="inputSugerencia" class="form-control" maxlength="1000" rows="3" placeholder="Escriba la sugerencia..."></textarea>
+                                </div>
+                            </div>
                             <div class="modal-footer bg-light">
                                 <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
 
-                                <form id="formReject" method="post" style="display:inline;"> <button type="submit" class="btn btn-danger rounded-pill fw-bold px-4">
-                                    <i class="bi bi-x-circle me-2"></i>Rechazar
-                                </button>
+                                <form id="formReject" method="post" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger rounded-pill fw-bold px-4">
+                                        <i class="bi bi-x-circle me-2"></i>Rechazar
+                                    </button>
                                 </form>
 
-                                <form id="formApprove" method="post" style="display:inline;"> <button type="submit" class="btn btn-success rounded-pill fw-bold px-4">
-                                    <i class="bi bi-check-circle me-2"></i>Aprobar
-                                </button>
+                                <form id="formApprove" method="post" style="display:inline;">
+                                    <button type="submit" class="btn btn-success rounded-pill fw-bold px-4">
+                                        <i class="bi bi-check-circle me-2"></i>Aprobar
+                                    </button>
+                                </form>
+
+                                <form id="formApproveWithSuggestion" method="post" style="display:inline;">
+                                    <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">
+                                        <i class="bi bi-lightbulb me-2"></i>Aceptar con Sugerencia
+                                    </button>
                                 </form>
                             </div>
                         </div>
@@ -186,21 +201,38 @@
                             }
 
                             tableBody.innerHTML += `
-                    <tr>
-                        <td class="fw-bold">${req.tituloDelHechoAEliminar || 'Sin título'}</td>
-                        <td><span class="badge bg-info text-dark">${req.tipo}</span></td>
-                        <td><span class="badge ${badgeClass}">${req.estado}</span></td>
-                        <td class="text-end">${actionBtn}</td>
-                    </tr>`;
+                                <tr>
+                                    <td class="fw-bold">${req.tituloDelHechoAEliminar || 'Sin título'}</td>
+                                    <td><span class="badge bg-info text-dark">${req.tipo}</span></td>
+                                    <td><span class="badge ${badgeClass}">${req.estado}</span></td>
+                                    <td class="text-end">${actionBtn}</td>
+                                </tr>`;
                         });
                     }
 
                     function applyFilters() {
                         const type = filterType.value;
                         const status = filterStatus.value;
+
                         const filtered = allRequests.filter(req => {
-                            return (!type || req.tipo === type) && (!status || req.estado === status);
+                            let estadoMatch = true;
+
+                            if (status) {
+                                if (status === "APROBADA") {
+                                    // si seleccionaste APROBADA, incluimos también las creaciones ACEPTADAS
+                                    estadoMatch = req.estado === "APROBADA" || req.estado === "ACEPTADO";
+                                } else if (status === "RECHAZADA") {
+                                    // incluir ambos tipos de rechazo si existen
+                                    estadoMatch = req.estado === "RECHAZADA" || req.estado === "RECHAZADO";
+                                } else {
+                                    estadoMatch = req.estado === status;
+                                }
+                            }
+
+                            const typeMatch = !type || req.tipo === type;
+                            return estadoMatch && typeMatch;
                         });
+
                         renderTable(filtered);
                     }
 
@@ -224,47 +256,80 @@
 
                             const modalTitle = document.getElementById('modalTitle');
                             const modalContent = document.getElementById('modalContent');
-                            const formApprove = document.getElementById('formApprove');
+                            const sugerenciaContainer = document.getElementById('sugerencia-container');
+
+                            const inputSugerencia = document.getElementById('inputSugerencia');
+                            const sugerencia = inputSugerencia.value.trim();
+                            console.log("Sugerencia actual al abrir modal:", sugerencia);
+
+                            // const formApprove = document.getElementById('formApprove');
+                            const formApproveWithSuggestion = document.getElementById('formApproveWithSuggestion');
                             const formReject = document.getElementById('formReject');
 
                             modalTitle.textContent = `Evaluando: ${tipo}`;
                             modalContent.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary"></div><p class="mt-2">Cargando detalles...</p></div>';
 
-                            // Configurar Actions
+                            sugerenciaContainer.style.display = 'none';
+                            inputSugerencia.value = '';
+
+                            // Configurar Actions TODO: REVISAR RUTAS
                             if (tipo === 'Nuevo Hecho') {
-                                formApprove.action = `/admin/hechos/${id}/aprobar`;
-                                formReject.action = `/admin/hechos/${id}/rechazar`;
+                                formApprove.action = `/hechos/${id}/aprobar`;
+                                formReject.action = `/hechos/${id}/rechazar`;
+                                formApproveWithSuggestion.action = `http://localhost:8082/dinamica/hechos/${id}/aceptar-con-sugerencia`;
+
+                                sugerenciaContainer.style.display = 'block';
+                                inputSugerencia.value = '';
+
                             } else if (tipo === 'Eliminación') {
-                                formApprove.action = `/admin/solicitudes/${id}/aprobar`;
-                                formReject.action = `/admin/solicitudes/${id}/rechazar`;
+                                formApprove.action = `/solicitudes/${id}/aprobar`;
+                                formReject.action = `/solicitudes/${id}/rechazar`;
                             } else if (tipo === 'Edición') {
-                                formApprove.action = `/admin/ediciones/${id}/aceptar`;
-                                formReject.action = `/admin/ediciones/${id}/rechazar`;
+                                formApprove.action = `/ediciones/${id}/aceptar`;
+                                formReject.action = `/ediciones/${id}/rechazar`;
                             }
 
                             // Mostrar Modal
                             const modal = new bootstrap.Modal(document.getElementById('evaluationModal'));
                             modal.show();
 
-                            // Llamada AJAX
-                            fetch(`/admin/api/solicitudes/${id}/detalle?tipo=${encodeURIComponent(tipo)}`)
+                            // Llamada AJAX SEGÚN TIPO
+                            let apiURL = null;
+
+                            if (tipo === "Nuevo Hecho") {
+                                apiURL = `http://localhost:8082/dinamica/hechos/${id}`;
+                            } else if (tipo === "Edición") {
+                                apiURL = `http://localhost:8082/dinamica/ediciones/${id}`;
+                            } else if (tipo === "Eliminación") {
+                                apiURL = `http://localhost:8081/agregador/solicitudes/${id}/detalle?tipo=Eliminación`; // Revisa si esta URL es correcta
+                            }
+
+
+                            fetch(apiURL, {
+                                headers: {
+                                    'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                                }
+                            })
                                 .then(response => response.json().then(data => ({ status: response.status, body: data })))
                                 .then(({ status, body }) => {
 
-                                    // Si el backend devolvió error
-                                    if (status >= 400) {
-                                        throw new Error(body.error || "Error desconocido en el servidor");
-                                    }
+                                    if (status >= 400) throw new Error(body.error || "Error desconocido");
 
-                                    const data = body;
-                                    let html = '';
+                                    let html = "";
+                                    const data = body.datos || body;
 
-                                    // 1. LÓGICA NUEVO HECHO (CON MAPA)
-                                    if (tipo === 'Nuevo Hecho') {
-                                        const fecha = data.fechaAcontecimiento ? new Date(data.fechaAcontecimiento).toLocaleString() : '-';
+                                    /* -------------------------------------------
+                                     * TIPO: NUEVO HECHO
+                                     * ------------------------------------------- */
+                                    if (tipo === "Nuevo Hecho") {
+                                        const fecha = data.fechaAcontecimiento
+                                            ? new Date(data.fechaAcontecimiento).toLocaleString()
+                                            : '-';
 
                                         html = `
-                                            <div class="alert alert-info border-0 shadow-sm mb-3"><i class="bi bi-info-circle me-2"></i>Propuesta de creación</div>
+                                            <div class="alert alert-info border-0 shadow-sm mb-3">
+                                                <i class="bi bi-info-circle me-2"></i>Propuesta de creación
+                                            </div>
                                             <h4 class="text-primary fw-bold mb-3">${data.titulo || 'Sin título'}</h4>
                                             <p class="lead fs-6">${data.descripcion || 'Sin descripción'}</p>
 
@@ -276,53 +341,61 @@
                                             <div class="card border-0">
                                                 <div class="card-header bg-white fw-bold small text-muted">Ubicación Geográfica</div>
                                                 <div class="card-body p-0">
-                                                     <div id="modal-map-container" style="height: 250px; width: 100%; background: #eee; border-radius: 0 0 8px 8px;"></div>
+                                                    <div id="modal-map-container" style="height: 250px; width: 100%; background: #eee; border-radius: 0 0 8px 8px;"></div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+
+                                    /* -------------------------------------------
+                                     * TIPO: ELIMINACIÓN
+                                     * ------------------------------------------- */
+                                    else if (tipo === "Eliminación") {
+                                        html = `
+                                            <div class="alert alert-danger border-0 shadow-sm mb-3">
+                                                <i class="bi bi-trash3 me-2"></i>Solicitud de Baja
+                                            </div>
+                                            <p>Se solicita eliminar: <strong>${data.tituloDelHechoAEliminar}</strong></p>
+                                            <div class="card border-danger">
+                                                <div class="card-body text-danger p-3">
+                                                    <strong>Motivo del solicitante:</strong><br>${data.motivo}
                                                 </div>
                                             </div>`;
                                     }
-                                    // 2. LÓGICA ELIMINACIÓN
-                                    else if (tipo === 'Eliminación') {
-                                        html = `
-                                            <div class="alert alert-danger border-0 shadow-sm mb-3"><i class="bi bi-trash3 me-2"></i>Solicitud de Baja</div>
-                                            <p>Se solicita eliminar: <strong>${data.tituloDelHechoAEliminar}</strong></p>
-                                            <div class="card border-danger"><div class="card-body text-danger p-3">
-                                                <strong>Motivo:</strong><br> ${data.motivo}
-                                            </div></div>`;
-                                    }
-                                    // 3. LÓGICA EDICIÓN
-                                    else if (tipo === 'Edición') {
-                                        const orig = data.original || {};
-                                        const prop = data.propuesta || {};
-
-                                        // Helper para comparar
-                                        const isDiff = (a, b) => a !== b ? 'text-success fw-bold' : '';
+                                    /* -------------------------------------------
+                                     * TIPO: EDICIÓN
+                                     * ------------------------------------------- */
+                                    else if (tipo === "Edición") {
+                                        const d = data; // datos directos
+                                        const orig = data.hechoOriginal || {};
 
                                         html = `
-                                            <div class="alert alert-warning border-0 shadow-sm mb-3"><i class="bi bi-pencil me-2"></i>Propuesta de Edición</div>
+                                            <div class="alert alert-warning border-0 shadow-sm mb-3">
+                                                <i class="bi bi-pencil me-2"></i>Propuesta de Edición
+                                            </div>
                                             <div class="row g-0 border rounded">
                                                 <div class="col-6 border-end bg-light p-3">
                                                     <h6 class="text-center text-muted small fw-bold text-uppercase">Original</h6>
                                                     <div class="mb-2"><small class="fw-bold">Título:</small><div>${orig.titulo || '-'}</div></div>
-                                                    <div class="mb-2"><small class="fw-bold">Descripción:</small><div class="small">${orig.descripcion || '-'}</div></div>
-                                                    <div class="mb-2"><small class="fw-bold">Categoría:</small><div class="small">${orig.categoria || '-'}</div></div>
+                                                    <div class="mb-2"><small class="fw-bold">Descripción:</small><div>${orig.descripcion || '-'}</div></div>
+                                                    <div class="mb-2"><small class="fw-bold">Categoría:</small><div>${orig.categoriaNombre || '-'}</div></div>
                                                 </div>
                                                 <div class="col-6 bg-white p-3">
                                                     <h6 class="text-center text-primary small fw-bold text-uppercase">Propuesta</h6>
-                                                    <div class="mb-2"><small class="fw-bold">Título:</small><div class="${isDiff(orig.titulo, prop.tituloPropuesto)}">${prop.tituloPropuesto || orig.titulo}</div></div>
-                                                    <div class="mb-2"><small class="fw-bold">Descripción:</small><div class="${isDiff(orig.descripcion, prop.descripcionPropuesta)} small">${prop.descripcionPropuesta || orig.descripcion}</div></div>
-                                                    <div class="mb-2"><small class="fw-bold">Categoría:</small><div class="${isDiff(orig.categoria, prop.categoriaPropuestaNombre)} small">${prop.categoriaPropuestaNombre || orig.categoria}</div></div>
+                                                    <div class="mb-2"><small class="fw-bold">Título:</small><div>${d.tituloPropuesto || '-'}</div></div>
+                                                    <div class="mb-2"><small class="fw-bold">Descripción:</small><div>${d.descripcionPropuesta || '-'}</div></div>
+                                                    <div class="mb-2"><small class="fw-bold">Categoría:</small><div>${d.categoriaPropuestaNombre || '-'}</div></div>
                                                 </div>
-                                            </div>`;
+                                            </div>
+                                        `;
                                     }
 
-                                    // 4. INYECTAR HTML EN EL MODAL
                                     modalContent.innerHTML = html;
 
-                                    // 5. INICIALIZAR MAPA (Solo si es Nuevo Hecho y ya insertamos el HTML)
-                                    if (tipo === 'Nuevo Hecho') {
+                                    // Render mapa SOLO si es nuevo hecho
+                                    if (tipo === "Nuevo Hecho") {
                                         setTimeout(() => {
                                             if (data.latitud && data.longitud) {
-                                                // Verificar si ya existe mapa previo y limpiarlo si es necesario (aunque el innerHTML lo borra)
                                                 const map = L.map('modal-map-container').setView([data.latitud, data.longitud], 15);
 
                                                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -332,18 +405,40 @@
                                                 L.marker([data.latitud, data.longitud]).addTo(map)
                                                     .bindPopup(`<b>${data.titulo}</b>`).openPopup();
 
-                                                // Truco para que se renderice bien al estar dentro de un modal
                                                 map.invalidateSize();
-                                            } else {
-                                                document.getElementById('modal-map-container').innerHTML =
-                                                    '<div class="d-flex align-items-center justify-content-center h-100 text-muted">Ubicación no disponible</div>';
                                             }
-                                        }, 300); // Delay para asegurar que el div es visible
+                                        }, 300);
                                     }
                                 })
                                 .catch(err => {
                                     console.error(err);
-                                    modalContent.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i> ${err.message}</div>`;
+                                    modalContent.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+                                });
+
+                                console.log(JSON.stringify({ sugerencia }))
+                                // Submit Aceptar con Sugerencia
+                                formApproveWithSuggestion.addEventListener('submit', function(e) {
+                                    e.preventDefault();
+                                    const sugerencia = inputSugerencia.value.trim();
+                                    if (!sugerencia) {
+                                        alert('Debes escribir una sugerencia antes de enviar.');
+                                        return;
+                                    }
+
+                                    fetch(formApproveWithSuggestion.action, {
+                                        method: 'PUT',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                                        },
+                                        body: JSON.stringify({ sugerencia })
+                                    })
+                                        .then(res => res.json())
+                                        .then(res => {
+                                            alert(res.mensaje || 'Hecho aceptado con sugerencia');
+                                            location.reload();
+                                        })
+                                        .catch(err => console.error(err));
                                 });
                         }
                     });
