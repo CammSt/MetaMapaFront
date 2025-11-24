@@ -442,6 +442,38 @@
                                 });
                         }
                     });
+
+                    const csvImportForm = document.getElementById('csv-import-form');
+                    const loadingOverlay = document.getElementById('loading-overlay');
+
+                    if (csvImportForm && loadingOverlay) {
+                        csvImportForm.addEventListener('submit', function(e) {
+                            const fileInput = document.getElementById('csvFile');
+                            const errorPlaceholder = document.getElementById('csv-validation-error-placeholder');
+                            errorPlaceholder.innerHTML = '';
+
+                            if (!fileInput.files.length) {
+                                errorPlaceholder.innerHTML = '<div class="alert alert-danger" role="alert">Error: Por favor, selecciona un archivo CSV.</div>';
+                                e.preventDefault();
+                                return;
+                            }
+
+                            const fileName = fileInput.files[0].name;
+                            if (!fileName.toLowerCase().endsWith('.csv')) {
+                                errorPlaceholder.innerHTML = '<div class="alert alert-danger" role="alert">Error: Solo se admiten archivos en formato CSV (.csv).</div>';
+                                e.preventDefault();
+                                return;
+                            }
+
+                            const modalElement = document.getElementById('csvImportModal');
+                            const bootstrapModal = bootstrap.Modal.getInstance(modalElement);
+                            if (bootstrapModal) {
+                                bootstrapModal.hide();
+                            }
+
+                            loadingOverlay.style.display = 'flex';
+                        });
+                    }
                 });
             </script>
         </div>

@@ -8,12 +8,14 @@ import ar.utn.da.dsi.frontend.services.colecciones.ColeccionService;
 import ar.utn.da.dsi.frontend.services.estadisticas.EstadisticasService;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
 import ar.utn.da.dsi.frontend.services.solicitudes.SolicitudService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ar.utn.da.dsi.frontend.exceptions.ValidationException;
 
@@ -30,6 +32,7 @@ public class AdminController {
   private final SolicitudService solicitudService;
   private final HechoService hechoService;
   private final EstadisticasService estadisticasService;
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   public AdminController(ColeccionService coleccionService, SolicitudService solicitudService, HechoService hechoService, EstadisticasService estadisticasService) {
     this.coleccionService = coleccionService;
@@ -263,11 +266,27 @@ public class AdminController {
     try {
       hechoService.importarCsv(file);
       attr.addFlashAttribute("success", "CSV subido con éxito al sistema.");
-    } catch (Exception e) {
-      attr.addFlashAttribute("error", "Error: " + e.getMessage());
+    } catch (RuntimeException e) {
+      String errorMessage = getWebClientErrorMessage(e);
+      attr.addFlashAttribute("error", "Error al importar: " + errorMessage);
     }
     return "redirect:/admin";
   }
+
+  private String getWebClientErrorMessage(RuntimeException e) {
+    Throwable cause = e.getCause();
+    if (cause instanceof WebClientResponseException) {
+      WebClientResponseException webClientEx = (WebClientResponseException) cause;
+      String errorBody = webClientEx.getResponseBodyAsString();
+      try {
+        return objectMapper.readTree(errorBody).path("message").asText(webClientEx.getStatusText());
+      } catch (Exception jsonEx) {
+        return "Error de comunicación: " + webClientEx.getStatusText() + " (" + webClientEx.getStatusCode().value() + "). Verificá los logs del backend.";
+      }
+    }
+    return e.getMessage();
+  }
+
   @GetMapping("/estadisticas")
   public String mostrarEstadisticas(@RequestParam(required = false) String handleIdColeccion, @RequestParam(required = false) String categoriaProvincia, @RequestParam(required = false) String categoriaHora, Model model) {
     try { model.addAttribute("colecciones", coleccionService.obtenerTodas()); } catch (Exception e) { model.addAttribute("colecciones", List.of()); }
