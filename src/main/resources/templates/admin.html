@@ -220,7 +220,7 @@
                             if (status) {
                                 if (status === "APROBADA") {
                                     // si seleccionaste APROBADA, incluimos también las creaciones ACEPTADAS
-                                    estadoMatch = req.estado === "APROBADA" || req.estado === "ACEPTADO";
+                                    estadoMatch = req.estado === "APROBADA" || req.estado === "ACEPTADO" || req.estado === "ACEPTADO_CON_SUGERENCIAS";
                                 } else if (status === "RECHAZADA") {
                                     // incluir ambos tipos de rechazo si existen
                                     estadoMatch = req.estado === "RECHAZADA" || req.estado === "RECHAZADO";
