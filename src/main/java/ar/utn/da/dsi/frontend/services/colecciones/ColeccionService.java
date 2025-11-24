@@ -28,13 +28,11 @@ public class ColeccionService {
 	}
 
 	public void actualizar(String id, ColeccionInputDTO dto) {
-		validarDatosColeccion(dto);
+		validarDatosColeccion(dto); // Valida al menos título, descripción y algoritmo (si es nuevo)
 
-		apiClient.actualizar(id, dto); //
+		apiClient.actualizarDatosBasicos(id, dto);
 
-		if (dto.getAlgoritmoConsenso() != null && !dto.getAlgoritmoConsenso().isEmpty()) {
-			apiClient.cambiarAlgoritmoConsenso(id, dto.getAlgoritmoConsenso(), dto.getVisualizadorID()); //
-		}
+		apiClient.editarConfiguracionUnificada(id, dto);
 	}
 
 	public void eliminar(String id, String visualizadorID) {

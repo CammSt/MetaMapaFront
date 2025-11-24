@@ -6,6 +6,7 @@ import ar.utn.da.dsi.frontend.services.ApiClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,41 +43,39 @@ public class ColeccionApiService {
 		apiClientService.delete(urlConParam);
 	}
 
-	// PUT /colecciones/{id}/consenso (Cambiar Algoritmo)
-	public void cambiarAlgoritmoConsenso(String id, String algoritmo, String visualizadorID) {
-		// Endpoint PUT /colecciones/{id}/consenso?algoritmo={alg}&visualizadorID={id}
-		String url = coleccionesApiUrl + "/" + id + "/consenso";
-		String urlConParam = url + "?algoritmo=" + algoritmo + "&visualizadorID=" + visualizadorID;
-		apiClientService.put(urlConParam, null, Void.class);
+	/**
+	 * Actualiza Título y Descripción (PUT /colecciones/{id})
+	 */
+	public void actualizarDatosBasicos(String id, ColeccionInputDTO dto) {
+		apiClientService.put(coleccionesApiUrl + "/" + id, dto, Void.class);
 	}
 
-	// PUT /colecciones/{handleId}/fuentes (Añadir/Modificar Fuentes)
-	public void modificarFuentes(String handleId, List<String> fuentes, String visualizadorID) {
-		// Endpoint PUT /colecciones/{handleId}/fuentes?visualizadorID={id}
-		String url = coleccionesApiUrl + "/" + handleId + "/fuentes" + "?visualizadorID=" + visualizadorID;
-		apiClientService.put(url, fuentes, Void.class);
-	}
+	/**
+	 * Actualiza la configuración unificada (PUT /colecciones/{id}/editar)
+	 */
+	public void editarConfiguracionUnificada(String handleId, ColeccionInputDTO dto) {
+		// Endpoint: PUT /colecciones/{handleId}/editar?visualizadorID={id}
+		String url = coleccionesApiUrl + "/" + handleId + "/editar" + "?visualizadorID=" + dto.getVisualizadorID();
 
-	// DELETE /colecciones/{handleId}/fuentes (Quitar Fuentes con Body)
-	public void quitarFuentes(String handleId, List<String> fuentes, String visualizadorID) {
-		// Endpoint DELETE /colecciones/{handleId}/fuentes?visualizadorID={id}
-		String url = coleccionesApiUrl + "/" + handleId + "/fuentes" + "?visualizadorID=" + visualizadorID;
-		// Usa el método especial deleteWithBody del ApiClientService
-		apiClientService.deleteWithBody(url, fuentes);
-	}
+		Map<String, Object> body = new HashMap<>();
 
-	// PUT /colecciones/{handleID}/criterios (Editar Criterios de Pertenencia)
-	public void editarCriteriosDePertenencia(String handleID, List<String> criterios, List<String> valoresCriterios, String visualizadorID) {
-		// Endpoint PUT /colecciones/{handleID}/criterios?visualizadorID={id}
-		String url = coleccionesApiUrl + "/" + handleID + "/criterios" + "?visualizadorID=" + visualizadorID;
+		if (dto.getAlgoritmoConsenso() != null) {
+			body.put("algoritmoConsenso", dto.getAlgoritmoConsenso());
+		}
+		if (dto.getFuentes() != null) {
+			body.put("fuentes", dto.getFuentes());
+		}
+		if (dto.getCriteriosPertenenciaNombres() != null && dto.getCriteriosPertenenciaValores() != null) {
+			body.put("criteriosPertenenciaNombres", dto.getCriteriosPertenenciaNombres());
+			body.put("criteriosPertenenciaValores", dto.getCriteriosPertenenciaValores());
+		}
+		if (dto.getIdDeHechosParaEliminar() != null) {
+			body.put("idDeHechosParaEliminar", dto.getIdDeHechosParaEliminar());
+		}
 
-		// El Backend espera las dos listas, lo enviamos como un Map encapsulado en el cuerpo.
-		Map<String, List<String>> body = Map.of(
-				"criterios", criterios,
-				"valoresParaCriterios", valoresCriterios
-		);
-
-		apiClientService.put(url, body, Void.class);
+		if (!body.isEmpty()) {
+			apiClientService.put(url, body, Void.class);
+		}
 	}
 
 }

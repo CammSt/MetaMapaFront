@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle=${titulo}, content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+<body>
+
+<main class="container-fluid p-4 animate__animated animate__fadeIn" id="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0 text-primary" th:text="${titulo}"></h3>
+        <a th:href="@{/admin}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold">
+            ← Volver al Panel
+        </a>
+    </div>
+
+    <div class="card shadow-lg border-0 rounded-3">
+        <div class="card-body p-4">
+
+            <div th:if="${success}" class="alert alert-success d-flex align-items-center" role="alert">
+                <i class="bi bi-check-circle-fill me-2 fs-5"></i><span th:text="${success}"></span>
+            </div>
+            <div th:if="${error}" class="alert alert-danger d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i><span th:text="${error}"></span>
+            </div>
+
+            <form id="full-edit-form" th:object="${coleccionDTO}"
+                  th:action="@{/admin/colecciones/{id}/guardar(id=${coleccionDTO.handleID})}"
+                  method="post">
+
+                <ul class="nav nav-tabs mb-4" id="collectionEditTab" role="tablist">
+                    <li class="nav-item" role="presentation"><button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic-tab-pane" type="button" role="tab">Básico</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config-tab-pane" type="button" role="tab">Configuración Avanzada</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" id="criterios-tab" data-bs-toggle="tab" data-bs-target="#criterios-tab-pane" type="button" role="tab">Criterios</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" id="facts-tab" data-bs-toggle="tab" data-bs-target="#facts-tab-pane" type="button" role="tab">Hechos</button></li>
+                </ul>
+
+                <div class="tab-content">
+
+                    <div class="tab-pane fade show active" id="basic-tab-pane" role="tabpanel">
+                        <h4 class="fw-bold text-secondary mb-3">Información Principal</h4>
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título</label>
+                            <input type="text" id="titulo" class="form-control" th:field="*{titulo}" required>
+                            <div th:if="${#fields.hasErrors('titulo')}" th:errors="*{titulo}" class="text-danger small"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea id="descripcion" class="form-control" rows="4" th:field="*{descripcion}" required></textarea>
+                            <div th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}" class="text-danger small"></div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="config-tab-pane" role="tabpanel">
+                        <h4 class="fw-bold text-secondary mb-3">Algoritmo y Fuentes de Datos</h4>
+
+                        <div class="mb-4">
+                            <label for="algoritmoConsenso" class="form-label">Algoritmo de Consenso</label>
+                            <select id="algoritmoConsenso" class="form-select" th:field="*{algoritmoConsenso}" required>
+                                <option value="">Seleccione un algoritmo...</option>
+                                <option th:each="entry : ${consensusLabels}"
+                                        th:value="${entry.key}"
+                                        th:text="${entry.value}">
+                                </option>
+                            </select>
+                            <div th:if="${#fields.hasErrors('algoritmoConsenso')}" th:errors="*{algoritmoConsenso}" class="text-danger small"></div>
+                        </div>
+
+                        <div class="mb-4 border p-3 rounded bg-light">
+                            <label class="form-label fw-bold d-block">Fuentes de Datos (Seleccione las que debe incluir)</label>
+                            <div class="form-check form-check-inline" th:each="source : ${availableSources}">
+                                <input class="form-check-input" type="checkbox" th:id="${'source-' + source}" name="fuentes" th:value="${source}"
+                                       th:checked="${coleccionDTO.fuentes != null and #lists.contains(coleccionDTO.fuentes, source)}">
+                                <label class="form-check-label" th:for="${'source-' + source}" th:text="${source}"></label>
+                            </div>
+                            <div class="form-text mt-2">Fuentes actualmente en la colección: <span th:text="${coleccionDTO.fuentes}" class="fw-bold"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="criterios-tab-pane" role="tabpanel">
+                        <h4 class="fw-bold text-secondary mb-3">Criterios de Pertenencia</h4>
+                        <p class="text-muted small">Define el criterio principal que un hecho debe cumplir para ser incluido. Para cambiar, selecciona un nuevo criterio y valor.</p>
+
+                        <div class="alert alert-info py-2 small" th:if="${criteriosActuales != null and #lists.size(criteriosActuales) > 0}">
+                            Criterio Actual: <span th:text="${criteriosActuales[0]}"></span>
+                        </div>
+                        <div class="alert alert-warning py-2 small" th:unless="${criteriosActuales != null and #lists.size(criteriosActuales) > 0}">
+                            No hay criterios de pertenencia definidos.
+                        </div>
+
+                        <div class="mb-4 border p-3 rounded bg-light">
+                            <label class="form-label fw-bold">Nuevo Criterio (Reemplaza el actual)</label>
+                            <p class="form-text small">Si quieres **eliminar** el criterio, selecciona "-- Sin Criterio --".</p>
+
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <select id="criterioNombre" name="criteriosPertenenciaNombres" class="form-select form-select-sm" data-is-list-input="true">
+                                        <option value="">-- Sin Criterio --</option>
+                                        <option value="CATEGORIA">CATEGORIA</option>
+                                        <option value="TITULO">TITULO</option>
+                                        <option value="UBICACION">UBICACION (Provincia)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <input type="text" id="criterioValor" name="criteriosPertenenciaValores" class="form-control form-control-sm" placeholder="Valor del Criterio (Ej: Inundación, Buenos Aires)" data-is-list-input="true">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="facts-tab-pane" role="tabpanel">
+                        <h4 class="fw-bold text-danger mb-3">Remover Hechos Manualmente</h4>
+                        <p class="text-muted small">Selecciona los hechos que deseas **remover** de esta colección.</p>
+
+                        <div class="mb-4 border p-3 rounded bg-white shadow-sm">
+                            <div style="max-height: 400px; overflow-y: auto;">
+                                <div th:if="${#lists.isEmpty(hechosEnColeccion)}" class="text-center text-muted p-3">No hay hechos en esta colección.</div>
+                                <table th:unless="${#lists.isEmpty(hechosEnColeccion)}" class="table table-sm table-hover mb-0">
+                                    <thead><tr><th>Remover</th><th>Título</th><th>Fecha</th><th>Categoría</th></tr></thead>
+                                    <tbody>
+                                    <tr th:each="hecho : ${hechosEnColeccion}">
+                                        <td style="width: 10%;">
+                                            <input class="form-check-input" type="checkbox" name="idDeHechosParaEliminar" th:value="${hecho.id}">
+                                        </td>
+                                        <td th:text="${hecho.titulo}"></td>
+                                        <td th:text="${#temporals.format(hecho.fechaAcontecimiento, 'dd/MM/yyyy')}"></td>
+                                        <td th:text="${hecho.categoria}"></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4 border-top pt-4">
+                    <a th:href="@{/admin}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                        Guardar Cambios
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<div id="page-scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar('admin');
+        });
+    </script>
+</div>
+
+</body>
+</html>

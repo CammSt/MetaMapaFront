@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ar.utn.da.dsi.frontend.exceptions.ValidationException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -188,31 +189,70 @@ public class AdminController {
     model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
     return "admin-coleccion-form";
   }
+
   @PostMapping("/colecciones/crear")
   public String crearColeccion(@ModelAttribute ColeccionInputDTO dto, Authentication auth) {
     dto.setVisualizadorID(auth.getName());
     coleccionService.crear(dto);
     return "redirect:/admin?success=coleccion_creada";
   }
-  @GetMapping("/colecciones/{id}/editar")
-  public String mostrarFormularioEditarColeccion(@PathVariable("id") String id, Model model) {
-    ColeccionOutputDTO out = coleccionService.obtenerPorId(id);
-    ColeccionInputDTO in = new ColeccionInputDTO();
-    in.setTitulo(out.titulo());
-    in.setDescripcion(out.descripcion());
-    in.setHandleID(out.handleID());
-    model.addAttribute("coleccionDTO", in);
-    model.addAttribute("titulo", "Editar Colección");
-    model.addAttribute("accion", "editar");
-    model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
-    return "admin-coleccion-form";
+
+  @GetMapping("/colecciones/{id}/editar-completo")
+  public String mostrarFormularioEditarColeccionCompleta(@PathVariable("id") String id, Model model) {
+    try {
+      ColeccionOutputDTO out = coleccionService.obtenerPorId(id);
+
+      ColeccionInputDTO in = new ColeccionInputDTO();
+      in.setTitulo(out.getTitulo());
+      in.setDescripcion(out.getDescripcion());
+      in.setHandleID(out.getHandleID());
+      in.setAlgoritmoConsenso(out.getAlgoritmoConsenso());
+      in.setFuentes(out.getFuentes());
+
+      // Se usa el modo "irrestricta" por defecto para obtener todos los hechos
+      List<HechoDTO> hechosDeColeccion = hechoService.getHechosDeColeccion(id, "irrestricta", null, null, null, null);
+
+
+      model.addAttribute("coleccionDTO", in);
+      model.addAttribute("titulo", "Editar Colección: " + out.getTitulo());
+      model.addAttribute("accion", "editar");
+
+      model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
+      model.addAttribute("availableSources", hechoService.getAvailableSources());
+      model.addAttribute("hechosEnColeccion", hechosDeColeccion);
+      model.addAttribute("criteriosActuales", out.getCriterios());
+      model.addAttribute("handleId", id);
+
+      return "admin-coleccion-edit-full";
+    } catch (Exception e) {
+      System.err.println("Error al cargar formulario de edición de colección: " + e.getMessage());
+      return "redirect:/admin?error=Error al cargar la colección para edición.";
+    }
   }
-  @PostMapping("/colecciones/{id}/editar")
-  public String editarColeccion(@PathVariable("id") String id, @ModelAttribute ColeccionInputDTO dto, Authentication auth) {
-    dto.setVisualizadorID(auth.getName());
-    coleccionService.actualizar(id, dto);
-    return "redirect:/admin?success=coleccion_editada";
+
+  @PostMapping("/colecciones/{id}/guardar")
+  public String guardarColeccionCompleta(@PathVariable("id") String id,
+                                         @ModelAttribute ColeccionInputDTO dto,
+                                         Authentication auth,
+                                         RedirectAttributes redirectAttributes) {
+    try {
+      dto.setVisualizadorID(auth.getName());
+
+      coleccionService.actualizar(id, dto);
+
+      redirectAttributes.addFlashAttribute("success", "Colección " + dto.getTitulo() + " actualizada correctamente.");
+      return "redirect:/admin?tab=collections";
+    } catch (ValidationException e) {
+      redirectAttributes.addFlashAttribute("error", "Error de validación: " + e.getFieldErrors().values().iterator().next());
+      redirectAttributes.addFlashAttribute("coleccionDTO", dto);
+      return "redirect:/admin/colecciones/" + id + "/editar-completo";
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("error", "Error al actualizar la colección: " + e.getMessage());
+      redirectAttributes.addFlashAttribute("coleccionDTO", dto);
+      return "redirect:/admin/colecciones/" + id + "/editar-completo";
+    }
   }
+
   @PostMapping("/colecciones/{id}/eliminar")
   public String eliminarColeccion(@PathVariable("id") String id, Authentication auth) {
     coleccionService.eliminar(id, auth.getName());
@@ -222,7 +262,7 @@ public class AdminController {
   public String importarCsv(@RequestParam("csvFile") MultipartFile file, RedirectAttributes attr) {
     try {
       hechoService.importarCsv(file);
-      attr.addFlashAttribute("success", "CSV procesándose.");
+      attr.addFlashAttribute("success", "CSV subido con éxito al sistema.");
     } catch (Exception e) {
       attr.addFlashAttribute("error", "Error: " + e.getMessage());
     }
