@@ -227,4 +227,22 @@ public class ApiClientService {
   public interface ApiCall<T> {
     T execute(String accessToken) throws Exception;
   }
+
+  /**
+   * Ejecuta una llamada HTTP DELETE con cuerpo (Autenticada).
+   * Necesario para endpoints DELETE con @RequestBody (ej: eliminar fuentes).
+   */
+  public void deleteWithBody(String url, Object body) {
+    executeWithToken(accessToken -> {
+      webClient
+          .method(org.springframework.http.HttpMethod.DELETE)
+          .uri(url)
+          .header("Authorization", "Bearer " + accessToken)
+          .bodyValue(body)
+          .retrieve()
+          .bodyToMono(Void.class)
+          .block();
+      return null;
+    });
+  }
 }

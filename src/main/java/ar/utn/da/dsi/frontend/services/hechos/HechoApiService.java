@@ -47,34 +47,78 @@ public class HechoApiService {
 
   /**
    * Llama al backend para obtener los hechos de una colección.
-   * (Usado por WebController para la página de /facts)
+   * Mapea filtros a los endpoints específicos del Agregador.
    */
   public List<HechoDTO> getHechosDeColeccion(String handleId, String modo, String fechaDesde, String fechaHasta, String categoria, String titulo) {
 
-    String urlBase = dinamicaUrl + "/coleccion/" + handleId;
+    boolean hayFiltrosDetallados = (fechaDesde != null && !fechaDesde.isEmpty()) ||
+        (fechaHasta != null && !fechaHasta.isEmpty()) ||
+        (categoria != null && !categoria.isEmpty()) ||
+        (titulo != null && !titulo.isEmpty());
 
-    // Usamos UriComponentsBuilder para añadir parámetros solo si no son nulos
+    String urlBase;
+
+    // agregadorApiUrl es 'http://localhost:8081' (definido en application.properties como agregador.service.url)
+
+    if (hayFiltrosDetallados) {
+      // Usamos el endpoint de FILTRADO del Agregador: /colecciones/{handleID}/hechos/filtrar
+      urlBase = agregadorApiUrl + "/colecciones/" + handleId + "/hechos/filtrar";
+    }
+    else if (modo != null && !modo.isEmpty()) {
+      // Usamos el endpoint de NAVEGACION del Agregador: /colecciones/{handleID}/hechos/navegacion
+      urlBase = agregadorApiUrl + "/colecciones/" + handleId + "/hechos/navegacion";
+    }
+    else {
+      // Endpoint base si no hay filtros explícitos, usamos navegación por defecto (irrestricta)
+      return getHechosDeColeccionSinFiltros(handleId);
+    }
+
+    // Usamos UriComponentsBuilder para construir la URL con los parámetros
     UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(urlBase);
 
-    if (modo != null && !modo.isEmpty()) {
-      builder.queryParam("modo", modo);
+    if (urlBase.contains("/hechos/navegacion")) {
+      if ("curada".equalsIgnoreCase(modo)) {
+        builder.queryParam("esModoCurado", true);
+      } else {
+        builder.queryParam("esModoCurado", false);
+      }
     }
-    if (fechaDesde != null && !fechaDesde.isEmpty()) {
-      builder.queryParam("fechaDesde", fechaDesde);
-    }
-    if (fechaHasta != null && !fechaHasta.isEmpty()) {
-      builder.queryParam("fechaHasta", fechaHasta);
-    }
-    if (categoria != null && !categoria.isEmpty()) {
-      builder.queryParam("categoria", categoria);
-    }
-    if (titulo != null && !titulo.isEmpty()) {
-      builder.queryParam("titulo", titulo);
+    else if (urlBase.contains("/hechos/filtrar")) {
+      if (fechaDesde != null && !fechaDesde.isEmpty() && fechaHasta != null && !fechaHasta.isEmpty()) {
+        builder.queryParam("fechaInicio", fechaDesde);
+        builder.queryParam("fechaFin", fechaHasta);
+      }
+      if (categoria != null && !categoria.isEmpty()) {
+        builder.queryParam("categoria", categoria);
+      }
+      if (titulo != null && !titulo.isEmpty()) {
+        builder.queryParam("titulo", titulo);
+      }
     }
 
     String urlCompleta = builder.toUriString();
 
+    // Las rutas de hechos de colección son públicas
     return apiClientService.getListPublic(urlCompleta, HechoDTO.class);
+  }
+
+  // GET /colecciones/{handleID}/hechos/{hechoID} (Obtener Hecho Específico)
+  /**
+   * Llama al Agregador para obtener un hecho específico de una colección.
+   */
+  public HechoDTO getHechoEspecificoDeColeccion(String handleId, String hechoId) {
+    // Endpoint GET /colecciones/{handleID}/hechos/{hechoID}
+    // Se asume que el hecho puede ser recuperado con el DTO existente.
+    String url = agregadorApiUrl + "/colecciones/" + handleId + "/hechos/" + hechoId;
+
+    // Es una ruta de consulta pública (asumimos, como el resto de las consultas a hechos)
+    return apiClientService.getPublic(url, HechoDTO.class);
+  }
+
+  // Método auxiliar para la navegación irrestricta por defecto
+  private List<HechoDTO> getHechosDeColeccionSinFiltros(String handleId) {
+    String url = agregadorApiUrl + "/colecciones/" + handleId + "/hechos/navegacion?esModoCurado=false";
+    return apiClientService.getListPublic(url, HechoDTO.class);
   }
 
   /**
@@ -117,10 +161,9 @@ public class HechoApiService {
   }
 
   public Map<String, String> getConsensusLabels() {
-    // Asumo que el endpoint del backend es /hechos/metadata/consensus
-    String url = dinamicaUrl + "/metadata/consensus";
-    // NOTA: Map.class es complicado para WebClient,
-    // si esto falla, necesitaremos un DTO. Por ahora lo intentamos así.
+    // CORRECCIÓN: Apuntamos al Agregador (/colecciones/metadata/consensus)
+    String url = agregadorApiUrl + "/colecciones/metadata/consensus"; //
+
     return apiClientService.get(url, Map.class);
   }
 

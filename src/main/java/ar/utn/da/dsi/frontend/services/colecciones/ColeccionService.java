@@ -29,7 +29,12 @@ public class ColeccionService {
 
 	public void actualizar(String id, ColeccionInputDTO dto) {
 		validarDatosColeccion(dto);
-		apiClient.actualizar(id, dto);
+
+		apiClient.actualizar(id, dto); //
+
+		if (dto.getAlgoritmoConsenso() != null && !dto.getAlgoritmoConsenso().isEmpty()) {
+			apiClient.cambiarAlgoritmoConsenso(id, dto.getAlgoritmoConsenso(), dto.getVisualizadorID()); //
+		}
 	}
 
 	public void eliminar(String id, String visualizadorID) {

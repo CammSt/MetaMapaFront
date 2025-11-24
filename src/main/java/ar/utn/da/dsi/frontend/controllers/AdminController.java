@@ -66,7 +66,7 @@ public class AdminController {
         for (EdicionOutputDTO e : ediciones) {
           // Usamos el título propuesto o un identificador genérico
           String titulo = (e.getTituloPropuesto() != null) ? e.getTituloPropuesto() : "Edición Hecho ID " + e.getIdHechoOriginal();
-          listaUnificada.add(new SolicitudUnificadaDTO(e.getId(), titulo, "Edición", e.getEstado())); // Usamos e.getEstado()
+          listaUnificada.add(new SolicitudUnificadaDTO(e.getId(), titulo, "Edición", e.getEstado()));
         }
 
       } catch (Exception e) {

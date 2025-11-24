@@ -113,14 +113,18 @@
                                 <td><span class="badge" th:classappend="${req.estado == 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' || req.estado == 'ACEPTADO' || req.estado == 'ACEPTADO_CON_SUGERENCIAS' ? 'bg-success' : 'bg-danger')}" th:text="${req.estado}"></span></td>
                                 <td class="text-end">
                                     <div th:if="${req.estado == 'PENDIENTE'}">
+                                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill btn-view-request-detail"
+                                                th:attr="data-request-id=${req.id}, data-request-type=${req.tipo}, data-request-estado=${req.estado}">
+                                            <span th:text="${req.estado == 'PENDIENTE' ? 'Ver Solicitud' : 'Ver Resolución'}"></span>
+                                        </button>
                                         <button th:attr="data-request-id=${req.id}, data-request-type=${req.tipo}, data-is-pending='true'"
-                                                class="btn btn-warning btn-sm rounded-pill btn-review-modal">
+                                                class="btn btn-warning btn-sm rounded-pill btn-evaluate">
                                             Evaluar
                                         </button>
                                     </div>
                                     <div th:unless="${req.estado == 'PENDIENTE'}">
                                         <button th:attr="data-request-id=${req.id}, data-request-type=${req.tipo}, data-request-estado=${req.estado}, data-is-pending='false'"
-                                                class="btn btn-sm btn-outline-info rounded-pill btn-review-modal">
+                                                class="btn btn-sm btn-outline-info rounded-pill btn-view-solicitud">
                                             Ver Resolución
                                         </button>
                                     </div>
@@ -134,6 +138,24 @@
         </div>
     </div>
 </main>
+
+<div id="request-detail-modal-html" style="display: none;">
+    <div class="modal fade" id="request-detail-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">Detalle de Solicitud/Resolución</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="request-modal-body">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
     <div class="modal fade" id="adminResolutionModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -186,7 +208,18 @@
         /*]]>*/
     </script>
     <script>
+        // FIX: Se define la función normalizeStatus en el ámbito del script
+        const normalizeStatus = (status) => {
+            if (!status) return 'PENDIENTE'; // Trata nulo o indefinido como PENDIENTE
+            const upperStatus = status.toUpperCase();
+            if (upperStatus.includes('ACEPTAD') || upperStatus.includes('APROBADA')) return 'APROBADA';
+            if (upperStatus.includes('RECHAZAD')) return 'RECHAZADA';
+            // Esto cubre casos como "EN_REVISION" o estados indefinidos, tratándolos como PENDIENTES.
+            return 'PENDIENTE';
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            // FIX: Se asegura que renderSidebar se llama primero.
             renderSidebar('admin');
 
             // --- LÓGICA DE TABS ---
@@ -292,9 +325,6 @@
                     return;
                 }
 
-                // 1. Configurar carga inicial (siempre necesario para 'Ver Solicitud' y 'Evaluar')
-                // FIX: El botón "Ver Solicitud" ya no usa el modal de resolución, sino el modal genérico (openModal)
-
                 // --- ACCIÓN 1: VER SOLICITUD (Muestra todos los detalles en el modal genérico) ---
                 if (!isEvaluate) {
                     // Mostrar indicador de carga en el contenedor temporal
@@ -396,6 +426,7 @@
             const adminFilterStatus = document.getElementById('admin-filter-status');
             const requestsTableBody = document.getElementById('admin-requests-table-body');
 
+            // Función renderAdminRequestsTable (mantenida de la corrección anterior, ya que está correcta)
             function renderAdminRequestsTable(requests) {
                 requestsTableBody.innerHTML = '';
                 if (requests.length === 0) {
@@ -404,39 +435,44 @@
                 }
 
                 requests.forEach(req => {
-                    const statusClass = req.estado === 'PENDIENTE'
-                        ? 'bg-warning'
-                        : (req.estado.includes('APROBA') || req.estado.includes('ACEPTA') ? 'bg-success' : 'bg-danger');
+                    const normalizedStatus = normalizeStatus(req.estado);
 
-                    const isPending = req.estado === 'PENDIENTE';
+                    const statusClass = normalizedStatus === 'PENDIENTE'
+                        ? 'bg-warning'
+                        : (normalizedStatus === 'APROBADA' ? 'bg-success' : 'bg-danger');
+
+                    const isPending = normalizedStatus === 'PENDIENTE';
                     const buttonClass = isPending ? 'btn-warning' : 'btn-outline-info';
 
-                    const actionsHtml = `
-                        <button data-request-id="${req.id}"
-                                data-request-type="${req.tipo}"
-                                data-request-estado="${req.estado}"
-                                class="btn btn-sm btn-outline-info rounded-pill btn-view-solicitud me-2">
-                            Ver Solicitud
-                        </button>
+                    const viewButtonText = isPending ? 'Ver Solicitud' : 'Ver Resolución';
 
-                        ${isPending ?
+
+                    const actionsHtml = `
+                    <button data-request-id="${req.id}"
+                            data-request-type="${req.tipo}"
+                            data-request-estado="${req.estado}"
+                            class="btn btn-sm btn-outline-info rounded-pill btn-view-solicitud me-2">
+                        ${viewButtonText}
+                    </button>
+
+                    ${isPending ?
                         `<button data-request-id="${req.id}"
-                                     data-request-type="${req.tipo}"
-                                     data-is-pending="true"
-                                     class="btn ${buttonClass} btn-sm rounded-pill btn-evaluate">
-                                Evaluar
-                            </button>` : ''}
-                    `;
+                             data-request-type="${req.tipo}"
+                             data-is-pending="true"
+                             class="btn ${buttonClass} btn-sm rounded-pill btn-evaluate">
+                        Evaluar
+                    </button>` : ''}
+                `;
 
                     requestsTableBody.innerHTML += `
-                        <tr>
-                            <td>${req.tituloDelHechoAEliminar}</td>
-                            <td><span class="badge bg-info">${req.tipo}</span></td>
-                            <td><span class="badge ${statusClass}">${req.estado}</span></td>
-                            <td class="text-end">
-                                <div>${actionsHtml}</div>
-                            </td>
-                        </tr>`;
+                    <tr>
+                        <td>${req.tituloDelHechoAEliminar}</td>
+                        <td><span class="badge bg-info">${req.tipo}</span></td>
+                        <td><span class="badge ${statusClass}">${req.estado}</span></td>
+                        <td class="text-end">
+                            <div>${actionsHtml}</div>
+                        </td>
+                    </tr>`;
                 });
             }
 
@@ -445,15 +481,16 @@
                 const typeValue = adminFilterType.value;
                 const statusValue = adminFilterStatus.value;
 
-                const normalizeStatus = (status) => {
-                    if (status.includes('ACEPTAD') || status.includes('APROBADA')) return 'APROBADA';
-                    if (status.includes('RECHAZAD')) return 'RECHAZADA';
-                    return status;
-                }
-
                 const filteredRequests = allRequestsForFilter.filter(req => {
+                    // 1. Filtro por Tipo
                     const typeMatch = !typeValue || req.tipo === typeValue;
-                    const statusMatch = !statusValue || normalizeStatus(req.estado) === normalizeStatus(statusValue);
+
+                    // 2. Filtro por Estado
+                    if (!statusValue) return typeMatch;
+
+                    // Comparamos el estado normalizado del request con el valor limpio del filtro.
+                    const requestNormalizedStatus = normalizeStatus(req.estado);
+                    const statusMatch = requestNormalizedStatus === statusValue;
 
                     return typeMatch && statusMatch;
                 });
@@ -461,7 +498,7 @@
                 renderAdminRequestsTable(filteredRequests);
             }
 
-            // FIX: Ejecutar la función de filtro cada vez que cambie un selector
+            // Ejecutar la función de filtro cada vez que cambie un selector
             adminFilterType.addEventListener('change', applyAdminRequestFilters);
             adminFilterStatus.addEventListener('change', applyAdminRequestFilters);
 
@@ -473,3 +510,7 @@
 </div>
 </body>
 </html>
+
+
+
+

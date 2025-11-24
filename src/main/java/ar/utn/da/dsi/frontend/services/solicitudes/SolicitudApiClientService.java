@@ -53,21 +53,25 @@ public class SolicitudApiClientService {
 	}
 
 	public SolicitudEliminacionOutputDTO obtenerPorId(Integer id, String visualizadorId) {
-		String url = solicitudesApiUrl + "/mostrar-solicitud/" + id + "?idVisualizador=" + visualizadorId;
+		// El Backend es GET /solicitudes/{id} y usa el token para la autorización.
+		String url = solicitudesApiUrl + "/" + id;
 		return apiClientService.get(url, SolicitudEliminacionOutputDTO.class);
 	}
 
 	public SolicitudEliminacionOutputDTO crear(SolicitudEliminacionInputDTO dto) {
-		return apiClientService.postPublic(solicitudesApiUrl, dto, SolicitudEliminacionOutputDTO.class);
+		// El Backend (POST /solicitudes) requiere autenticación (token) para obtener el userId.
+		return apiClientService.post(solicitudesApiUrl, dto, SolicitudEliminacionOutputDTO.class);
 	}
 
 	public SolicitudEliminacionOutputDTO aceptar(Integer id, String visualizadorId) {
-		String url = solicitudesApiUrl + "/" + id + "?visualizadorId=" + visualizadorId + "&aceptado=true";
+		//El Backend es PUT /solicitudes/{id}?aceptado=true y usa el token para la identidad.
+		String url = solicitudesApiUrl + "/" + id + "?aceptado=true";
 		return apiClientService.put(url, null, SolicitudEliminacionOutputDTO.class);
 	}
 
 	public SolicitudEliminacionOutputDTO rechazar(Integer id, String visualizadorId) {
-		String url = solicitudesApiUrl + "/" + id + "?visualizadorId=" + visualizadorId + "&aceptado=false";
+		//El Backend es PUT /solicitudes/{id}?aceptado=false y usa el token para la identidad.
+		String url = solicitudesApiUrl + "/" + id + "?aceptado=false";
 		return apiClientService.put(url, null, SolicitudEliminacionOutputDTO.class);
 	}
 }

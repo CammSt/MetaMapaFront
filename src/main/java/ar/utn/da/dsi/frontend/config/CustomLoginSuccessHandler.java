@@ -38,9 +38,6 @@ import java.nio.charset.StandardCharsets;
       String encodedUserJson = URLEncoder.encode(userJson, StandardCharsets.UTF_8);
       String encodedAccessToken = URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
 
-      session.removeAttribute("userJson");
-      session.removeAttribute("userRole");
-
       //Redirigir, AÑADIENDO EL TOKEN
       String targetUrl = UriComponentsBuilder.fromPath("/login-success")
           .queryParam("userJson", encodedUserJson)

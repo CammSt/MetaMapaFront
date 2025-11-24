@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ColeccionApiService {
@@ -40,4 +41,42 @@ public class ColeccionApiService {
 		String urlConParam = coleccionesApiUrl + "/" + id + "?visualizadorID=" + visualizadorID;
 		apiClientService.delete(urlConParam);
 	}
+
+	// PUT /colecciones/{id}/consenso (Cambiar Algoritmo)
+	public void cambiarAlgoritmoConsenso(String id, String algoritmo, String visualizadorID) {
+		// Endpoint PUT /colecciones/{id}/consenso?algoritmo={alg}&visualizadorID={id}
+		String url = coleccionesApiUrl + "/" + id + "/consenso";
+		String urlConParam = url + "?algoritmo=" + algoritmo + "&visualizadorID=" + visualizadorID;
+		apiClientService.put(urlConParam, null, Void.class);
+	}
+
+	// PUT /colecciones/{handleId}/fuentes (Añadir/Modificar Fuentes)
+	public void modificarFuentes(String handleId, List<String> fuentes, String visualizadorID) {
+		// Endpoint PUT /colecciones/{handleId}/fuentes?visualizadorID={id}
+		String url = coleccionesApiUrl + "/" + handleId + "/fuentes" + "?visualizadorID=" + visualizadorID;
+		apiClientService.put(url, fuentes, Void.class);
+	}
+
+	// DELETE /colecciones/{handleId}/fuentes (Quitar Fuentes con Body)
+	public void quitarFuentes(String handleId, List<String> fuentes, String visualizadorID) {
+		// Endpoint DELETE /colecciones/{handleId}/fuentes?visualizadorID={id}
+		String url = coleccionesApiUrl + "/" + handleId + "/fuentes" + "?visualizadorID=" + visualizadorID;
+		// Usa el método especial deleteWithBody del ApiClientService
+		apiClientService.deleteWithBody(url, fuentes);
+	}
+
+	// PUT /colecciones/{handleID}/criterios (Editar Criterios de Pertenencia)
+	public void editarCriteriosDePertenencia(String handleID, List<String> criterios, List<String> valoresCriterios, String visualizadorID) {
+		// Endpoint PUT /colecciones/{handleID}/criterios?visualizadorID={id}
+		String url = coleccionesApiUrl + "/" + handleID + "/criterios" + "?visualizadorID=" + visualizadorID;
+
+		// El Backend espera las dos listas, lo enviamos como un Map encapsulado en el cuerpo.
+		Map<String, List<String>> body = Map.of(
+				"criterios", criterios,
+				"valoresParaCriterios", valoresCriterios
+		);
+
+		apiClientService.put(url, body, Void.class);
+	}
+
 }
