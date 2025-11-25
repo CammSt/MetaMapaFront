@@ -16,6 +16,7 @@ public class HechoInputDTO {
 
   private double latitud;
   private double longitud;
+  private String contenidoMultimedia;
   private String collectionHandle;
   private String visualizadorID;
 }

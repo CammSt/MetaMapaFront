@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -14,6 +15,15 @@ public class EdicionOutputDTO {
 
 	@JsonProperty("idHechoOriginal")
 	private Long idHechoOriginal;
+
+	@JsonProperty("hechoOriginal")
+	private void unpackHechoOriginal(Map<String, Object> hecho) {
+		if (hecho != null && hecho.get("id") != null) {
+			if (hecho.get("id") instanceof Number) {
+				this.idHechoOriginal = ((Number) hecho.get("id")).longValue();
+			}
+		}
+	}
 
 	@JsonProperty("tituloPropuesto")
 	private String tituloPropuesto;

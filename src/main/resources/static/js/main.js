@@ -123,61 +123,64 @@ function renderFactDetailModal(container, fact) {
 // =========================================================================================
 // FUNCIÓN renderRequestDetailModal (Crítica para el Admin/Contributor)
 // =========================================================================================
+
 function renderRequestDetailModal(container, requestData) {
 
-    // --- Extracción y Normalización de Datos ---
     const requestType = requestData.tipo || (requestData.idHechoOriginal ? 'Edición' : (requestData.motivo ? 'Eliminación' : 'Nuevo Hecho'));
     const requestEstado = requestData.estado || 'N/A';
     const isEdicion = requestType === 'Edición';
     const isEliminacion = requestType === 'Eliminación';
 
-    // Campos primarios (título, descripción/motivo)
+    // Campos primarios
     const titulo = requestData.titulo || requestData.tituloPropuesto || requestData.tituloDelHechoAEliminar || `Hecho ID ${requestData.idHechoOriginal || requestData.id}`;
     const descripcionPropuesta = requestData.descripcionPropuesta || requestData.descripcion || '';
     const motivoEliminacion = requestData.motivo || '';
     const detalleAdmin = requestData.detalle || 'El administrador no proporcionó comentarios adicionales.';
 
-    // Campos técnicos y ubicación (normalizados)
+    // Campos técnicos y ubicación
     const lat = requestData.latitud || requestData.latitudPropuesta;
     const lon = requestData.longitud || requestData.longitudPropuesta;
     const fechaAcontecimiento = requestData.fechaAcontecimiento || requestData.fechaAcontecimientoPropuesta;
     const categoriaNombre = requestData.categoria || (requestData.categoriaPropuesta && requestData.categoriaPropuesta.nombre) || 'No especificada';
     const contenidoMultimedia = requestData.contenidoMultimediaPropuesto || requestData.contenidoMultimedia;
 
-    // --- Contenido de la Sección de Propuesta / Detalle ---
+    // --- Contenido ---
     let propuestaContent = '';
 
     if (isEliminacion) {
         propuestaContent += `<p class="fw-bold text-danger">Motivo de Eliminación:</p><p class="text-muted" style="white-space: pre-wrap;">${motivoEliminacion || 'No especificado.'}</p>`;
         propuestaContent += `<p><strong>Título del Hecho a Eliminar:</strong> ${requestData.tituloHecho || titulo}</p>`;
     } else {
-        // Nuevo Hecho o Edición (Muestra todos los campos técnicos)
         propuestaContent += `<p class="fw-bold text-primary">${isEdicion ? 'Detalles de la Edición Propuesta' : 'Detalles del Nuevo Hecho'}</p>`;
-
-        // Descripción
         propuestaContent += `<p><strong>Descripción:</strong> <span class="text-muted" style="white-space: pre-wrap;">${descripcionPropuesta || 'Sin descripción.'}</span></p>`;
-
-        propuestaContent += `<hr>`;
-        propuestaContent += `<h6 class="fw-bold">Datos Técnicos:</h6>`;
+        propuestaContent += `<hr><h6 class="fw-bold">Datos Técnicos:</h6>`;
 
         let detallesTecnicos = `<ul class="list-unstyled small">`;
         detallesTecnicos += `<li><strong>Título:</strong> ${titulo}</li>`;
         detallesTecnicos += `<li><strong>Categoría:</strong> <span class="badge bg-secondary">${categoriaNombre}</span></li>`;
 
-        // Ubicación
         if (lat && lon) {
             detallesTecnicos += `<li><strong>Ubicación:</strong> Latitud: ${lat} | Longitud: ${lon}</li>`;
+            detallesTecnicos += `<div id="request-map-container" data-lat="${lat}" data-lon="${lon}" style="height: 200px; width: 100%; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; z-index: 1;"></div>`;
         } else {
             detallesTecnicos += `<li><strong>Ubicación:</strong> No especificada</li>`;
         }
 
-        // Multimedia y Fecha
         if (fechaAcontecimiento) {
             const formattedDate = new Date(fechaAcontecimiento).toLocaleString('es-ES');
             detallesTecnicos += `<li><strong>Fecha del Acontecimiento:</strong> ${formattedDate}</li>`;
         }
         if (contenidoMultimedia) {
-            detallesTecnicos += `<li><strong>Contenido Multimedia:</strong> ${contenidoMultimedia} (Archivo adjunto)</li>`;
+            detallesTecnicos += `<li><strong>Contenido Multimedia:</strong>`;
+            detallesTecnicos += `
+                <div class="mt-2 p-2 border rounded bg-white text-center">
+                    <img src="${contenidoMultimedia}" 
+                         class="img-fluid rounded shadow-sm" 
+                         style="max-height: 300px; max-width: 100%;" 
+                         alt="Evidencia adjunta"
+                         onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=\'text-muted small\'><i class=\'bi bi-file-earmark\'></i> ${contenidoMultimedia} (No es una imagen previsualizable)</div>');">
+                </div>`;
+            detallesTecnicos += `</li>`;
         } else {
             detallesTecnicos += `<li><strong>Contenido Multimedia:</strong> No se adjuntó archivo.</li>`;
         }
@@ -190,14 +193,12 @@ function renderRequestDetailModal(container, requestData) {
         propuestaContent += detallesTecnicos;
     }
 
-
     // --- Estilos y Elementos de Estado ---
     const statusClass = requestEstado === 'PENDIENTE'
         ? 'bg-warning'
         : (requestEstado.includes('APROBA') || requestEstado.includes('ACEPTA') ? 'bg-success' : 'bg-danger');
 
     const modalTitleText = (requestEstado === 'PENDIENTE' ? `Revisar Solicitud de ${requestType}` : `Detalle de Resolución de ${requestType}`);
-
 
     // --- Construcción del HTML Final ---
     const modalBodyHtml = `
@@ -207,14 +208,11 @@ function renderRequestDetailModal(container, requestData) {
                 <h6 class="fw-bold mb-0">Estado: <span class="badge ${statusClass}">${requestEstado}</span></h6>
             </div>
             <hr>
-            
             <div class="card card-body bg-light mb-3">
                 ${propuestaContent}
             </div>
-            
             ${requestEstado !== 'PENDIENTE' ? `<hr><h6 class="fw-bold text-info">Resolución de Administración</h6><p>${detalleAdmin}</p>` : ''}
-            
-            <small class="text-muted d-block mt-3">ID Interno de Solicitud: ${requestData.id} | Solicitante ID: ${requestData.solicitanteId || requestData.visualizadorEditor || 'N/A'}</small>
+            <small class="text-muted d-block mt-3">ID Interno: ${requestData.id} | Solicitante: ${requestData.solicitanteId || requestData.visualizadorEditor || 'N/A'}</small>
         </div>
     `;
 
@@ -235,10 +233,6 @@ function renderRequestDetailModal(container, requestData) {
                 </div>
             </div>
         </div>`;
-}
-
-function renderFactList(facts) {
-    // ... (omitted)
 }
 
 // --- INICIALIZACIÓN ---

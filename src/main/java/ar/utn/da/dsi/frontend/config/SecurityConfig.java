@@ -42,6 +42,8 @@ public class SecurityConfig {
 								"/error/403"
 						).permitAll()
 
+						.requestMatchers("/admin/api/solicitudes/**").hasAnyRole("ADMIN", "CONTRIBUTOR")
+
 						//RUTAS DE CONTRIBUYENTE (Requieren estar registrados)
 						.requestMatchers(
 								"/contributor/**",              // Panel de Contribuyente

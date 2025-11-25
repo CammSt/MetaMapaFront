@@ -39,6 +39,7 @@
                         </table>
                     </div>
                 </div>
+
                 <div id="my-requests-content" style="display: none;">
                     <div class="card card-body mb-3 bg-light border-0">
                         <div class="row g-3 align-items-center">
@@ -56,16 +57,15 @@
                                 <select class="form-select form-select-sm" id="filter-request-status">
                                     <option value="">Todos</option>
                                     <option value="PENDIENTE">Pendiente</option>
-                                    <option value="ACEPTADO">Aprobada</option>
-                                    <option value="RECHAZADO">Rechazada</option>
+                                    <option value="ACEPTADO">Aceptado</option>
+                                    <option value="RECHAZADO">Rechazado</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
                     <div class="table-responsive rounded-3 overflow-hidden shadow-sm">
-                        <div th:if="${#lists.isEmpty(misSolicitudes)}" class="text-center text-muted p-5">No has realizado ninguna solicitud todavía.</div>
-                        <table th:unless="${#lists.isEmpty(misSolicitudes)}" class="table table-striped table-hover mb-0">
+                        <table class="table table-striped table-hover mb-0">
                             <thead class="bg-light">
                             <tr>
                                 <th class="text-secondary fw-bold">Título</th>
@@ -75,19 +75,6 @@
                             </tr>
                             </thead>
                             <tbody id="requests-table-body">
-                            <tr th:each="req : ${misSolicitudes}">
-                                <td th:text="${req.tituloDelHechoAEliminar}"></td>
-                                <td><span class="badge bg-secondary" th:text="${req.tipo}"></span></td>
-                                <td><span class="badge" th:classappend="${req.estado == 'PENDIENTE' ? 'bg-warning' : (req.estado == 'APROBADA' || req.estado == 'ACEPTADO' || req.estado == 'ACEPTADO_CON_SUGERENCIAS' ? 'bg-success' : 'bg-danger')}" th:text="${req.estado}"></span></td>
-                                <td class="text-end">
-                                    <div>
-                                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill btn-view-request-detail"
-                                                th:attr="data-request-id=${req.id}, data-request-type=${req.tipo}, data-request-estado=${req.estado}">
-                                            <span th:text="${req.estado == 'PENDIENTE' ? 'Ver Solicitud' : 'Ver Resolución'}"></span>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
                             </tbody>
                         </table>
                     </div>
@@ -96,7 +83,6 @@
         </div>
     </div>
 </main>
-
 
 <div id="page-scripts">
     <script th:inline="javascript">
@@ -109,38 +95,35 @@
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('contributor');
 
-            // --- TABLA 2: ESTADO SOLICITUDES (Filtros y Renderizado) ---
+            // --- TABLA DE SOLICITUDES Y FILTROS ---
             const reqTable = document.getElementById('requests-table-body');
             const filterType = document.getElementById('filter-request-type');
             const filterStatus = document.getElementById('filter-request-status');
 
             function renderMyRequests(list) {
                 reqTable.innerHTML = '';
-                if (!list.length) {
-                    // Nota: Corregida colspan a 4 ya que la tabla tiene 4 columnas
-                    reqTable.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay solicitudes.</td></tr>';
+                if (!list || list.length === 0) {
+                    reqTable.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No hay solicitudes.</td></tr>';
                     return;
                 }
                 list.forEach(r => {
                     const st = r.estado ? r.estado.toUpperCase() : 'PENDIENTE';
                     const badgeClass = st === 'PENDIENTE' ? 'bg-warning' : (st.includes('ACEPT') ? 'bg-success' : 'bg-danger');
 
-                    // Crear el HTML de la fila con el botón que contiene los data attributes
-                    const rowHtml = `
+                    reqTable.innerHTML += `
                         <tr>
-                            <td>${r.tituloDelHechoAEliminar}</td>
+                            <td>${r.tituloDelHechoAEliminar || 'Sin título'}</td>
                             <td><span class="badge bg-secondary">${r.tipo}</span></td>
                             <td><span class="badge ${badgeClass}">${r.estado}</span></td>
                             <td class="text-end">
-                                <div>
-                                    <button type="button" class="btn btn-sm btn-outline-info rounded-pill btn-view-request-detail"
-                                            data-request-id="${r.id}" data-request-type="${r.tipo}" data-request-estado="${r.estado}">
-                                        <span>${r.estado === 'PENDIENTE' ? 'Ver Solicitud' : 'Ver Resolución'}</span>
-                                    </button>
-                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-info rounded-pill btn-view-request-detail"
+                                        data-request-id="${r.id}"
+                                        data-request-type="${r.tipo}"
+                                        data-request-estado="${r.estado}">
+                                    <span>${st === 'PENDIENTE' ? 'Ver Solicitud' : 'Ver Resolución'}</span>
+                                </button>
                             </td>
                         </tr>`;
-                    reqTable.innerHTML += rowHtml;
                 });
             }
 
@@ -151,11 +134,8 @@
                     const estadoUpper = r.estado ? r.estado.toUpperCase() : 'PENDIENTE';
                     let statusMatch = true;
                     if (s) {
-                        if (s === 'ACEPTADO' || s === 'APROBADA') {
-                            statusMatch = estadoUpper.includes('ACEPT');
-                        } else {
-                            statusMatch = estadoUpper === s;
-                        }
+                        if (s === 'ACEPTADO' || s === 'APROBADA') statusMatch = estadoUpper.includes('ACEPT');
+                        else statusMatch = estadoUpper === s;
                     }
                     return (!t || r.tipo === t) && statusMatch;
                 });
@@ -164,10 +144,8 @@
 
             filterType.addEventListener('change', applyReqFilters);
             filterStatus.addEventListener('change', applyReqFilters);
-            // La llamada inicial se hace al final de DOMContentLoaded
 
-
-            // --- LÓGICA DE PESTAÑAS ---
+            // --- PESTAÑAS ---
             const tabMyFacts = document.getElementById('contrib-tab-my-facts');
             const tabMyRequests = document.getElementById('contrib-tab-my-requests');
             const contentMyFacts = document.getElementById('my-facts-content');
@@ -185,81 +163,108 @@
                 tabMyFacts.classList.remove('active');
                 contentMyRequests.style.display = 'block';
                 contentMyFacts.style.display = 'none';
-
                 applyReqFilters();
             });
 
-
+            // ============================================================
+            // LÓGICA MODAL DE DETALLE HECHO
+            // ============================================================
             document.addEventListener('click', function(e) {
                 const btn = e.target.closest('.btn-view-request-detail');
                 if (btn) {
                     const id = btn.getAttribute('data-request-id');
                     const tipo = btn.getAttribute('data-request-type');
+                    const estado = btn.getAttribute('data-request-estado') || 'PENDIENTE';
 
-                    if (!id || id === 'null') {
-                        alert("Error: ID de solicitud inválido.");
-                        return;
-                    }
+                    if (!id || id === 'null') { alert("Error: ID inválido."); return; }
 
-                    // 1. Crear datos de carga temporal
                     const tempLoadingData = {
-                        id: id,
-                        tipo: tipo,
-                        estado: 'PENDIENTE',
-                        tituloDelHechoAEliminar: 'Cargando detalles...',
-                        detalle: '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Obteniendo detalles completos...</p></div>'
+                        id: id, tipo: tipo, estado: estado,
+                        titulo: 'Cargando...',
+                        tituloDelHechoAEliminar: 'Cargando...',
+                        descripcion: '<div class="d-flex align-items-center text-primary p-3"><span class="spinner-border spinner-border-sm me-3" role="status"></span><span>Obteniendo información...</span></div>',
+                        categoria: '', detalle: ''
                     };
 
-                    // 2. Abrir el modal de carga INMEDIATAMENTE
-                    let currentModalInstance = openModal(renderRequestDetailModal, tempLoadingData);
+                    openModal(renderRequestDetailModal, tempLoadingData);
 
-                    // 3. Llamada AJAX al endpoint del Admin
+                    const forceCloseAndOpen = (renderFunc, data) => {
+                        const container = document.getElementById('modal-container');
+                        const modalEl = container.querySelector('.modal');
+                        if (modalEl) {
+                            const instance = bootstrap.Modal.getInstance(modalEl);
+                            if (instance) instance.dispose();
+                        }
+
+                        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style = '';
+
+                        setTimeout(() => {
+                            openModal(renderFunc, data);
+                        }, 50);
+                    };
+
+                    // 3. Fetch de datos
                     fetch(`/admin/api/solicitudes/${id}/detalle?tipo=${encodeURIComponent(tipo)}`)
-                        .then(response => {
-                            if (!response.ok) {
-                                return response.json().then(data => {
-                                    throw new Error(data.error || response.statusText);
-                                });
-                            }
-                            return response.json();
+                        .then(res => {
+                            if (!res.ok) throw new Error("Error HTTP: " + res.status);
+                            return res.json();
                         })
                         .then(data => {
-                            // 4. CERRAR EL MODAL DE CARGA USANDO LA INSTANCIA DE BOOTSTRAP
-                            if (currentModalInstance) {
-                                const bootstrapModal = bootstrap.Modal.getInstance(currentModalInstance);
-                                if (bootstrapModal) {
-                                    bootstrapModal.hide(); // <-- Cierra correctamente el modal y limpia el backdrop
-                                }
-                            }
+                            // Normalización
+                            data.tipo = tipo;
+                            if (!data.estado) data.estado = estado;
 
-                            // 5. Re-abrir con los datos finales
-                            openModal(renderRequestDetailModal, data);
+                            if (tipo === 'Edición' && data.propuesta) {
+                                const combinacion = { ...data.propuesta, ...data };
+                                if (!combinacion.idHechoOriginal && data.original) {
+                                    combinacion.idHechoOriginal = data.original.id;
+                                }
+                                data = combinacion;
+                            }
+                            forceCloseAndOpen(renderRequestDetailModal, data);
                         })
                         .catch(err => {
-                            console.error("Error al obtener detalle de solicitud:", err);
-
-                            // 4. Inyectar error en el modal de carga si falla
+                            console.error(err);
                             const errorData = {
-                                id: id,
-                                tipo: tipo,
-                                estado: 'ERROR',
-                                tituloDelHechoAEliminar: 'Error de Carga',
-                                detalle: `<div class="alert alert-danger">${err.message || 'Error desconocido al cargar el detalle.'}</div>`
+                                id: id, tipo: tipo, estado: 'ERROR',
+                                tituloDelHechoAEliminar: 'Error',
+                                descripcion: `<div class="alert alert-danger">No se pudo cargar el detalle: ${err.message}</div>`
                             };
-
-                            // Asegurarse de cerrar la instancia de carga antes de abrir el error
-                            if (currentModalInstance) {
-                                const bootstrapModal = bootstrap.Modal.getInstance(currentModalInstance);
-                                if (bootstrapModal) bootstrapModal.hide();
-                            }
-                            openModal(renderRequestDetailModal, errorData);
+                            forceCloseAndOpen(renderRequestDetailModal, errorData);
                         });
                 }
             });
 
-            // Llamada inicial a la renderización de solicitudes
-            applyReqFilters();
+            // ============================================================
+            // NUEVO: INICIALIZAR MAPA AL MOSTRAR EL MODAL
+            // ============================================================
+            document.addEventListener('shown.bs.modal', function (event) {
+                const mapContainer = document.getElementById('request-map-container');
 
+                // Verificamos si existe el contenedor y si aún no tiene mapa (está vacío)
+                if (mapContainer && !mapContainer.hasChildNodes()) {
+                    const lat = parseFloat(mapContainer.getAttribute('data-lat'));
+                    const lon = parseFloat(mapContainer.getAttribute('data-lon'));
+
+                    if (!isNaN(lat) && !isNaN(lon)) {
+                        // Inicializar Leaflet
+                        const map = L.map('request-map-container').setView([lat, lon], 13);
+
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap contributors'
+                        }).addTo(map);
+
+                        L.marker([lat, lon]).addTo(map);
+
+                        // Truco para reajustar el tamaño del mapa dentro del modal
+                        setTimeout(() => { map.invalidateSize(); }, 10);
+                    }
+                }
+            });
+
+            applyReqFilters();
         });
     </script>
 </div>

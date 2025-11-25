@@ -66,6 +66,7 @@ public class HechoService {
       dtoForm.setFechaAcontecimiento(dtoApi.getFechaAcontecimiento());
       dtoForm.setLatitud(dtoApi.getLatitud());
       dtoForm.setLongitud(dtoApi.getLongitud());
+      dtoForm.setContenidoMultimedia(dtoApi.getContenidoMultimedia());
       dtoForm.setCollectionHandle(dtoApi.getCollectionHandle());
 
       if (dtoApi.getUserId() != null) {
@@ -93,6 +94,14 @@ public class HechoService {
 
   public void rechazar(Long id) {
     apiClient.rechazarHecho(id);
+  }
+
+  public void aprobarConSugerencias(Long id, String sugerencia) {
+    apiClient.aprobarHechoConSugerencias(id, sugerencia);
+  }
+
+  public void rechazarConMotivo(Long id, String motivo) {
+    apiClient.rechazarHechoConMotivo(id, motivo);
   }
 
   public List<EdicionOutputDTO> buscarEdicionesPendientes() {

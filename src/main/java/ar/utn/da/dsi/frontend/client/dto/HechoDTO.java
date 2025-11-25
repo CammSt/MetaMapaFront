@@ -43,6 +43,9 @@ public class HechoDTO {
 	@JsonProperty("longitud")
 	private Double longitud;
 
+	@JsonProperty("contenidoMultimedia")
+	private String contenidoMultimedia;
+
 	@JsonProperty("consensuado")
 	private boolean consensuado;
 

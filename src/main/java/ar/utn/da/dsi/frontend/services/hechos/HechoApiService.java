@@ -344,14 +344,29 @@ public class HechoApiService {
 
   // APROBAR HECHO
   public void aprobarHecho(Long id) {
-    String url = dinamicaUrl + "/" + id + "/aprobar";
+    String url = dinamicaUrl + "/hechos/" + id + "/aprobar";
     apiClientService.put(url, "", Void.class);
+  }
+
+  public void aprobarHechoConSugerencias(Long id, String sugerencia) {
+    String url = dinamicaUrl + "/hechos/" + id + "/aprobarConSugerencias";
+
+    Map<String, String> body = Map.of("detalle", sugerencia);
+
+    apiClientService.put(url, body, Void.class);
+  }
+
+  // OPCIONAL: RECHAZAR CON MOTIVO
+  public void rechazarHechoConMotivo(Long id, String motivo) {
+    String url = dinamicaUrl + "/hechos/" + id + "/rechazar";
+    Map<String, String> body = Map.of("detalle", motivo);
+    apiClientService.put(url, body, Void.class);
   }
 
   // RECHAZAR HECHO
   public void rechazarHecho(Long id) {
-    // URL: http://localhost:8082/dinamica/hechos/{id}/rechazar
-    String url = dinamicaUrl + "/" + id + "/rechazar";
+    // URL esperada: http://localhost:8082/dinamica/hechos/{id}/rechazar
+    String url = dinamicaUrl + "/hechos/" + id + "/rechazar";
     apiClientService.put(url, null, Void.class);
   }
 
