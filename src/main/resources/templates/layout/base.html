@@ -63,34 +63,36 @@
 </div>
 
 <div id="modal-container">
-    <div class="modal fade" id="csvImportModal" tabindex="-1" aria-labelledby="csvImportModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
 
-                <form id="csv-import-form" th:action="@{/admin/hechos/importar-csv}" method="post" enctype="multipart/form-data">
+</div>
 
-                    <div class="modal-header">
-                        <h5 class="modal-title text-primary fw-bold" id="csvImportModalLabel">Importar desde CSV</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="csvImportModal" tabindex="-1" aria-labelledby="csvImportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <form id="csv-import-form" th:action="@{/admin/hechos/importar-csv}" method="post" enctype="multipart/form-data">
+
+                <div class="modal-header">
+                    <h5 class="modal-title text-primary fw-bold" id="csvImportModalLabel">Importar desde CSV</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="csv-validation-error-placeholder"></div> <p class="text-muted small">
+                    Selecciona un archivo .csv para la carga masiva de hechos.
+                </p>
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">Archivo CSV</label>
+                        <input class="form-control" type="file" id="csvFile" name="csvFile" accept=".csv" required>
+                        <div class="form-text">Solo se admiten archivos en formato CSV (.csv).</div>
                     </div>
-                    <div class="modal-body">
-                        <div id="csv-validation-error-placeholder"></div> <p class="text-muted small">
-                            Selecciona un archivo .csv para la carga masiva de hechos.
-                        </p>
-                        <div class="mb-3">
-                            <label for="csvFile" class="form-label">Archivo CSV</label>
-                            <input class="form-control" type="file" id="csvFile" name="csvFile" accept=".csv" required>
-                            <div class="form-text">Solo se admiten archivos en formato CSV (.csv).</div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" id="submit-import-btn">Importar</button>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="submit-import-btn">Importar</button>
+                </div>
 
-                </form>
+            </form>
 
-            </div>
         </div>
     </div>
 </div>

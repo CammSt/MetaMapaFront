@@ -7,6 +7,16 @@
     <div class="card shadow-lg border-0 rounded-3">
         <div class="card-header bg-primary text-white border-bottom-0 p-4 rounded-top-3"><h3 class="fw-bold mb-0">Mi Panel de Contribuyente</h3></div>
         <div class="card-body p-4">
+            <div id="alert-placeholder">
+                <div th:if="${success}" class="alert alert-success d-flex align-items-center" role="alert">
+                    <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                    <span th:text="${success}"></span>
+                </div>
+                <div th:if="${error}" class="alert alert-danger d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                    <span th:text="${error}"></span>
+                </div>
+            </div>
             <ul class="nav nav-pills nav-justified mb-4">
                 <li class="nav-item"><button id="contrib-tab-my-facts" class="nav-link active">Mis Hechos Publicados</button></li>
                 <li class="nav-item"><button id="contrib-tab-my-requests" class="nav-link">Estado de Solicitudes</button></li>
@@ -87,23 +97,6 @@
     </div>
 </main>
 
-<div id="request-detail-modal-html" style="display: none;">
-    <div class="modal fade" id="request-detail-modal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fw-bold">Detalle de Solicitud/Resolución</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4" id="request-modal-body">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <div id="page-scripts">
     <script th:inline="javascript">
@@ -116,39 +109,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('contributor');
 
-            // --- TABLA 1: MIS HECHOS (Solo búsqueda por título) ---
-            const factsTable = document.getElementById('my-facts-body');
-            const searchInput = document.getElementById('search-fact-input');
-
-            function renderMyFacts(list) {
-                factsTable.innerHTML = '';
-                if (!list.length) {
-                    factsTable.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No tienes hechos publicados.</td></tr>';
-                    return;
-                }
-                list.forEach(f => {
-                    // Botón Editar corregido
-                    const editBtn = `<a href="/hechos/${f.id}/editar" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-pencil"></i> Editar</a>`;
-
-                    factsTable.innerHTML += `
-                        <tr>
-                            <td>${f.titulo}</td>
-                            <td>${f.categoria}</td>
-                            <td>${new Date(f.fechaAcontecimiento).toLocaleDateString()}</td>
-                            <td class="text-end">${editBtn}</td>
-                        </tr>`;
-                });
-            }
-
-            searchInput.addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                const filtered = myFacts.filter(f => f.titulo.toLowerCase().includes(term));
-                renderMyFacts(filtered);
-            });
-            renderMyFacts(myFacts);
-
-
-            // --- TABLA 2: ESTADO SOLICITUDES (Filtros) ---
+            // --- TABLA 2: ESTADO SOLICITUDES (Filtros y Renderizado) ---
             const reqTable = document.getElementById('requests-table-body');
             const filterType = document.getElementById('filter-request-type');
             const filterStatus = document.getElementById('filter-request-status');
@@ -156,19 +117,30 @@
             function renderMyRequests(list) {
                 reqTable.innerHTML = '';
                 if (!list.length) {
-                    reqTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay solicitudes.</td></tr>';
+                    // Nota: Corregida colspan a 4 ya que la tabla tiene 4 columnas
+                    reqTable.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay solicitudes.</td></tr>';
                     return;
                 }
                 list.forEach(r => {
                     const st = r.estado ? r.estado.toUpperCase() : 'PENDIENTE';
-                    const badge = st === 'PENDIENTE' ? 'bg-warning' : (st.includes('ACEPT') ? 'bg-success' : 'bg-danger');
+                    const badgeClass = st === 'PENDIENTE' ? 'bg-warning' : (st.includes('ACEPT') ? 'bg-success' : 'bg-danger');
 
-                    reqTable.innerHTML += `
+                    // Crear el HTML de la fila con el botón que contiene los data attributes
+                    const rowHtml = `
                         <tr>
                             <td>${r.tituloDelHechoAEliminar}</td>
-                            <td>${r.tipo}</td>
-                            <td><span class="badge ${badge}">${r.estado}</span></td>
+                            <td><span class="badge bg-secondary">${r.tipo}</span></td>
+                            <td><span class="badge ${badgeClass}">${r.estado}</span></td>
+                            <td class="text-end">
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-info rounded-pill btn-view-request-detail"
+                                            data-request-id="${r.id}" data-request-type="${r.tipo}" data-request-estado="${r.estado}">
+                                        <span>${r.estado === 'PENDIENTE' ? 'Ver Solicitud' : 'Ver Resolución'}</span>
+                                    </button>
+                                </div>
+                            </td>
                         </tr>`;
+                    reqTable.innerHTML += rowHtml;
                 });
             }
 
@@ -176,14 +148,118 @@
                 const t = filterType.value;
                 const s = filterStatus.value;
                 const filtered = myRequests.filter(r => {
-                    return (!t || r.tipo === t) && (!s || (r.estado && r.estado.toUpperCase() === s));
+                    const estadoUpper = r.estado ? r.estado.toUpperCase() : 'PENDIENTE';
+                    let statusMatch = true;
+                    if (s) {
+                        if (s === 'ACEPTADO' || s === 'APROBADA') {
+                            statusMatch = estadoUpper.includes('ACEPT');
+                        } else {
+                            statusMatch = estadoUpper === s;
+                        }
+                    }
+                    return (!t || r.tipo === t) && statusMatch;
                 });
                 renderMyRequests(filtered);
             }
 
             filterType.addEventListener('change', applyReqFilters);
             filterStatus.addEventListener('change', applyReqFilters);
-            renderMyRequests(myRequests);
+            // La llamada inicial se hace al final de DOMContentLoaded
+
+
+            // --- LÓGICA DE PESTAÑAS ---
+            const tabMyFacts = document.getElementById('contrib-tab-my-facts');
+            const tabMyRequests = document.getElementById('contrib-tab-my-requests');
+            const contentMyFacts = document.getElementById('my-facts-content');
+            const contentMyRequests = document.getElementById('my-requests-content');
+
+            tabMyFacts.addEventListener('click', () => {
+                tabMyFacts.classList.add('active');
+                tabMyRequests.classList.remove('active');
+                contentMyFacts.style.display = 'block';
+                contentMyRequests.style.display = 'none';
+            });
+
+            tabMyRequests.addEventListener('click', () => {
+                tabMyRequests.classList.add('active');
+                tabMyFacts.classList.remove('active');
+                contentMyRequests.style.display = 'block';
+                contentMyFacts.style.display = 'none';
+
+                applyReqFilters();
+            });
+
+
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.btn-view-request-detail');
+                if (btn) {
+                    const id = btn.getAttribute('data-request-id');
+                    const tipo = btn.getAttribute('data-request-type');
+
+                    if (!id || id === 'null') {
+                        alert("Error: ID de solicitud inválido.");
+                        return;
+                    }
+
+                    // 1. Crear datos de carga temporal
+                    const tempLoadingData = {
+                        id: id,
+                        tipo: tipo,
+                        estado: 'PENDIENTE',
+                        tituloDelHechoAEliminar: 'Cargando detalles...',
+                        detalle: '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Obteniendo detalles completos...</p></div>'
+                    };
+
+                    // 2. Abrir el modal de carga INMEDIATAMENTE
+                    let currentModalInstance = openModal(renderRequestDetailModal, tempLoadingData);
+
+                    // 3. Llamada AJAX al endpoint del Admin
+                    fetch(`/admin/api/solicitudes/${id}/detalle?tipo=${encodeURIComponent(tipo)}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(data => {
+                                    throw new Error(data.error || response.statusText);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            // 4. CERRAR EL MODAL DE CARGA USANDO LA INSTANCIA DE BOOTSTRAP
+                            if (currentModalInstance) {
+                                const bootstrapModal = bootstrap.Modal.getInstance(currentModalInstance);
+                                if (bootstrapModal) {
+                                    bootstrapModal.hide(); // <-- Cierra correctamente el modal y limpia el backdrop
+                                }
+                            }
+
+                            // 5. Re-abrir con los datos finales
+                            openModal(renderRequestDetailModal, data);
+                        })
+                        .catch(err => {
+                            console.error("Error al obtener detalle de solicitud:", err);
+
+                            // 4. Inyectar error en el modal de carga si falla
+                            const errorData = {
+                                id: id,
+                                tipo: tipo,
+                                estado: 'ERROR',
+                                tituloDelHechoAEliminar: 'Error de Carga',
+                                detalle: `<div class="alert alert-danger">${err.message || 'Error desconocido al cargar el detalle.'}</div>`
+                            };
+
+                            // Asegurarse de cerrar la instancia de carga antes de abrir el error
+                            if (currentModalInstance) {
+                                const bootstrapModal = bootstrap.Modal.getInstance(currentModalInstance);
+                                if (bootstrapModal) bootstrapModal.hide();
+                            }
+                            openModal(renderRequestDetailModal, errorData);
+                        });
+                }
+            });
+
+            // Llamada inicial a la renderización de solicitudes
+            applyReqFilters();
+
         });
     </script>
 </div>

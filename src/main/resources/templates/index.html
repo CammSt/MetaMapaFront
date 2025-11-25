@@ -4,6 +4,16 @@
 <body>
 
 <main class="container-fluid p-4" id="main-content">
+    <div id="alert-placeholder">
+        <div th:if="${success}" class="alert alert-success d-flex align-items-center" role="alert">
+            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+            <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+            <span th:text="${error}"></span>
+        </div>
+    </div>
     <div class="text-center mb-5 animate__animated animate__fadeInDown">
         <h2 class="display-4 fw-bold text-primary">Información Colaborativa para un Mundo Transparente</h2>
         <p class="lead text-secondary">MetaMapa es una plataforma abierta y ciudadana para mapear, verificar y visualizar información geolocalizada.</p>

@@ -6,7 +6,7 @@ const AppState = {
 // Función para cerrar la sesión del usuario.
 function logout() {
     sessionStorage.clear();
-    window.location.href = '/';
+    window.location.href = '/logout';
 }
 
 function renderSidebar(currentPage) {
@@ -51,7 +51,7 @@ function openModal(modalRenderFunc, ...args) {
         const modal = new bootstrap.Modal(modalElement);
         modal.show();
         modalElement.addEventListener('hidden.bs.modal', () => { modalContainer.innerHTML = ''; }, { once: true });
-        return modalElement; // Devuelve el elemento para añadirle eventos después
+        return modal;
     }
     return null;
 }

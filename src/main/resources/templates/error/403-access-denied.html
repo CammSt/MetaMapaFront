@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(pageTitle='Acceso Denegado', content=~{::#main-content}, pageScripts=~{::#page-scripts})}">
+<body>
+
+<main class="container-fluid p-4 d-flex align-items-center justify-content-center" style="min-height: 80vh;" id="main-content">
+    <div class="text-center animate__animated animate__fadeIn">
+        <h1 class="display-1 fw-bold text-danger">403</h1>
+        <h3 class="fw-bold text-secondary">Acceso Denegado</h3>
+        <p class="lead text-muted">
+            Lo sentimos, no tienes los permisos necesarios para acceder a esta página.
+        </p>
+        <div class="mt-4">
+            <a th:href="@{/}" class="btn btn-primary rounded-pill px-4 py-2 fw-bold me-2">
+                Volver al Inicio
+            </a>
+            <a href="javascript:void(0);" onclick="logout();" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold">
+                Cerrar Sesión
+            </a>
+        </div>
+    </div>
+</main>
+
+<div id="page-scripts">
+</div>
+
+</body>
+</html>

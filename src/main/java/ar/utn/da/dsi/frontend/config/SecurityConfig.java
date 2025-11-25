@@ -38,7 +38,8 @@ public class SecurityConfig {
                 "/login-success",								// Login Sucess
 								"/hechos/nuevo", "/hechos/crear",      // Enviar Hecho (Anónimo)
 								"/solicitudes/nueva", "/solicitudes/crear", // Enviar Solicitud (Anónimo)
-								"/css/**", "/js/**", "/assets/**" // Recursos estáticos
+								"/css/**", "/js/**", "/assets/**", // Recursos estáticos
+								"/error/403"
 						).permitAll()
 
 						//RUTAS DE CONTRIBUYENTE (Requieren estar registrados)
@@ -65,12 +66,15 @@ public class SecurityConfig {
 				)
 				.logout(logout -> logout
 						.logoutUrl("/logout")
-						.logoutSuccessUrl("/login?logout")
+						.logoutSuccessUrl("/")
 						.permitAll()
 				)
 				.exceptionHandling(ex -> ex
 						.authenticationEntryPoint((request, response, authException) ->
 								response.sendRedirect("/login?unauthorized")
+						)
+						.accessDeniedHandler((request, response, accessDeniedException) ->
+								response.sendRedirect("/error/403")
 						)
 				);
 

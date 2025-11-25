@@ -62,7 +62,7 @@ public class HechoController {
         redirectAttributes.addFlashAttribute("success", "Sugerencia enviada y pendiente de revisión en Mi Panel.");
         return "redirect:/contributor";
       }
-      redirectAttributes.addFlashAttribute("success", "Sugerencia recibida.");
+      redirectAttributes.addFlashAttribute("success", "Sugerencia recibida. Será revisada por un administrador.");
       return "redirect:/";
 
     } catch (RuntimeException e) {
