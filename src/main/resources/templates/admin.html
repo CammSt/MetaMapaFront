@@ -129,7 +129,7 @@
 
                                 <form id="formApprove" method="post" style="display:inline;">
                                     <button type="submit" class="btn btn-success rounded-pill fw-bold px-4">
-                                        <i class="bi bi-check-circle me-2"></i>Aprobar
+                                        <i class="bi bi-check-circle me-2"></i>Aceptar
                                     </button>
                                 </form>
 
@@ -154,29 +154,22 @@
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
                     renderSidebar('admin');
-
-                    // Mueve el modal al body en runtime para evitar problemas de z-index
                     const modalEl = document.getElementById('evaluationModal');
                     if (modalEl) document.body.appendChild(modalEl);
 
-                    // --- TABS ---
+                    // --- TABS Y FILTROS (Sin cambios) ---
                     const tabCollections = document.getElementById('admin-tab-collections');
                     const tabRequests = document.getElementById('admin-tab-requests');
                     const contentCollections = document.getElementById('collections-content');
                     const contentRequests = document.getElementById('requests-content');
 
-                    // Lógica de Tabs (si existen)
                     if(tabCollections && tabRequests){
-                        // Leer parámetro URL para activar tab
                         const urlParams = new URLSearchParams(window.location.search);
                         if (urlParams.get('tab') === 'requests') {
                             tabRequests.click();
-                            tabRequests.classList.add('active');
-                            tabCollections.classList.remove('active');
-                            contentRequests.style.display = 'block';
-                            contentCollections.style.display = 'none';
+                            tabRequests.classList.add('active'); tabCollections.classList.remove('active');
+                            contentRequests.style.display = 'block'; contentCollections.style.display = 'none';
                         }
-
                         tabCollections.addEventListener('click', () => {
                             tabCollections.classList.add('active'); tabRequests.classList.remove('active');
                             contentCollections.style.display = 'block'; contentRequests.style.display = 'none';
@@ -187,7 +180,6 @@
                         });
                     }
 
-                    // --- TABLA Y FILTROS ---
                     const tableBody = document.getElementById('admin-requests-table-body');
                     const filterType = document.getElementById('admin-filter-type');
                     const filterStatus = document.getElementById('admin-filter-status');
@@ -199,36 +191,18 @@
                             tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-3">No hay solicitudes pendientes.</td></tr>';
                             return;
                         }
-
                         requests.forEach(req => {
                             let badgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado.includes('APROBA') || req.estado.includes('ACEPT') ? 'bg-success' : 'bg-danger');
-                            let actionBtn = '-';
-
-                            if (req.estado === 'PENDIENTE') {
-                                actionBtn = `<button class="btn btn-primary btn-sm rounded-pill btn-view-detail"
-                        data-id="${req.id}"
-                        data-type="${req.tipo}"
-                        data-title="${req.tituloDelHechoAEliminar}">
-                        <i class="bi bi-eye me-1"></i> Ver Detalle
-                     </button>`;
-                            }
-
-                            tableBody.innerHTML += `
-            <tr>
-                <td class="fw-bold">${req.tituloDelHechoAEliminar || 'Sin título'}</td>
-                <td><span class="badge bg-info text-dark">${req.tipo}</span></td>
-                <td><span class="badge ${badgeClass}">${req.estado}</span></td>
-                <td class="text-end">${actionBtn}</td>
-            </tr>`;
+                            let actionBtn = req.estado === 'PENDIENTE' ?
+                                `<button class="btn btn-primary btn-sm rounded-pill btn-view-detail" data-id="${req.id}" data-type="${req.tipo}" data-title="${req.tituloDelHechoAEliminar}"><i class="bi bi-eye me-1"></i> Ver Detalle</button>` : '-';
+                            tableBody.innerHTML += `<tr><td class="fw-bold">${req.tituloDelHechoAEliminar || 'Sin título'}</td><td><span class="badge bg-info text-dark">${req.tipo}</span></td><td><span class="badge ${badgeClass}">${req.estado}</span></td><td class="text-end">${actionBtn}</td></tr>`;
                         });
                     }
 
                     function applyFilters() {
                         const type = filterType.value;
                         const status = filterStatus.value;
-                        const filtered = allRequests.filter(req => {
-                            return (!type || req.tipo === type) && (!status || req.estado === status);
-                        });
+                        const filtered = allRequests.filter(req => (!type || req.tipo === type) && (!status || req.estado === status));
                         renderTable(filtered);
                     }
 
@@ -238,13 +212,12 @@
                         renderTable(allRequests);
                     }
 
-                    // --- LOGICA DEL MODAL ---
+                    // --- LÓGICA DEL MODAL ---
                     document.addEventListener('click', function(e) {
                         const btn = e.target.closest('.btn-view-detail');
                         if (btn) {
                             const id = btn.getAttribute('data-id');
                             const tipo = btn.getAttribute('data-type');
-
                             if (!id || id === 'null') { alert("Error: ID inválido."); return; }
 
                             const modalTitle = document.getElementById('modalTitle');
@@ -255,13 +228,28 @@
                             modalTitle.textContent = `Evaluando: ${tipo}`;
                             modalContent.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary"></div><p class="mt-2">Cargando detalles...</p></div>';
 
-                            // Configurar Actions
+                            // Referencia al botón de sugerencia para ocultarlo/mostrarlo
+                            const formSuggestion = document.getElementById('formApproveWithSuggestion');
+                            const inputSugerenciaContainer = document.getElementById('sugerencia-container');
+
+                            if(formSuggestion) formSuggestion.style.display = 'none';
+                            if(inputSugerenciaContainer) inputSugerenciaContainer.style.display = 'none';
+
+                            // --- CONFIGURACIÓN DE ACCIONES ---
                             if (tipo === 'Nuevo Hecho') {
-                                formApprove.action = `/admin/hechos/${id}/aprobar`;
-                                formReject.action = `/admin/hechos/${id}/rechazar`;
+                                formApprove.action = `/admin/hechos/${id}/resolver?estado=ACEPTADO`;
+                                formReject.action = `/admin/hechos/${id}/resolver?estado=RECHAZADO`;
+
+                                if(formSuggestion) {
+                                    formSuggestion.style.display = 'inline';
+                                    formSuggestion.action = `/admin/hechos/${id}/resolver?estado=ACEPTADO_CON_SUGERENCIAS`;
+                                    if(inputSugerenciaContainer) inputSugerenciaContainer.style.display = 'block';
+                                }
+
                             } else if (tipo === 'Eliminación') {
                                 formApprove.action = `/admin/solicitudes/${id}/aprobar`;
                                 formReject.action = `/admin/solicitudes/${id}/rechazar`;
+
                             } else if (tipo === 'Edición') {
                                 formApprove.action = `/admin/ediciones/${id}/aceptar`;
                                 formReject.action = `/admin/ediciones/${id}/rechazar`;
@@ -274,69 +262,72 @@
                                 .then(response => response.json().then(data => ({ status: response.status, body: data })))
                                 .then(({ status, body }) => {
                                     if (status >= 400) throw new Error(body.error || "Error en el servidor");
-
                                     const data = body;
                                     let html = '';
 
-                                    // 1. NUEVO HECHO
+                                    // Variables para inicializar mapas al final
+                                    let mapsToInit = [];
+
+                                    // --- 1. NUEVO HECHO ---
                                     if (tipo === 'Nuevo Hecho') {
                                         const fecha = data.fechaAcontecimiento ? new Date(data.fechaAcontecimiento).toLocaleString() : '-';
-
-                                        // CAMBIO AQUÍ: Si hay imagen muestra la foto, si no, muestra texto aviso.
                                         const imgHtml = data.contenidoMultimedia ?
-                                            `<div class="mb-3 text-center p-2 bg-light rounded border">
-                                        <img src="${data.contenidoMultimedia}" class="img-fluid rounded" style="max-height: 300px;"
-                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-                                        <div style="display:none" class="text-muted small mt-1"><i class="bi bi-file-earmark"></i> ${data.contenidoMultimedia} (Archivo)</div>
-                                     </div>` :
-                                            `<div class="alert alert-secondary py-2 small text-center"><i class="bi bi-info-circle me-2"></i>No se adjuntó contenido multimedia.</div>`;
+                                            `<div class="mb-3 text-center p-2 bg-light rounded border"><img src="${data.contenidoMultimedia}" class="img-fluid rounded" style="max-height: 300px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"><div style="display:none" class="text-muted small mt-1"><i class="bi bi-file-earmark"></i> ${data.contenidoMultimedia}</div></div>`
+                                            : `<div class="alert alert-secondary py-2 small text-center">No se adjuntó contenido multimedia.</div>`;
 
                                         html = `
-                                    <div class="alert alert-info border-0 shadow-sm mb-3"><i class="bi bi-info-circle me-2"></i>Propuesta de creación</div>
+                                    <div class="alert alert-info border-0 shadow-sm mb-3">Propuesta de creación</div>
                                     <h4 class="text-primary fw-bold mb-3">${data.titulo || 'Sin título'}</h4>
                                     <p class="lead fs-6">${data.descripcion || 'Sin descripción'}</p>
-                                    ${imgHtml} <div class="row g-2 small text-muted mb-3">
+                                    ${imgHtml}
+                                    <div class="row g-2 small text-muted mb-3">
                                         <div class="col-6"><strong>Categoría:</strong> <span class="badge bg-secondary">${data.categoria}</span></div>
                                         <div class="col-6"><strong>Fecha:</strong> ${fecha}</div>
                                     </div>
+                                    <div class="card border-0"><div class="card-header bg-white fw-bold small text-muted">Ubicación</div><div class="card-body p-0"><div id="modal-map-container" style="height: 250px; width: 100%; background: #eee; border-radius: 0 0 8px 8px;"></div></div></div>`;
 
-                                    <div class="card border-0">
-                                        <div class="card-header bg-white fw-bold small text-muted">Ubicación Geográfica</div>
-                                        <div class="card-body p-0">
-                                             <div id="modal-map-container" style="height: 250px; width: 100%; background: #eee; border-radius: 0 0 8px 8px;"></div>
-                                        </div>
-                                    </div>`;
+                                        if(data.latitud && data.longitud) {
+                                            mapsToInit.push({ id: 'modal-map-container', lat: data.latitud, lng: data.longitud, popup: 'Ubicación' });
+                                        }
                                     }
-                                    // 2. ELIMINACIÓN
+
+                                    // --- 2. ELIMINACIÓN ---
                                     else if (tipo === 'Eliminación') {
-                                        html = `
-                                    <div class="alert alert-danger border-0 shadow-sm mb-3"><i class="bi bi-trash3 me-2"></i>Solicitud de Baja</div>
-                                    <p>Se solicita eliminar: <strong>${data.tituloDelHechoAEliminar}</strong></p>
-                                    <div class="card border-danger"><div class="card-body text-danger p-3">
-                                        <strong>Motivo:</strong><br> ${data.motivo}
-                                    </div></div>`;
+                                        html = `<div class="alert alert-danger border-0 shadow-sm mb-3">Solicitud de Baja</div><p>Se solicita eliminar: <strong>${data.tituloDelHechoAEliminar}</strong></p><div class="card border-danger"><div class="card-body text-danger p-3"><strong>Motivo:</strong><br> ${data.motivo}</div></div>`;
                                     }
-                                    // 3. EDICIÓN
+
+                                    // --- 3. EDICIÓN (Lógica Avanzada) ---
                                     else if (tipo === 'Edición') {
                                         const orig = data.original || {};
                                         const prop = data.propuesta || {};
                                         const isDiff = (a, b) => a !== b ? 'text-success fw-bold' : '';
 
+                                        // A) Comparación de ubicación
+                                        // Aseguramos que sean números para comparar
+                                        const latO = parseFloat(orig.latitud); const lngO = parseFloat(orig.longitud);
+                                        const latP = parseFloat(prop.latitudPropuesta); const lngP = parseFloat(prop.longitudPropuesta);
+
+                                        const hasLocationChange = (latO !== latP) || (lngO !== lngP);
+
+                                        // B) Imágenes (Original y Propuesta)
+                                        const imgOrig = orig.contenidoMultimedia ?
+                                            `<div class="mt-2"><small class="fw-bold text-muted">Multimedia Actual:</small><br><img src="${orig.contenidoMultimedia}" class="img-fluid rounded shadow-sm" style="max-height: 150px;" onerror="this.style.display='none';"></div>`
+                                            : `<div class="mt-2 text-muted small">Sin multimedia original.</div>`;
+
                                         const imgProp = prop.contenidoMultimediaPropuesto ?
-                                            `<div class="mt-2"><small class="fw-bold text-success">Nueva Imagen Propuesta:</small><br>
-                                     <img src="${prop.contenidoMultimediaPropuesto}" class="img-fluid rounded shadow-sm" style="max-height: 150px;"
-                                     onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<small class=text-muted>${prop.contenidoMultimediaPropuesto}</small>')"></div>`
+                                            `<div class="mt-2"><small class="fw-bold text-success">Nueva Imagen:</small><br><img src="${prop.contenidoMultimediaPropuesto}" class="img-fluid rounded shadow-sm" style="max-height: 150px;" onerror="this.style.display='none';"></div>`
                                             : `<div class="mt-2 text-muted small fst-italic border-top pt-1">Sin cambios en multimedia.</div>`;
 
+                                        // C) HTML de comparación de campos
                                         html = `
-                                    <div class="alert alert-warning border-0 shadow-sm mb-3"><i class="bi bi-pencil me-2"></i>Propuesta de Edición</div>
-                                    <div class="row g-0 border rounded">
+                                    <div class="alert alert-warning border-0 shadow-sm mb-3">Propuesta de Edición</div>
+                                    <div class="row g-0 border rounded mb-3">
                                         <div class="col-6 border-end bg-light p-3">
                                             <h6 class="text-center text-muted small fw-bold text-uppercase">Original</h6>
                                             <div class="mb-2"><small class="fw-bold">Título:</small><div>${orig.titulo || '-'}</div></div>
                                             <div class="mb-2"><small class="fw-bold">Descripción:</small><div class="small">${orig.descripcion || '-'}</div></div>
                                             <div class="mb-2"><small class="fw-bold">Categoría:</small><div class="small">${orig.categoria || '-'}</div></div>
-                                            <div class="mb-2"><small class="fw-bold">Multimedia:</small><div class="small text-truncate" style="max-width:150px;">${orig.contenidoMultimedia || 'Ninguno'}</div></div>
+                                            ${imgOrig}
                                         </div>
                                         <div class="col-6 bg-white p-3">
                                             <h6 class="text-center text-primary small fw-bold text-uppercase">Propuesta</h6>
@@ -346,23 +337,56 @@
                                             ${imgProp}
                                         </div>
                                     </div>`;
+
+                                        // D) Lógica de Mapas (Uno o Dos)
+                                        if (hasLocationChange) {
+                                            html += `
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <div class="card border-danger"><div class="card-header bg-danger text-white small fw-bold">Ubicación Original</div>
+                                                <div class="card-body p-0"><div id="map-edicion-original" style="height: 200px; width: 100%;"></div></div></div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="card border-success"><div class="card-header bg-success text-white small fw-bold">Ubicación Propuesta Editada</div>
+                                                <div class="card-body p-0"><div id="map-edicion-propuesta" style="height: 200px; width: 100%;"></div></div></div>
+                                            </div>
+                                        </div>`;
+
+                                            // Agregamos ambos mapas a la cola de inicialización
+                                            if(!isNaN(latO)) mapsToInit.push({ id: 'map-edicion-original', lat: latO, lng: lngO, popup: 'Original' });
+                                            if(!isNaN(latP)) mapsToInit.push({ id: 'map-edicion-propuesta', lat: latP, lng: lngP, popup: 'Propuesta' });
+
+                                        } else {
+                                            html += `
+                                        <div class="alert alert-secondary d-flex align-items-center"><i class="bi bi-geo-alt me-2"></i> Sin modificaciones en la ubicación del hecho original en la nueva propuesta.</div>
+                                        <div class="card border-0"><div class="card-header bg-white fw-bold small text-muted">Ubicación (Sin cambios)</div>
+                                        <div class="card-body p-0"><div id="map-edicion-unico" style="height: 200px; width: 100%;"></div></div></div>`;
+
+                                            if(!isNaN(latO)) mapsToInit.push({ id: 'map-edicion-unico', lat: latO, lng: lngO, popup: 'Ubicación Actual' });
+                                        }
                                     }
 
                                     modalContent.innerHTML = html;
 
-                                    // Inicializar Mapa (Nuevo Hecho)
-                                    if (tipo === 'Nuevo Hecho') {
+                                    // --- Inicialización Diferida de Mapas ---
+                                    if (mapsToInit.length > 0) {
                                         setTimeout(() => {
-                                            if (data.latitud && data.longitud) {
-                                                const map = L.map('modal-map-container').setView([data.latitud, data.longitud], 15);
-                                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
-                                                L.marker([data.latitud, data.longitud]).addTo(map).bindPopup(`<b>${data.titulo}</b>`).openPopup();
-                                                map.invalidateSize();
-                                            } else {
-                                                document.getElementById('modal-map-container').innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted">Ubicación no disponible</div>';
-                                            }
+                                            mapsToInit.forEach(m => {
+                                                const el = document.getElementById(m.id);
+                                                if(el) {
+                                                    const map = L.map(m.id).setView([m.lat, m.lng], 15);
+                                                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
+                                                    L.marker([m.lat, m.lng]).addTo(map).bindPopup(`<b>${m.popup}</b>`).openPopup();
+                                                    map.invalidateSize();
+                                                }
+                                            });
                                         }, 300);
+                                    } else if (tipo === 'Nuevo Hecho' || (tipo === 'Edición' && mapsToInit.length === 0)) {
+                                        // Fallback si no hay coords
+                                        const containers = document.querySelectorAll('[id^="map-"], [id^="modal-map-"]');
+                                        containers.forEach(c => c.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted small">Coordenadas no disponibles</div>');
                                     }
+
                                 })
                                 .catch(err => {
                                     console.error(err);
@@ -371,12 +395,9 @@
                         }
                     });
 
-                    // ===========================================
-                    // LÓGICA: Indicador de Carga y Validación para CSV
-                    // ===========================================
+                    // CSV Lógica (Se mantiene igual)
                     const csvImportForm = document.getElementById('csv-import-form');
                     const loadingOverlay = document.getElementById('loading-overlay');
-
                     if (csvImportForm && loadingOverlay) {
                         csvImportForm.addEventListener('submit', function(e) {
                             const fileInput = document.getElementById('csvFile');
@@ -385,21 +406,16 @@
 
                             if (!fileInput.files.length) {
                                 if(errorPlaceholder) errorPlaceholder.innerHTML = '<div class="alert alert-danger" role="alert">Error: Por favor, selecciona un archivo CSV.</div>';
-                                e.preventDefault();
-                                return;
+                                e.preventDefault(); return;
                             }
-
                             const fileName = fileInput.files[0].name;
                             if (!fileName.toLowerCase().endsWith('.csv')) {
                                 if(errorPlaceholder) errorPlaceholder.innerHTML = '<div class="alert alert-danger" role="alert">Error: Solo se admiten archivos en formato CSV (.csv).</div>';
-                                e.preventDefault();
-                                return;
+                                e.preventDefault(); return;
                             }
-
                             const modalElement = document.getElementById('csvImportModal');
                             const bootstrapModal = bootstrap.Modal.getInstance(modalElement);
                             if (bootstrapModal) bootstrapModal.hide();
-
                             loadingOverlay.style.display = 'flex';
                         });
                     }
