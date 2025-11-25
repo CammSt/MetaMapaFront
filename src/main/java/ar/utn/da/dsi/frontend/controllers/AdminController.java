@@ -9,6 +9,7 @@ import ar.utn.da.dsi.frontend.services.estadisticas.EstadisticasService;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
 import ar.utn.da.dsi.frontend.services.solicitudes.SolicitudService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -194,8 +195,9 @@ public class AdminController {
   }
 
   @PostMapping("/colecciones/crear")
-  public String crearColeccion(@ModelAttribute ColeccionInputDTO dto, Authentication auth) {
-    dto.setVisualizadorID(auth.getName());
+  public String crearColeccion(@ModelAttribute ColeccionInputDTO dto, HttpSession session) {
+    dto.setVisualizadorID(getUserIdFromSession(session));
+    System.out.println("Creando colección con DTO: " + dto);
     coleccionService.crear(dto);
     return "redirect:/admin?success=coleccion_creada";
   }
@@ -285,6 +287,19 @@ public class AdminController {
       }
     }
     return e.getMessage();
+  }
+
+  // MÉTODO AUXILIAR PARA NO REPETIR CÓDIGO
+  private String getUserIdFromSession(HttpSession session) {
+    try {
+      String userJson = (String) session.getAttribute("userJson");
+      if (userJson != null) {
+        return String.valueOf(objectMapper.readTree(userJson).get("id").asLong());
+      }
+    } catch (Exception e) {
+      System.err.println("Error obteniendo ID de sesión: " + e.getMessage());
+    }
+    return null; // O lanzar excepción si preferís
   }
 
   @GetMapping("/estadisticas")
