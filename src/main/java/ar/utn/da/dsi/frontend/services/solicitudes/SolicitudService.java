@@ -49,8 +49,8 @@ public class SolicitudService {
 		ValidationException validationException = new ValidationException("Errores de validación");
 		boolean tieneErrores = false;
 
-		if (dto.getTituloHecho() == null || dto.getTituloHecho().trim().isEmpty()) {
-			validationException.addFieldError("tituloHecho", "El título del hecho no puede estar vacío.");
+		if (dto.getId() == null) {
+			validationException.addFieldError("Id", "El Id del hecho no puede estar vacío.");
 			tieneErrores = true;
 		}
 

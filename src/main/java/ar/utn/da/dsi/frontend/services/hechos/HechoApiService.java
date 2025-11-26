@@ -18,6 +18,7 @@ import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.lang.Nullable;
 import ar.utn.da.dsi.frontend.client.dto.ApiResponse;
 import org.springframework.core.ParameterizedTypeReference;
+import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.List;
@@ -197,8 +198,10 @@ public class HechoApiService {
     return apiClientService.getList(url, String.class);
   }
 
+
+  //LO PIDE EB AGREGADOR PARA MOSTRAR DETALLES DE HECHO
   public HechoDTO getHechoPorId(Long id) {
-    String url = dinamicaUrl + "/hechos/" + id;
+    String url = agregadorApiUrl + "/hechos/" + id;
 
     try {
       return apiClientService.executeWithToken(accessToken ->
@@ -207,7 +210,13 @@ public class HechoApiService {
               .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
               .retrieve()
               .bodyToMono(new ParameterizedTypeReference<ApiResponse<HechoDTO>>() {})
-              .map(response -> response.getDatos())
+              .flatMap(response -> {
+                // Si datos es null, retornamos un Mono vacío (que .block() convierte en null de forma segura)
+                if (response.getDatos() == null) {
+                  return Mono.empty();
+                }
+                return Mono.just(response.getDatos());
+              })
               .block()
       );
     } catch (Exception e) {

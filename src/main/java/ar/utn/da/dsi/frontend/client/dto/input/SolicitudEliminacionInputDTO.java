@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class SolicitudEliminacionInputDTO {
 	private String motivo;
-	private String tituloHecho;
+	private Long id;
 }

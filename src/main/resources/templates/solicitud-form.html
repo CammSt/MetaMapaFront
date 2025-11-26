@@ -19,7 +19,7 @@
 
             <form th:object="${solicitudDTO}" th:action="@{/solicitudes/crear}" method="post">
 
-                <input type="hidden" th:field="*{tituloHecho}" />
+                <input type="hidden" th:field="*{id}" />
 
                 <div class.mb-3>
                     <label for="motivo" class="form-label">Motivo de la solicitud</label>
@@ -29,7 +29,7 @@
                 </div>
 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                    <a th:href="@{/facts(handleId=${hecho.collectionHandle})}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
+                    <a th:href="@{/facts/(handleId=${hecho.collectionHandle})}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
                     <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">
                         Enviar Solicitud
                     </button>
