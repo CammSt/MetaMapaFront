@@ -155,34 +155,40 @@ public class AdminController {
 
   // --- ACTIONS Y COLECCIONES (MANTENIDOS) ---
   @PostMapping("/solicitudes/{id}/aprobar")
-  public String aprobarSolicitud(@PathVariable("id") Integer id, Authentication auth) {
+  public String aprobarSolicitud(@PathVariable("id") Integer id, Authentication auth, RedirectAttributes redirectAttributes) {
     solicitudService.aceptar(id, auth.getName());
-    return "redirect:/admin?success=solicitud_aprobada";
+    redirectAttributes.addFlashAttribute("success", "Solicitud de eliminación aprobada.");
+    return "redirect:/admin?tab=requests";
   }
   @PostMapping("/solicitudes/{id}/rechazar")
-  public String rechazarSolicitud(@PathVariable("id") Integer id, Authentication auth) {
+  public String rechazarSolicitud(@PathVariable("id") Integer id, Authentication auth, RedirectAttributes redirectAttributes) {
     solicitudService.rechazar(id, auth.getName());
-    return "redirect:/admin?success=solicitud_rechazada";
+    redirectAttributes.addFlashAttribute("success", "Solicitud de eliminación rechazada.");
+    return "redirect:/admin?tab=requests";
   }
   @PostMapping("/hechos/{id}/aprobar")
-  public String aprobarHecho(@PathVariable("id") Long id) {
+  public String aprobarHecho(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
     hechoService.aprobar(id);
-    return "redirect:/admin?success=hecho_aprobado";
+    redirectAttributes.addFlashAttribute("success", "Hecho aprobado y publicado.");
+    return "redirect:/admin?tab=requests";
   }
   @PostMapping("/hechos/{id}/rechazar")
-  public String rechazarHecho(@PathVariable("id") Long id) {
+  public String rechazarHecho(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
     hechoService.rechazar(id);
-    return "redirect:/admin?success=hecho_rechazado";
+    redirectAttributes.addFlashAttribute("success", "Hecho rechazado.");
+    return "redirect:/admin?tab=requests";
   }
   @PostMapping("/ediciones/{id}/aceptar")
-  public String aceptarEdicion(@PathVariable("id") Long id) {
+  public String aceptarEdicion(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
     hechoService.aceptarEdicion(id);
-    return "redirect:/admin?success=edicion_aceptada";
+    redirectAttributes.addFlashAttribute("success", "Edición aceptada y publicada.");
+    return "redirect:/admin?tab=requests";
   }
   @PostMapping("/ediciones/{id}/rechazar")
-  public String rechazarEdicion(@PathVariable("id") Long id) {
+  public String rechazarEdicion(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
     hechoService.rechazarEdicion(id);
-    return "redirect:/admin?success=edicion_rechazada";
+    redirectAttributes.addFlashAttribute("success", "Edición rechazada.");
+    return "redirect:/admin?tab=requests";
   }
 
   @GetMapping("/colecciones/nueva")
@@ -195,11 +201,12 @@ public class AdminController {
   }
 
   @PostMapping("/colecciones/crear")
-  public String crearColeccion(@ModelAttribute ColeccionInputDTO dto, HttpSession session) {
+  public String crearColeccion(@ModelAttribute ColeccionInputDTO dto, HttpSession session, RedirectAttributes redirectAttributes) {
     dto.setVisualizadorID(getUserIdFromSession(session));
     System.out.println("Creando colección con DTO: " + dto);
     coleccionService.crear(dto);
-    return "redirect:/admin?success=coleccion_creada";
+    redirectAttributes.addFlashAttribute("success", "Colección creada exitosamente.");
+    return "redirect:/admin?tab=collections";
   }
 
   @GetMapping("/colecciones/{id}/editar-completo")
@@ -259,9 +266,10 @@ public class AdminController {
   }
 
   @PostMapping("/colecciones/{id}/eliminar")
-  public String eliminarColeccion(@PathVariable("id") String id, Authentication auth) {
+  public String eliminarColeccion(@PathVariable("id") String id, Authentication auth, RedirectAttributes redirectAttributes) {
     coleccionService.eliminar(id, auth.getName());
-    return "redirect:/admin?success=coleccion_eliminada";
+    redirectAttributes.addFlashAttribute("success", "Colección eliminada correctamente.");
+    return "redirect:/admin?tab=collections";
   }
   @PostMapping("/hechos/importar-csv")
   public String importarCsv(@RequestParam("csvFile") MultipartFile file, RedirectAttributes attr) {

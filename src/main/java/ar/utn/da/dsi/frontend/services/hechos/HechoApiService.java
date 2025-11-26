@@ -349,9 +349,9 @@ public class HechoApiService {
   }
 
   public void aprobarHechoConSugerencias(Long id, String sugerencia) {
-    String url = dinamicaUrl + "/hechos/" + id + "/aprobarConSugerencias";
+    String url = dinamicaUrl + "/hechos/" + id + "/aceptar-con-sugerencia";
 
-    Map<String, String> body = Map.of("detalle", sugerencia);
+    Map<String, String> body = Map.of("sugerencia", sugerencia);
 
     apiClientService.put(url, body, Void.class);
   }

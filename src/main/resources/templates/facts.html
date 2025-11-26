@@ -9,7 +9,11 @@
         <a th:href="@{/hechos/nuevo}" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">+ Subir Hecho</a>
     </div>
 
-    <div class="alert alert-info p-4 rounded-3 mb-4 border-0 shadow-sm"><h3 class="alert-heading fw-bold text-info-emphasis" th:text="${coleccion.titulo}"></h3><p class="mb-1 text-info-emphasis" th:text="${coleccion.descripcion}"></p><small class="d-block text-info-emphasis" th:if="${coleccion.consensusAlgorithm != null}"><i class="bi bi-check-circle-fill me-1"></i><strong>Consenso:</strong> <span th:text="${coleccion.consensusAlgorithm}"></span></small></div>
+    <div class="alert alert-info p-4 rounded-3 mb-4 border-0 shadow-sm"><h3 class="alert-heading fw-bold text-info-emphasis" th:text="${coleccion.titulo}"></h3><p class="mb-1 text-info-emphasis" th:text="${coleccion.descripcion}"></p>
+        <small class="d-block text-info-emphasis" th:if="${coleccion.algoritmoConsenso != null}">
+            <i class="bi bi-check-circle-fill me-1"></i><strong>Consenso:</strong> <span th:text="${coleccion.algoritmoConsenso}"></span>
+        </small>
+    </div>
 
     <form th:action="@{/facts}" method="get">
 

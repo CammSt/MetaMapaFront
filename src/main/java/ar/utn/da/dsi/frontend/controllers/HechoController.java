@@ -125,22 +125,31 @@ public class HechoController {
    */
   @PostMapping("/hechos/{id}/resolver")
   public String resolverHecho(@PathVariable("id") Long id,
-                              @RequestParam("estado") String estado, // ACEPTADO, RECHAZADO, ACEPTADO_CON_SUGERENCIAS
-                              @RequestParam(value = "detalle", required = false) String detalle, // Campo de comentario (solo para Rechazo/Sugerencias)
+                              @RequestParam("estado") String estado,
+                              @RequestParam(value = "detalle", required = false) String detalle,
                               RedirectAttributes redirectAttributes) {
     try {
       if ("ACEPTADO".equals(estado)) {
         hechoService.aprobar(id);
         redirectAttributes.addFlashAttribute("success", "Hecho aprobado y visible.");
+
       } else if ("RECHAZADO".equals(estado)) {
-        hechoService.rechazar(id); // Asumo que el rechazo puede consumir el detalle si lo necesita
-        redirectAttributes.addFlashAttribute("success", "Hecho rechazado. Detalle: " + (detalle != null ? detalle : "Sin detalle."));
+        if (detalle != null && !detalle.isBlank()) {
+          hechoService.rechazarConMotivo(id, detalle);
+        } else {
+          hechoService.rechazar(id);
+        }
+        redirectAttributes.addFlashAttribute("success", "Hecho rechazado.");
+
       } else if ("ACEPTADO_CON_SUGERENCIAS".equals(estado)) {
-        // Asumo que el servicio registra el detalle/sugerencia internamente
-        hechoService.aprobar(id);
-        redirectAttributes.addFlashAttribute("success", "Hecho aprobado con sugerencias. Detalle: " + detalle);
+        if (detalle != null && !detalle.isBlank()) {
+          hechoService.aprobarConSugerencias(id, detalle);
+        } else {
+          hechoService.aprobar(id);
+        }
+        redirectAttributes.addFlashAttribute("success", "Hecho aprobado con sugerencias.");
       }
-      // Redirigir al panel de administración y forzar la pestaña de solicitudes
+
       return "redirect:/admin?tab=requests";
     } catch (Exception e) {
       redirectAttributes.addFlashAttribute("error", "Error al resolver el hecho: " + e.getMessage());
