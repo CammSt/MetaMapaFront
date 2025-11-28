@@ -109,10 +109,13 @@ public class HechoApiService {
       }
     }
     else if (urlBase.contains("/hechos/filtrar")) {
-      if (fechaDesde != null && !fechaDesde.isEmpty() && fechaHasta != null && !fechaHasta.isEmpty()) {
+      if (fechaDesde != null && !fechaDesde.isEmpty()) {
         builder.queryParam("fechaInicio", fechaDesde);
+      }
+      if (fechaHasta != null && !fechaHasta.isEmpty()) {
         builder.queryParam("fechaFin", fechaHasta);
       }
+
       if (categoria != null && !categoria.isEmpty()) {
         builder.queryParam("categoria", categoria);
       }
