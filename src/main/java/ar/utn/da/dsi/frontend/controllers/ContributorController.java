@@ -53,9 +53,8 @@ public class ContributorController {
     }
 
     // --- TABLA 1: "Mis Hechos Publicados" ---
-    // USAMOS GETTERS AQUÍ
     List<HechoDTO> hechosPublicados = todosMisHechos.stream()
-        .filter(h -> "ACEPTADO".equals(h.getEstado()))
+        .filter(h -> "ACEPTADO".equals(h.getEstado()) || "ACEPTADO_CON_SUGERENCIAS".equals(h.getEstado()))
         .collect(Collectors.toList());
 
     model.addAttribute("misHechos", hechosPublicados);

@@ -135,7 +135,32 @@ function renderRequestDetailModal(container, requestData) {
     const titulo = requestData.titulo || requestData.tituloPropuesto || requestData.tituloDelHechoAEliminar || `Hecho ID ${requestData.idHechoOriginal || requestData.id}`;
     const descripcionPropuesta = requestData.descripcionPropuesta || requestData.descripcion || '';
     const motivoEliminacion = requestData.motivo || '';
-    const detalleAdmin = requestData.detalle || 'El administrador no proporcionó comentarios adicionales.';
+
+    // --- LÓGICA DE FEEDBACK DEL ADMIN (Sugerencias / Rechazo) ---
+    let adminFeedbackHtml = '';
+
+    // Recuperamos el mensaje, priorizando 'sugerenciaAdmin' que viene del backend dinámico
+    const mensajeAdmin = requestData.sugerenciaAdmin || requestData.detalle || '';
+
+    if (requestEstado === 'ACEPTADO_CON_SUGERENCIAS') {
+        adminFeedbackHtml = `
+            <div class="alert alert-warning border-warning shadow-sm mb-3">
+                <div class="d-flex">
+                    <i class="bi bi-lightbulb-fill fs-4 me-3"></i>
+                    <div>
+                        <h6 class="alert-heading fw-bold mb-1">Sugerencia del Administrador:</h6>
+                        <p class="mb-0 text-dark">${mensajeAdmin || 'Sin detalles adicionales.'}</p>
+                    </div>
+                </div>
+            </div>`;
+    } else if (requestEstado === 'RECHAZADO' && mensajeAdmin) {
+        adminFeedbackHtml = `
+            <div class="alert alert-danger border-danger shadow-sm mb-3">
+                <h6 class="alert-heading fw-bold"><i class="bi bi-x-circle me-2"></i>Motivo del Rechazo:</h6>
+                <p class="mb-0">${mensajeAdmin}</p>
+            </div>`;
+    }
+    // ------------------------------------------------------------
 
     // Campos técnicos y ubicación
     const lat = requestData.latitud || requestData.latitudPropuesta;
@@ -144,14 +169,14 @@ function renderRequestDetailModal(container, requestData) {
     const categoriaNombre = requestData.categoria || (requestData.categoriaPropuesta && requestData.categoriaPropuesta.nombre) || 'No especificada';
     const contenidoMultimedia = requestData.contenidoMultimediaPropuesto || requestData.contenidoMultimedia;
 
-    // --- Contenido ---
+    // --- Contenido Principal ---
     let propuestaContent = '';
 
     if (isEliminacion) {
         propuestaContent += `<p class="fw-bold text-danger">Motivo de Eliminación:</p><p class="text-muted" style="white-space: pre-wrap;">${motivoEliminacion || 'No especificado.'}</p>`;
         propuestaContent += `<p><strong>Título del Hecho a Eliminar:</strong> ${requestData.tituloHecho || titulo}</p>`;
     } else {
-        propuestaContent += `<p class="fw-bold text-primary">${isEdicion ? 'Detalles de la Edición Propuesta' : 'Detalles del Nuevo Hecho'}</p>`;
+        propuestaContent += `<p class="fw-bold text-primary">${isEdicion ? 'Detalles de la Edición Propuesta' : 'Detalles del Hecho'}</p>`;
         propuestaContent += `<p><strong>Descripción:</strong> <span class="text-muted" style="white-space: pre-wrap;">${descripcionPropuesta || 'Sin descripción.'}</span></p>`;
         propuestaContent += `<hr><h6 class="fw-bold">Datos Técnicos:</h6>`;
 
@@ -203,16 +228,18 @@ function renderRequestDetailModal(container, requestData) {
     // --- Construcción del HTML Final ---
     const modalBodyHtml = `
         <div id="request-modal-body">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-bold mb-0">Tipo: <span class="badge bg-primary">${requestType}</span></h6>
                 <h6 class="fw-bold mb-0">Estado: <span class="badge ${statusClass}">${requestEstado}</span></h6>
             </div>
-            <hr>
-            <div class="card card-body bg-light mb-3">
+
+            ${adminFeedbackHtml}
+
+            <div class="card card-body bg-light mb-3 border-0 shadow-sm">
                 ${propuestaContent}
             </div>
-            ${requestEstado !== 'PENDIENTE' ? `<hr><h6 class="fw-bold text-info">Resolución de Administración</h6><p>${detalleAdmin}</p>` : ''}
-            <small class="text-muted d-block mt-3">ID Interno: ${requestData.id} | Solicitante: ${requestData.solicitanteId || requestData.visualizadorEditor || 'N/A'}</small>
+            
+            <small class="text-muted d-block mt-3 text-end">ID Solicitud: ${requestData.id} | Solicitante: ${requestData.solicitanteId || requestData.visualizadorEditor || 'N/A'}</small>
         </div>
     `;
 
@@ -222,7 +249,7 @@ function renderRequestDetailModal(container, requestData) {
                 <div class="modal-content rounded-4 shadow-lg border-0">
                     <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title fw-bold">${modalTitleText}</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss=\"modal\"></button>
                     </div>
                     <div class="modal-body p-4">
                         ${modalBodyHtml}

@@ -77,6 +77,10 @@ public class HechoService {
     return dtoForm;
   }
 
+  public HechoDTO buscarHechoEnDinamica(Long id) {
+    return apiClient.getHechoDinamicaPorId(id);
+  }
+
   public HechoDTO actualizar(Long id, HechoInputDTO dto, @Nullable MultipartFile archivo) {
     return apiClient.actualizarHecho(id, dto, archivo);
   }

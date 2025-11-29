@@ -30,9 +30,6 @@ public class SolicitudController {
     HechoInputDTO hechoDTO = hechoService.getHechoInputDTOporId(hechoId);
 
     SolicitudEliminacionInputDTO solicitudDTO = new SolicitudEliminacionInputDTO();
-
-    System.out.println("Hecho ID recibido: " + hechoDTO);
-
     solicitudDTO.setId(hechoDTO.getId());
 
     model.addAttribute("hecho", hechoDTO);

@@ -33,7 +33,7 @@ public class HechoApiService {
   private final String dinamicaUrl;
   private final String estaticaApiUrl;
   private final WebClient webClient;
-  private final ObjectMapper objectMapper; // AÑADIDO
+  private final ObjectMapper objectMapper;
   private final String agregadorApiUrl;
 
   @Autowired
@@ -212,7 +212,7 @@ public class HechoApiService {
   }
 
 
-  //LO PIDE EB AGREGADOR PARA MOSTRAR DETALLES DE HECHO
+  //LO PIDE EB AGREGADOR PARA MOSTRAR DETALLES DE HECHO - Lo usa el mapa público y el detalle de hechos publicados.
   public HechoDTO getHechoPorId(Long id) {
     String url = agregadorApiUrl + "/hechos/" + id;
 
@@ -234,6 +234,32 @@ public class HechoApiService {
       );
     } catch (Exception e) {
       System.out.println("Error al buscar hecho por ID " + id + ": " + e.getMessage());
+      return null;
+    }
+  }
+
+  // Lo usaremos en el Controller para: Editar, Revisar Solicitud, Mis Hechos Pendientes.
+  public HechoDTO getHechoDinamicaPorId(Long id) {
+    String url = dinamicaUrl + "/hechos/" + id;
+
+    try {
+      return apiClientService.executeWithToken(accessToken ->
+          webClient.get()
+              .uri(url)
+              .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+              .retrieve()
+              // Si Dinámica devuelve ApiResponse, úsalo. Si devuelve objeto directo, usa HechoDTO.class
+              .bodyToMono(new ParameterizedTypeReference<ApiResponse<HechoDTO>>() {})
+              .map(response -> {
+                if (response == null || response.getDatos() == null) {
+                  throw new RuntimeException("El hecho no devolvió datos (Posiblemente rechazado/oculto).");
+                }
+                return response.getDatos();
+              })
+              .block()
+      );
+    } catch (Exception e) {
+      System.out.println("Error buscando en Dinámica ID " + id + ": " + e.getMessage());
       return null;
     }
   }

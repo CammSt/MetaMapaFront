@@ -199,10 +199,44 @@
                         });
                     }
 
+                    function renderTable(requests) {
+                        if(!tableBody) return;
+                        tableBody.innerHTML = '';
+                        if (!requests || requests.length === 0) {
+                            tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-3">No hay solicitudes que coincidan.</td></tr>';
+                            return;
+                        }
+                        requests.forEach(req => {
+                            let badgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado.includes('ACEPT') ? 'bg-success' : 'bg-danger');
+
+                            // CAMBIO 2: Botón SIEMPRE visible, cambiamos el texto según estado
+                            let btnText = req.estado === 'PENDIENTE' ? 'Evaluar' : 'Ver Detalle';
+                            let btnClass = req.estado === 'PENDIENTE' ? 'btn-primary' : 'btn-outline-secondary';
+
+                            let actionBtn = `<button class="btn ${btnClass} btn-sm rounded-pill btn-view-detail"
+                                     data-id="${req.id}"
+                                     data-type="${req.tipo}"
+                                     data-status="${req.estado}">
+                                     <i class="bi bi-eye me-1"></i> ${btnText}</button>`;
+
+                            tableBody.innerHTML += `<tr>
+                        <td class="fw-bold">${req.tituloDelHechoAEliminar || 'Sin título'}</td>
+                        <td><span class="badge bg-info text-dark">${req.tipo}</span></td>
+                        <td><span class="badge ${badgeClass}">${req.estado}</span></td>
+                        <td class="text-end">${actionBtn}</td>
+                    </tr>`;
+                        });
+                    }
+
                     function applyFilters() {
                         const type = filterType.value;
                         const status = filterStatus.value;
-                        const filtered = allRequests.filter(req => (!type || req.tipo === type) && (!status || req.estado === status));
+
+                        const filtered = allRequests.filter(req => {
+                            const typeMatch = !type || req.tipo === type;
+                            const statusMatch = !status || req.estado === status;
+                            return typeMatch && statusMatch;
+                        });
                         renderTable(filtered);
                     }
 
@@ -218,7 +252,16 @@
                         if (btn) {
                             const id = btn.getAttribute('data-id');
                             const tipo = btn.getAttribute('data-type');
+                            const estado = btn.getAttribute('data-status');
                             if (!id || id === 'null') { alert("Error: ID inválido."); return; }
+
+                            const modalFooter = document.querySelector('#evaluationModal .modal-footer');
+
+                            if (estado !== 'PENDIENTE') {
+                                modalFooter.style.display = 'none';
+                            } else {
+                                modalFooter.style.display = 'flex'; // Mostrar si es pendiente
+                            }
 
                             const modalTitle = document.getElementById('modalTitle');
                             const modalContent = document.getElementById('modalContent');
@@ -235,15 +278,20 @@
                             if(formSuggestion) formSuggestion.style.display = 'none';
                             if(inputSugerenciaContainer) inputSugerenciaContainer.style.display = 'none';
 
-                            // --- CONFIGURACIÓN DE ACCIONES ---
                             if (tipo === 'Nuevo Hecho') {
                                 formApprove.action = `/admin/hechos/${id}/resolver?estado=ACEPTADO`;
                                 formReject.action = `/admin/hechos/${id}/resolver?estado=RECHAZADO`;
 
-                                if(formSuggestion) {
+                                if (formSuggestion) {
                                     formSuggestion.style.display = 'inline';
-                                    formSuggestion.action = `/admin/hechos/${id}/resolver?estado=ACEPTADO_CON_SUGERENCIAS`;
                                     if(inputSugerenciaContainer) inputSugerenciaContainer.style.display = 'block';
+
+                                    formSuggestion.onsubmit = function(e) {
+                                        e.preventDefault();
+                                        const textoSugerencia = document.getElementById('inputSugerencia').value;
+                                        this.action = `/admin/hechos/${id}/resolver?estado=ACEPTADO_CON_SUGERENCIAS&sugerencia=${encodeURIComponent(textoSugerencia)}`;
+                                        this.submit();
+                                    };
                                 }
 
                             } else if (tipo === 'Eliminación') {

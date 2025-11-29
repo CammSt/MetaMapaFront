@@ -124,7 +124,12 @@ public class AdminController {
   public ResponseEntity<?> getDetalleUnificado(@PathVariable Long id, @RequestParam String tipo) {
     try {
       if ("Nuevo Hecho".equals(tipo)) {
-        return ResponseEntity.ok(hechoService.getHechoInputDTOporId(id));
+        HechoDTO hecho = hechoService.buscarHechoEnDinamica(id);
+
+        if (hecho == null) {
+          return ResponseEntity.status(404).body(Map.of("error", "Hecho no encontrado"));
+        }
+        return ResponseEntity.ok(hecho);
       }
       else if ("Eliminación".equals(tipo)) {
         return ResponseEntity.ok(solicitudService.obtenerPorId(id.intValue(), "admin"));
@@ -151,6 +156,39 @@ public class AdminController {
     } catch (Exception e) {
       return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
     }
+  }
+
+
+  @PostMapping("/hechos/{id}/resolver")
+  public String resolverHecho(
+      @PathVariable("id") Long id,
+      @RequestParam("estado") String estado,
+      @RequestParam(value = "sugerencia", required = false) String sugerencia,
+      RedirectAttributes redirectAttributes) {
+
+    try {
+      if ("ACEPTADO".equals(estado)) {
+        hechoService.aprobar(id);
+        redirectAttributes.addFlashAttribute("success", "Hecho aprobado y publicado.");
+
+      } else if ("RECHAZADO".equals(estado)) {
+        hechoService.rechazar(id);
+        redirectAttributes.addFlashAttribute("success", "Hecho rechazado.");
+
+      } else if ("ACEPTADO_CON_SUGERENCIAS".equals(estado)) {
+        if (sugerencia == null) sugerencia = "";
+        hechoService.aprobarConSugerencias(id, sugerencia);
+        redirectAttributes.addFlashAttribute("success", "Hecho aprobado con sugerencias.");
+
+      } else {
+        redirectAttributes.addFlashAttribute("error", "Estado desconocido: " + estado);
+      }
+
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("error", "Error al resolver: " + e.getMessage());
+    }
+
+    return "redirect:/admin?tab=requests";
   }
 
   // --- ACTIONS Y COLECCIONES (MANTENIDOS) ---
