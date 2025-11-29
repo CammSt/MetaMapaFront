@@ -39,6 +39,37 @@
                     </select>
                 </div>
 
+                <div class="mb-4 p-3 bg-light rounded border">
+                    <label class="form-label fw-bold">Fuentes de Datos</label>
+                    <div class="d-flex gap-3">
+                        <div class="form-check" th:each="fuente : ${fuentesDisponibles}">
+                            <input class="form-check-input" type="checkbox"
+                                   name="fuentes"
+                                   th:value="${fuente}"
+                                   th:id="${'fuente-' + fuente}"
+                                   th:checked="${coleccionDTO.fuentes != null and #lists.contains(coleccionDTO.fuentes, fuente)}">
+                            <label class="form-check-label" th:for="${'fuente-' + fuente}" th:text="${fuente}"></label>
+                        </div>
+                    </div>
+                    <div class="form-text">Seleccione de dónde obtendrá datos esta colección.</div>
+                </div>
+
+                <div class="mb-4">
+                </div>
+
+                <div class="mb-4 p-3 bg-light rounded border">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold mb-0">Criterios de Pertenencia</label>
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" onclick="agregarCriterio()">
+                            <i class="bi bi-plus-lg"></i> Agregar Criterio
+                        </button>
+                    </div>
+                    <div class="form-text mb-3">Defina reglas para filtrar qué hechos entran automáticamente.</div>
+
+                    <div id="criterios-container">
+                    </div>
+                </div>
+
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                     <a th:href="@{/admin}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
@@ -56,6 +87,43 @@
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('admin');
         });
+    </script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const criteriosOps = /*[[${criteriosDisponibles}]]*/ ['TITULO', 'CATEGORIA', 'UBICACION', 'FECHA'];
+        /*]]>*/
+
+        function agregarCriterio() {
+            const container = document.getElementById('criterios-container');
+            const index = container.children.length;
+
+            const row = document.createElement('div');
+            row.className = 'row g-2 mb-2 align-items-center criterio-row animate__animated animate__fadeIn';
+
+            // Select de Tipo
+            let optionsHtml = '';
+            criteriosOps.forEach(op => {
+                optionsHtml += `<option value="${op}">${op}</option>`;
+            });
+
+            row.innerHTML = `
+            <div class="col-4">
+                <select class="form-select form-select-sm" name="criteriosPertenenciaNombres">
+                    <option value="" disabled selected>Tipo...</option>
+                    ${optionsHtml}
+                </select>
+            </div>
+            <div class="col-7">
+                <input type="text" class="form-control form-control-sm" name="criteriosPertenenciaValores" placeholder="Valor (ej: Incendio, 2024-01-01|2024-12-31)">
+            </div>
+            <div class="col-1 text-end">
+                <button type="button" class="btn btn-link text-danger p-0" onclick="this.closest('.criterio-row').remove()">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+            container.appendChild(row);
+        }
     </script>
 </div>
 

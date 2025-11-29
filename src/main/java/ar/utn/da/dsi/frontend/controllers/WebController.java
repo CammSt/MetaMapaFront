@@ -1,6 +1,7 @@
 package ar.utn.da.dsi.frontend.controllers;
 
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
+import ar.utn.da.dsi.frontend.client.dto.PaginaDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.RegistroInputDTO;
 import ar.utn.da.dsi.frontend.exceptions.ValidationException;
 import ar.utn.da.dsi.frontend.services.colecciones.ColeccionService;
@@ -59,6 +60,7 @@ public class WebController {
       @RequestParam(required = false) String fechaHasta,
       @RequestParam(required = false) String categoria,
       @RequestParam(required = false) String titulo,
+      @RequestParam(defaultValue = "0") int page, // <-- Recibimos el número de página
       Model model) {
 
     var coleccion = coleccionService.obtenerPorId(handleId);
@@ -66,12 +68,21 @@ public class WebController {
 
     model.addAttribute("coleccion", coleccion);
 
-    //Llamamos al servicio con todos los filtros
-    List<HechoDTO> hechosFiltrados = hechoService.getHechosDeColeccion(
-        handleId, modo, fechaDesde, fechaHasta, categoria, titulo);
+    // 1. LLAMADA AL SERVICIO (Ahora devuelve PaginaDTO, pasamos 'page')
+    PaginaDTO<HechoDTO> paginaResult = hechoService.getHechosDeColeccion(
+        handleId, modo, fechaDesde, fechaHasta, categoria, titulo, page
+    );
 
-    model.addAttribute("hechos", hechosFiltrados);
+    // 2. DESEMPAQUETAR PARA LA VISTA
+    // 'hechos' sigue siendo la lista para que el th:each del HTML funcione igual
+    model.addAttribute("hechos", paginaResult.getContenido());
 
+    // Agregamos datos de paginación para los botones
+    model.addAttribute("paginaActual", paginaResult.getPaginaActual());
+    model.addAttribute("totalPaginas", paginaResult.getTotalPaginas());
+    model.addAttribute("totalElementos", paginaResult.getTotalElementos());
+
+    // 3. RESTO DE ATRIBUTOS
     model.addAttribute("categorias", hechoService.getAvailableCategories());
     model.addAttribute("filtros", Map.of(
         "handleId", handleId,

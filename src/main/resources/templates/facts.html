@@ -76,6 +76,31 @@
         <div id="list-view"><div class="row g-4" id="facts-list-container"></div></div>
         <div id="map-view" style="display: none;"><div class="card shadow-sm border-0 rounded-3" style="height: 70vh;"><div id="map" style="height: 100%; border-radius: .4375rem;"></div></div></div>
     </div>
+
+    <nav aria-label="Navegación de hechos" class="mt-4" th:if="${totalPaginas > 1}">
+        <ul class="pagination justify-content-center">
+
+            <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/facts(handleId=${filtros.handleId}, page=${paginaActual - 1}, titulo=${filtros.titulo}, categoria=${filtros.categoria}, fechaDesde=${filtros.fechaDesde}, fechaHasta=${filtros.fechaHasta}, modo=${filtros.modo})}">
+                    Anterior
+                </a>
+            </li>
+
+            <li class="page-item disabled">
+                <span class="page-link text-dark">
+                    Página <span th:text="${paginaActual + 1}"></span> de <span th:text="${totalPaginas}"></span>
+                </span>
+            </li>
+
+            <li class="page-item" th:classappend="${paginaActual + 1 >= totalPaginas} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/facts(handleId=${filtros.handleId}, page=${paginaActual + 1}, titulo=${filtros.titulo}, categoria=${filtros.categoria}, fechaDesde=${filtros.fechaDesde}, fechaHasta=${filtros.fechaHasta}, modo=${filtros.modo})}">
+                    Siguiente
+                </a>
+            </li>
+        </ul>
+    </nav>
 </main>
 
 <div id="page-scripts">

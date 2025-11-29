@@ -1,6 +1,7 @@
 package ar.utn.da.dsi.frontend.services.hechos;
 
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
+import ar.utn.da.dsi.frontend.client.dto.PaginaDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.HechoInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.EdicionOutputDTO;
 import ar.utn.da.dsi.frontend.services.ApiClientService;
@@ -74,7 +75,7 @@ public class HechoApiService {
    * Llama al backend para obtener los hechos de una colección.
    * Mapea filtros a los endpoints específicos del Agregador.
    */
-  public List<HechoDTO> getHechosDeColeccion(String handleId, String modo, String fechaDesde, String fechaHasta, String categoria, String titulo) {
+  public PaginaDTO<HechoDTO> getHechosDeColeccion(String handleId, String modo, String fechaDesde, String fechaHasta, String categoria, String titulo, int page) {
 
     boolean hayFiltrosDetallados = (fechaDesde != null && !fechaDesde.isEmpty()) ||
         (fechaHasta != null && !fechaHasta.isEmpty()) ||
@@ -83,39 +84,41 @@ public class HechoApiService {
 
     String urlBase;
 
-    // agregadorApiUrl es 'http://localhost:8081' (definido en application.properties como agregador.service.url)
-
+    // Lógica de selección de endpoint
     if (hayFiltrosDetallados) {
-      // Usamos el endpoint de FILTRADO del Agregador: /colecciones/{handleID}/hechos/filtrar
+      // Usamos el endpoint de FILTRADO del Agregador
       urlBase = agregadorApiUrl + "/colecciones/" + handleId + "/hechos/filtrar";
-    }
-    else if (modo != null && !modo.isEmpty()) {
-      // Usamos el endpoint de NAVEGACION del Agregador: /colecciones/{handleID}/hechos/navegacion
+    } else if (modo != null && !modo.isEmpty()) {
+      // Usamos el endpoint de NAVEGACION del Agregador
       urlBase = agregadorApiUrl + "/colecciones/" + handleId + "/hechos/navegacion";
-    }
-    else {
-      // Endpoint base si no hay filtros explícitos, usamos navegación por defecto (irrestricta)
-      return getHechosDeColeccionSinFiltros(handleId);
+    } else {
+      // Por defecto, usamos navegación si no hay nada específico
+      urlBase = agregadorApiUrl + "/colecciones/" + handleId + "/hechos/navegacion";
     }
 
     // Usamos UriComponentsBuilder para construir la URL con los parámetros
     UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(urlBase);
 
+    // 1. Agregar parámetros de Paginación (siempre se envían)
+    builder.queryParam("page", page);
+    builder.queryParam("size", 20); // Tamaño de página fijo a 20
+
+    // 2. Agregar parámetros según el tipo de endpoint
     if (urlBase.contains("/hechos/navegacion")) {
+      // Lógica para modo Curado/Irrestricto
       if ("curada".equalsIgnoreCase(modo)) {
         builder.queryParam("esModoCurado", true);
       } else {
-        builder.queryParam("esModoCurado", false);
+        builder.queryParam("esModoCurado", false); // Irrestricta por defecto
       }
-    }
-    else if (urlBase.contains("/hechos/filtrar")) {
+    } else if (urlBase.contains("/hechos/filtrar")) {
+      // Lógica de Filtros (Validación Individual)
       if (fechaDesde != null && !fechaDesde.isEmpty()) {
         builder.queryParam("fechaInicio", fechaDesde);
       }
       if (fechaHasta != null && !fechaHasta.isEmpty()) {
         builder.queryParam("fechaFin", fechaHasta);
       }
-
       if (categoria != null && !categoria.isEmpty()) {
         builder.queryParam("categoria", categoria);
       }
@@ -126,9 +129,16 @@ public class HechoApiService {
 
     String urlCompleta = builder.toUriString();
 
-    // Las rutas de hechos de colección son públicas
-    return apiClientService.getListPublic(urlCompleta, HechoDTO.class);
+    // Llamada al servicio base esperando un PaginaDTO
+    // Nota: Necesitas usar ParameterizedTypeReference para manejar los genéricos correctamente
+    return apiClientService.getWebClient().get()
+        .uri(builder.toUriString())
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<PaginaDTO<HechoDTO>>() {})
+        .block();
   }
+
+
 
   // GET /colecciones/{handleID}/hechos/{hechoID} (Obtener Hecho Específico)
   /**

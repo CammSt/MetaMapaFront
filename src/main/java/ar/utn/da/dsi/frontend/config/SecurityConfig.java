@@ -39,7 +39,8 @@ public class SecurityConfig {
 								"/hechos/nuevo", "/hechos/crear",      // Enviar Hecho (Anónimo)
 								"/solicitudes/nueva", "/solicitudes/crear", // Enviar Solicitud (Anónimo)
 								"/css/**", "/js/**", "/assets/**", // Recursos estáticos
-								"/error/403"
+								"/error/403",
+								"/error"
 						).permitAll()
 
 						.requestMatchers("/admin/api/solicitudes/**").hasAnyRole("ADMIN", "CONTRIBUTOR")

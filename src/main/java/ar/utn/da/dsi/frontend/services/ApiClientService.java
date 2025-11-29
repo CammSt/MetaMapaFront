@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import java.util.List;
@@ -19,7 +20,15 @@ public class ApiClientService {
   private final WebClient webClient;
 
   public ApiClientService() {
-    this.webClient = WebClient.builder().build();
+    // --- CAMBIO: Configurar el límite de memoria a 16MB ---
+    int size = 16 * 1024 * 1024;
+    ExchangeStrategies strategies = ExchangeStrategies.builder()
+        .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(size))
+        .build();
+
+    this.webClient = WebClient.builder()
+        .exchangeStrategies(strategies)
+        .build();
   }
 
   /**

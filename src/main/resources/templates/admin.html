@@ -50,7 +50,7 @@
                                             <td th:text="${col.titulo}"></td>
                                             <td><span class="badge bg-secondary">Carga Manual</span></td>
                                             <td class="text-end">
-                                                <a th:href="@{/admin/colecciones/{id}/editar-completo(id=${col.handleID})}" class="btn btn-primary btn-sm rounded-pill">Editar Colección</a>
+                                                <a th:href="@{/admin/colecciones/{id}/editar(id=${col.handleID})}" class="btn btn-primary btn-sm rounded-pill">Editar Colección</a>
                                                 <form th:action="@{/admin/colecciones/{id}/eliminar(id=${col.handleID})}" method="post" class="d-inline" onsubmit="return confirm('¿Estás seguro?');">
                                                     <button type="submit" class="btn btn-danger btn-sm rounded-pill">Eliminar</button>
                                                 </form>

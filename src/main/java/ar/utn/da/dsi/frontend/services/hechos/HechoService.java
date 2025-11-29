@@ -1,6 +1,7 @@
 package ar.utn.da.dsi.frontend.services.hechos;
 
 import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
+import ar.utn.da.dsi.frontend.client.dto.PaginaDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.HechoInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.EdicionOutputDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +31,8 @@ public class HechoService {
   }
   // --------------------------------------------
 
-  public List<HechoDTO> getHechosDeColeccion(String handleId, String modo, String fechaDesde, String fechaHasta, String categoria, String titulo) {
-    return apiClient.getHechosDeColeccion(handleId, modo, fechaDesde, fechaHasta, categoria, titulo);
+  public PaginaDTO<HechoDTO> getHechosDeColeccion(String handleId, String modo, String fechaDesde, String fechaHasta, String categoria, String titulo, int page) {
+    return apiClient.getHechosDeColeccion(handleId, modo, fechaDesde, fechaHasta, categoria, titulo, page);
   }
 
   public List<HechoDTO> buscarHechosPorUsuario(String userId) {

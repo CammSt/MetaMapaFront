@@ -196,7 +196,11 @@ public class AdminController {
     model.addAttribute("coleccionDTO", new ColeccionInputDTO());
     model.addAttribute("titulo", "Crear Nueva Colección");
     model.addAttribute("accion", "crear");
-    model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
+
+    model.addAttribute("consensusLabels", hechoService.getConsensusLabels()); // Ya lo tenías
+    model.addAttribute("fuentesDisponibles", List.of("DINAMICA", "ESTATICA"));
+    model.addAttribute("criteriosDisponibles", List.of("TITULO", "CATEGORIA", "FECHA", "UBICACION"));
+
     return "admin-coleccion-form";
   }
 
@@ -209,37 +213,67 @@ public class AdminController {
     return "redirect:/admin?tab=collections";
   }
 
-  @GetMapping("/colecciones/{id}/editar-completo")
-  public String mostrarFormularioEditarColeccionCompleta(@PathVariable("id") String id, Model model) {
-    try {
-      ColeccionOutputDTO out = coleccionService.obtenerPorId(id);
+  @GetMapping("/colecciones/{id}/editar")
+  public String mostrarFormularioEditarColeccion(@PathVariable("id") String id, Model model) {
+    // 1. Obtener la colección existente desde el Agregador
+    ColeccionOutputDTO dtoOutput = coleccionService.obtenerPorId(id);
 
-      ColeccionInputDTO in = new ColeccionInputDTO();
-      in.setTitulo(out.getTitulo());
-      in.setDescripcion(out.getDescripcion());
-      in.setHandleID(out.getHandleID());
-      in.setAlgoritmoConsenso(out.getAlgoritmoConsenso());
-      in.setFuentes(out.getFuentes());
+    // 2. Instanciar el DTO de entrada para el formulario
+    ColeccionInputDTO dtoInput = new ColeccionInputDTO();
 
-      // Se usa el modo "irrestricta" por defecto para obtener todos los hechos
-      List<HechoDTO> hechosDeColeccion = hechoService.getHechosDeColeccion(id, "irrestricta", null, null, null, null);
+    // 3. Mapear datos básicos (USANDO GETTERS)
+    dtoInput.setTitulo(dtoOutput.getTitulo());
+    dtoInput.setDescripcion(dtoOutput.getDescripcion());
+    dtoInput.setHandleID(dtoOutput.getHandleID());
+    dtoInput.setAlgoritmoConsenso(dtoOutput.getAlgoritmoConsenso());
 
-
-      model.addAttribute("coleccionDTO", in);
-      model.addAttribute("titulo", "Editar Colección: " + out.getTitulo());
-      model.addAttribute("accion", "editar");
-
-      model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
-      model.addAttribute("availableSources", hechoService.getAvailableSources());
-      model.addAttribute("hechosEnColeccion", hechosDeColeccion);
-      model.addAttribute("criteriosActuales", out.getCriterios());
-      model.addAttribute("handleId", id);
-
-      return "admin-coleccion-edit-full";
-    } catch (Exception e) {
-      System.err.println("Error al cargar formulario de edición de colección: " + e.getMessage());
-      return "redirect:/admin?error=Error al cargar la colección para edición.";
+    // 4. Mapear Fuentes (Lista directa)
+    if (dtoOutput.getFuentes() != null) {
+      dtoInput.setFuentes(new ArrayList<>(dtoOutput.getFuentes()));
+    } else {
+      dtoInput.setFuentes(new ArrayList<>());
     }
+
+    // 5. Mapear Criterios (Parseo de "FiltroPorX: Valor" a listas separadas)
+    List<String> listaNombres = new ArrayList<>();
+    List<String> listaValores = new ArrayList<>();
+
+    if (dtoOutput.getCriterios() != null) {
+      for (String criterioStr : dtoOutput.getCriterios()) {
+        // El backend suele devolver: "FiltroPorTitulo: Incendio"
+        String[] partes = criterioStr.split(": ", 2);
+        if (partes.length == 2) {
+          String nombreClase = partes[0]; // Ej: FiltroPorTitulo
+          String valor = partes[1];       // Ej: Incendio
+
+          // Limpiamos el nombre para que coincida con el Enum del front (TITULO, CATEGORIA...)
+          String tipo = nombreClase.replace("FiltroPor", "").toUpperCase();
+          // Ajuste por si acaso "Ubicacion" viene con mayúscula/minúscula distinta
+          if (tipo.equals("UBICACION")) tipo = "UBICACION";
+
+          listaNombres.add(tipo);
+          listaValores.add(valor);
+        }
+      }
+    }
+    dtoInput.setCriteriosPertenenciaNombres(listaNombres);
+    dtoInput.setCriteriosPertenenciaValores(listaValores);
+
+    // 6. Cargar datos al modelo
+    model.addAttribute("coleccionDTO", dtoInput);
+    model.addAttribute("titulo", "Editar Colección: " + dtoOutput.getTitulo());
+    model.addAttribute("accion", "editar");
+
+    // 7. Cargar listas para los selectores (Fuentes y Criterios disponibles)
+    try {
+      model.addAttribute("consensusLabels", hechoService.getConsensusLabels());
+    } catch (Exception e) {
+      model.addAttribute("consensusLabels", Map.of());
+    }
+    model.addAttribute("fuentesDisponibles", List.of("DINAMICA", "ESTATICA"));
+    model.addAttribute("criteriosDisponibles", List.of("TITULO", "CATEGORIA", "FECHA", "UBICACION"));
+
+    return "admin-coleccion-form";
   }
 
   @PostMapping("/colecciones/{id}/guardar")
@@ -257,11 +291,11 @@ public class AdminController {
     } catch (ValidationException e) {
       redirectAttributes.addFlashAttribute("error", "Error de validación: " + e.getFieldErrors().values().iterator().next());
       redirectAttributes.addFlashAttribute("coleccionDTO", dto);
-      return "redirect:/admin/colecciones/" + id + "/editar-completo";
+      return "redirect:/admin/colecciones/" + id + "/editar";
     } catch (Exception e) {
       redirectAttributes.addFlashAttribute("error", "Error al actualizar la colección: " + e.getMessage());
       redirectAttributes.addFlashAttribute("coleccionDTO", dto);
-      return "redirect:/admin/colecciones/" + id + "/editar-completo";
+      return "redirect:/admin/colecciones/" + id + "/editar";
     }
   }
 
