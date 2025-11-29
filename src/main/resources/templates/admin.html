@@ -188,21 +188,6 @@
                         if(!tableBody) return;
                         tableBody.innerHTML = '';
                         if (!requests || requests.length === 0) {
-                            tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-3">No hay solicitudes pendientes.</td></tr>';
-                            return;
-                        }
-                        requests.forEach(req => {
-                            let badgeClass = req.estado === 'PENDIENTE' ? 'bg-warning' : (req.estado.includes('APROBA') || req.estado.includes('ACEPT') ? 'bg-success' : 'bg-danger');
-                            let actionBtn = req.estado === 'PENDIENTE' ?
-                                `<button class="btn btn-primary btn-sm rounded-pill btn-view-detail" data-id="${req.id}" data-type="${req.tipo}" data-title="${req.tituloDelHechoAEliminar}"><i class="bi bi-eye me-1"></i> Ver Detalle</button>` : '-';
-                            tableBody.innerHTML += `<tr><td class="fw-bold">${req.tituloDelHechoAEliminar || 'Sin título'}</td><td><span class="badge bg-info text-dark">${req.tipo}</span></td><td><span class="badge ${badgeClass}">${req.estado}</span></td><td class="text-end">${actionBtn}</td></tr>`;
-                        });
-                    }
-
-                    function renderTable(requests) {
-                        if(!tableBody) return;
-                        tableBody.innerHTML = '';
-                        if (!requests || requests.length === 0) {
                             tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-3">No hay solicitudes que coincidan.</td></tr>';
                             return;
                         }
@@ -232,11 +217,24 @@
                         const type = filterType.value;
                         const status = filterStatus.value;
 
-                        const filtered = allRequests.filter(req => {
-                            const typeMatch = !type || req.tipo === type;
-                            const statusMatch = !status || req.estado === status;
-                            return typeMatch && statusMatch;
+                        const filtered = allRequests.filter(r => {
+                            const estadoData = r.estado ? r.estado.toUpperCase() : 'PENDIENTE';
+
+                            let statusMatch = true;
+
+                            if (status) {
+                                if (status === 'ACEPTADO' || status === 'APROBADA') {
+                                    statusMatch = estadoData.includes('ACEPT') || estadoData.includes('APROB');
+                                } else if (status === 'RECHAZADO' || status === 'RECHAZADA') {
+                                    statusMatch = estadoData.includes('RECHAZ');
+                                } else {
+                                    statusMatch = estadoData === status;
+                                }
+                            }
+
+                            return (!type || r.tipo === type) && statusMatch;
                         });
+
                         renderTable(filtered);
                     }
 
