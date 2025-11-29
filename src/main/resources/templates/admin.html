@@ -311,9 +311,24 @@
                                 .then(({ status, body }) => {
                                     if (status >= 400) throw new Error(body.error || "Error en el servidor");
                                     const data = body;
-                                    let html = '';
 
-                                    // Variables para inicializar mapas al final
+                                    const containerSugerencia = document.getElementById('sugerencia-container');
+                                    const txtSugerencia = document.getElementById('inputSugerencia');
+
+                                    txtSugerencia.value = '';
+                                    txtSugerencia.readOnly = false;
+                                    containerSugerencia.style.display = 'none';
+
+                                    if (data.estado === 'PENDIENTE' && tipo === 'Nuevo Hecho') {
+                                        containerSugerencia.style.display = 'block';
+                                    } else if (data.estado === 'ACEPTADO_CON_SUGERENCIAS') {
+                                        containerSugerencia.style.display = 'block';
+                                        // Priorizamos sugerenciaAdmin que viene del DTO nuevo, sino detalle
+                                        txtSugerencia.value = data.sugerenciaAdmin || data.detalle || '';
+                                        txtSugerencia.readOnly = true; // Para que se vea que es histórico
+                                    }
+
+                                    let html = '';
                                     let mapsToInit = [];
 
                                     // --- 1. NUEVO HECHO ---
