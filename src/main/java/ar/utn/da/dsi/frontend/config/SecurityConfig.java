@@ -49,7 +49,7 @@ public class SecurityConfig {
 						.requestMatchers(
 								"/contributor/**",              // Panel de Contribuyente
 								"/hechos/{id}/editar"       		// Formulario de Edición
-						).hasRole("CONTRIBUTOR") // Spring añade "ROLE_" automáticamente
+						).hasAnyRole("ADMIN", "CONTRIBUTOR") // Spring añade "ROLE_" automáticamente => agregue admin para tener panel como contribuyente
 
 						.requestMatchers("/profile")
 						.hasAnyRole("ADMIN", "CONTRIBUTOR")
