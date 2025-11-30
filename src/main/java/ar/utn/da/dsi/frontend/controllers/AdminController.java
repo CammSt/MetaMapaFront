@@ -350,11 +350,27 @@ public class AdminController {
   }
 
   @PostMapping("/colecciones/{id}/eliminar")
-  public String eliminarColeccion(@PathVariable("id") String id, Authentication auth, RedirectAttributes redirectAttributes) {
-    coleccionService.eliminar(id, auth.getName());
+  public String eliminarColeccion(@PathVariable("id") String id,
+                                  Authentication auth,
+                                  HttpSession session,
+                                  RedirectAttributes redirectAttributes) {
+
+    // 2. OBTENER EL ID NUMÉRICO REAL (Ej: "1")
+    String userId = getUserIdFromSession(session);
+
+    if (userId == null) {
+      redirectAttributes.addFlashAttribute("error", "No se pudo identificar al usuario. Inicie sesión nuevamente.");
+      return "redirect:/login";
+    }
+
+    // 3. PASAR EL ID NUMÉRICO AL SERVICIO (Antes pasabas auth.getName() que es el email)
+    coleccionService.eliminar(id, userId);
+
     redirectAttributes.addFlashAttribute("success", "Colección eliminada correctamente.");
     return "redirect:/admin?tab=collections";
   }
+
+
   @PostMapping("/hechos/importar-csv")
   public String importarCsv(@RequestParam("csvFile") MultipartFile file, RedirectAttributes attr) {
     try {

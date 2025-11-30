@@ -51,8 +51,12 @@
                                             <td><span class="badge bg-secondary">Carga Manual</span></td>
                                             <td class="text-end">
                                                 <a th:href="@{/admin/colecciones/{id}/editar(id=${col.handleID})}" class="btn btn-primary btn-sm rounded-pill">Editar Colección</a>
-                                                <form th:action="@{/admin/colecciones/{id}/eliminar(id=${col.handleID})}" method="post" class="d-inline" onsubmit="return confirm('¿Estás seguro?');">
-                                                    <button type="submit" class="btn btn-danger btn-sm rounded-pill">Eliminar</button>
+                                                <form th:action="@{/admin/colecciones/{id}/eliminar(id=${col.handleID})}"
+                                                      method="post"
+                                                      class="d-inline">
+                                                    <button type="button" class="btn btn-danger btn-sm rounded-pill" onclick="confirmarEliminacion(this)">
+                                                        <i class="bi bi-trash"></i> Eliminar
+                                                    </button>
                                                 </form>
                                             </td>
                                         </tr>
@@ -142,8 +146,33 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg rounded-4">
+                            <div class="modal-header border-bottom-0 pb-0">
+                                <h5 class="modal-title fw-bold text-danger">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar Eliminación
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body py-4 text-center">
+                                <p class="fs-5 text-muted">¿Estás seguro de que quieres eliminar esta colección?</p>
+                                <p class="small text-secondary mb-0">Esta acción no se puede deshacer y eliminará las referencias en el sistema.</p>
+                            </div>
+                            <div class="modal-footer border-top-0 justify-content-center gap-2 pb-4">
+                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" id="btn-confirm-delete" class="btn btn-danger rounded-pill px-4 fw-bold">
+                                    Sí, Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
+
+
+
         <div id="page-scripts">
             <script th:inline="javascript">
                 /*<![CDATA[*/
@@ -152,10 +181,40 @@
                 /*]]>*/
             </script>
             <script>
+                let formToDeleteGlobal = null;
+                let deleteModalInstance = null;
+
+                // Esta función la llama el botón HTML directamente. ¡No falla!
+                function confirmarEliminacion(boton) {
+                    // 1. Guardamos el formulario padre del botón que se clickeó
+                    formToDeleteGlobal = boton.closest('form');
+
+                    // 2. Inicializamos el modal si no existe
+                    const modalEl = document.getElementById('deleteConfirmModal');
+                    if (modalEl) {
+                        if (!deleteModalInstance) {
+                            deleteModalInstance = new bootstrap.Modal(modalEl);
+                        }
+                        deleteModalInstance.show();
+                    } else {
+                        console.error("No se encontró el modal 'deleteConfirmModal'");
+                    }
+                }
+
                 document.addEventListener('DOMContentLoaded', () => {
                     renderSidebar('admin');
-                    const modalEl = document.getElementById('evaluationModal');
-                    if (modalEl) document.body.appendChild(modalEl);
+
+                    const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+                    if (btnConfirmDelete) {
+                        btnConfirmDelete.addEventListener('click', function() {
+                            if (formToDeleteGlobal) {
+                                formToDeleteGlobal.submit(); // Enviamos el formulario manualmente
+                            }
+                            if (deleteModalInstance) {
+                                deleteModalInstance.hide();
+                            }
+                        });
+                    }
 
                     // --- TABS Y FILTROS (Sin cambios) ---
                     const tabCollections = document.getElementById('admin-tab-collections');
@@ -481,6 +540,11 @@
                         });
                     }
                 });
+
+                document.querySelectorAll('.modal').forEach(m => {
+                    document.body.appendChild(m);
+                });
+
             </script>
         </div>
     </body>

@@ -54,4 +54,7 @@ public class HechoDTO {
 
 	@JsonProperty("sugerenciaAdmin")
 	private String sugerenciaAdmin;
+
+	@JsonProperty("nombreOrigen")
+	private String nombreOrigen;
 }

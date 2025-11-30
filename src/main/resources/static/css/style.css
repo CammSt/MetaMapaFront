@@ -149,3 +149,7 @@ body {
     z-index: 99998 !important;
 }
 
+#deleteConfirmModal {
+    z-index: 99999 !important;
+}
+
