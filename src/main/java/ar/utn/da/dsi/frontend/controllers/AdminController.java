@@ -75,8 +75,6 @@ public class AdminController {
       // B) Solicitudes de Baja (Ya trae todas)
       try {
         List<SolicitudEliminacionOutputDTO> bajas = solicitudService.obtenerTodasParaAdmin();
-        System.out.println("Cantidad de solicitudes de baja obtenidas: " + (bajas != null ? bajas.size() : 0));
-        System.out.println("Solicitudes de baja: " + bajas);
         if (bajas != null) {
           for (SolicitudEliminacionOutputDTO b : bajas) {
             if (b.nroDeSolicitud() != null) {
@@ -241,6 +239,9 @@ public class AdminController {
     model.addAttribute("fuentesDisponibles", List.of("DINAMICA", "ESTATICA"));
     model.addAttribute("criteriosDisponibles", List.of("TITULO", "CATEGORIA", "FECHA", "UBICACION"));
 
+    model.addAttribute("listaCategorias", hechoService.getAvailableCategories());
+    model.addAttribute("listaProvincias", List.of("Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba", "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán"));
+
     return "admin-coleccion-form";
   }
 
@@ -313,16 +314,25 @@ public class AdminController {
     model.addAttribute("fuentesDisponibles", List.of("DINAMICA", "ESTATICA"));
     model.addAttribute("criteriosDisponibles", List.of("TITULO", "CATEGORIA", "FECHA", "UBICACION"));
 
+    model.addAttribute("listaCategorias", hechoService.getAvailableCategories());
+    model.addAttribute("listaProvincias", List.of("Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba", "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán"));
+
     return "admin-coleccion-form";
   }
 
-  @PostMapping("/colecciones/{id}/guardar")
+  @PostMapping("/colecciones/{id}/editar")
   public String guardarColeccionCompleta(@PathVariable("id") String id,
                                          @ModelAttribute ColeccionInputDTO dto,
                                          Authentication auth,
+                                         HttpSession session,
                                          RedirectAttributes redirectAttributes) {
     try {
-      dto.setVisualizadorID(auth.getName());
+      String userId = getUserIdFromSession(session);
+      if (userId == null) {
+        throw new RuntimeException("No se pudo obtener el ID del usuario de la sesión.");
+      }
+
+      dto.setVisualizadorID(userId);
 
       coleccionService.actualizar(id, dto);
 

@@ -86,36 +86,52 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar('admin');
+            cargarCriteriosExistentes();
         });
     </script>
     <script th:inline="javascript">
         /*<![CDATA[*/
+        // Traemos las listas desde Java a JS
+        const listaCategorias = /*[[${listaCategorias}]]*/ [];
+        const listaProvincias = /*[[${listaProvincias}]]*/ [];
         const criteriosOps = /*[[${criteriosDisponibles}]]*/ ['TITULO', 'CATEGORIA', 'UBICACION', 'FECHA'];
+        const criteriosNombresPrevios = /*[[${coleccionDTO.criteriosPertenenciaNombres}]]*/ [];
+        const criteriosValoresPrevios = /*[[${coleccionDTO.criteriosPertenenciaValores}]]*/ [];
         /*]]>*/
 
-        function agregarCriterio() {
-            const container = document.getElementById('criterios-container');
-            const index = container.children.length;
+        function cargarCriteriosExistentes() {
+            if (criteriosNombresPrevios && criteriosNombresPrevios.length > 0) {
+                for (let i = 0; i < criteriosNombresPrevios.length; i++) {
+                    // Llamamos a agregarCriterio pasando los valores que ya tenemos
+                    agregarCriterio(criteriosNombresPrevios[i], criteriosValoresPrevios[i]);
+                }
+            }
+        }
 
+        function agregarCriterio(tipoPreseleccionado = null, valorPreseleccionado = null) {
+            const container = document.getElementById('criterios-container');
             const row = document.createElement('div');
             row.className = 'row g-2 mb-2 align-items-center criterio-row animate__animated animate__fadeIn';
 
-            // Select de Tipo
             let optionsHtml = '';
             criteriosOps.forEach(op => {
-                optionsHtml += `<option value="${op}">${op}</option>`;
+                // Si estamos cargando datos, marcamos el option como selected
+                const selected = (tipoPreseleccionado && op === tipoPreseleccionado) ? 'selected' : '';
+                optionsHtml += `<option value="${op}" ${selected}>${op}</option>`;
             });
 
             row.innerHTML = `
             <div class="col-4">
-                <select class="form-select form-select-sm" name="criteriosPertenenciaNombres">
-                    <option value="" disabled selected>Tipo...</option>
+                <select class="form-select form-select-sm selector-tipo" name="criteriosPertenenciaNombres" onchange="cambiarInputValor(this)">
+                    <option value="" disabled ${!tipoPreseleccionado ? 'selected' : ''}>Tipo...</option>
                     ${optionsHtml}
                 </select>
             </div>
-            <div class="col-7">
-                <input type="text" class="form-control form-control-sm" name="criteriosPertenenciaValores" placeholder="Valor (ej: Incendio, 2024-01-01|2024-12-31)">
+            <div class="col-7 contenedor-valor">
+                <input type="text" class="form-control form-control-sm" disabled placeholder="Seleccione un tipo primero">
             </div>
+            <input type="hidden" name="criteriosPertenenciaValores" class="input-valor-final" value="${valorPreseleccionado || ''}">
+
             <div class="col-1 text-end">
                 <button type="button" class="btn btn-link text-danger p-0" onclick="this.closest('.criterio-row').remove()">
                     <i class="bi bi-trash"></i>
@@ -123,6 +139,105 @@
             </div>
         `;
             container.appendChild(row);
+
+            // Si venía preseleccionado, forzamos la renderización del input correcto
+            if (tipoPreseleccionado) {
+                const select = row.querySelector('.selector-tipo');
+                cambiarInputValor(select, valorPreseleccionado);
+            }
+        }
+
+        function cambiarInputValor(selectElement, valorInicial = null) {
+            const tipo = selectElement.value;
+            const row = selectElement.closest('.criterio-row');
+            const container = row.querySelector('.contenedor-valor');
+            const inputHidden = row.querySelector('.input-valor-final');
+
+            // Si no es carga inicial, limpiamos el hidden
+            if (!valorInicial) inputHidden.value = "";
+
+            let htmlInput = '';
+
+            if (tipo === 'TITULO') {
+                htmlInput = `<input type="text" class="form-control form-control-sm" placeholder="Ingrese texto..." value="${valorInicial || ''}" oninput="actualizarValor(this)">`;
+
+            } else if (tipo === 'CATEGORIA') {
+                let cats = '<option value="" disabled ' + (!valorInicial ? 'selected' : '') + '>Seleccione...</option>';
+                listaCategorias.forEach(c => {
+                    const sel = (valorInicial && c === valorInicial) ? 'selected' : '';
+                    cats += `<option value="${c}" ${sel}>${c}</option>`;
+                });
+                htmlInput = `<select class="form-select form-select-sm" onchange="actualizarValor(this)">${cats}</select>`;
+
+            } else if (tipo === 'UBICACION') {
+                let provs = '<option value="" disabled ' + (!valorInicial ? 'selected' : '') + '>Seleccione Provincia...</option>';
+                listaProvincias.forEach(p => {
+                    const sel = (valorInicial && p === valorInicial) ? 'selected' : '';
+                    provs += `<option value="${p}" ${sel}>${p}</option>`;
+                });
+                htmlInput = `<select class="form-select form-select-sm" onchange="actualizarValor(this)">${provs}</select>`;
+
+            } else if (tipo === 'FECHA') {
+                // Si hay valor inicial (YYYY-MM-DDT...|YYYY-MM-DDT...), lo separamos
+                let valInicio = '';
+                let valFin = '';
+                if (valorInicial && valorInicial.includes('|')) {
+                    const partes = valorInicial.split('|');
+                    valInicio = partes[0].split('T')[0]; // Nos quedamos solo con la fecha YYYY-MM-DD
+                    valFin = partes[1].split('T')[0];
+                }
+
+                htmlInput = `
+                    <div class="input-group input-group-sm">
+                        <input type="date" class="form-control" id="f-inicio" value="${valInicio}" onchange="actualizarFecha(this)">
+                        <span class="input-group-text">a</span>
+                        <input type="date" class="form-control" id="f-fin" value="${valFin}" onchange="actualizarFecha(this)">
+                    </div>`;
+            }
+
+            container.innerHTML = htmlInput;
+        }
+
+        // Función genérica para actualizar el input hidden (Selects y Texto)
+        window.actualizarValor = function(el) {
+            const row = el.closest('.criterio-row');
+            const inputHidden = row.querySelector('.input-valor-final');
+
+            // Reemplazar comas por espacios - evita que Spring rompa la lista en el backend
+            let valorLimpio = el.value.replace(/,/g, ' ');
+
+            inputHidden.value = valorLimpio;
+        }
+
+        // Función específica para concatenar fechas
+        window.actualizarFecha = function(el) {
+            const row = el.closest('.criterio-row');
+            const inicio = row.querySelector('#f-inicio').value;
+            const fin = row.querySelector('#f-fin').value;
+            const inputHidden = row.querySelector('.input-valor-final');
+
+            if (inicio && fin) {
+                // Formato que espera tu Backend: "YYYY-MM-DDTHH:mm|YYYY-MM-DDTHH:mm"
+                // Agregamos horas para cubrir todo el día
+                inputHidden.value = `${inicio}T00:00:00|${fin}T23:59:59`;
+            } else {
+                inputHidden.value = ""; // Incompleto
+            }
+            
+            // --- VALIDACIÓN AL ENVIAR EL FORMULARIO ---
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const filas = document.querySelectorAll('.criterio-row');
+                    filas.forEach(fila => {
+                        const selectTipo = fila.querySelector('select[name="criteriosPertenenciaNombres"]');
+                        const inputValor = fila.querySelector('input[name="criteriosPertenenciaValores"]');
+                        if (!selectTipo.value || !inputValor.value || inputValor.value.trim() === '') {
+                            fila.remove();
+                        }
+                    });
+                });
+            }
         }
     </script>
 </div>
