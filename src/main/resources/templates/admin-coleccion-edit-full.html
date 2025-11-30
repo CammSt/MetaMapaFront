@@ -22,7 +22,7 @@
             </div>
 
             <form id="full-edit-form" th:object="${coleccionDTO}"
-                  th:action="@{/admin/colecciones/{id}/guardar(id=${coleccionDTO.handleID})}"
+                  th:action="@{/admin/colecciones/{id}/editar(id=${coleccionDTO.handleID})}"
                   method="post">
 
                 <ul class="nav nav-tabs mb-4" id="collectionEditTab" role="tablist">

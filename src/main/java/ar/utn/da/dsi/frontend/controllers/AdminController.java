@@ -320,13 +320,19 @@ public class AdminController {
     return "admin-coleccion-form";
   }
 
-  @PostMapping("/colecciones/{id}/guardar")
+  @PostMapping("/colecciones/{id}/editar")
   public String guardarColeccionCompleta(@PathVariable("id") String id,
                                          @ModelAttribute ColeccionInputDTO dto,
                                          Authentication auth,
+                                         HttpSession session,
                                          RedirectAttributes redirectAttributes) {
     try {
-      dto.setVisualizadorID(auth.getName());
+      String userId = getUserIdFromSession(session);
+      if (userId == null) {
+        throw new RuntimeException("No se pudo obtener el ID del usuario de la sesión.");
+      }
+
+      dto.setVisualizadorID(userId);
 
       coleccionService.actualizar(id, dto);
 
