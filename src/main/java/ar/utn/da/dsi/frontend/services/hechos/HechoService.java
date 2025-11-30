@@ -128,4 +128,12 @@ public class HechoService {
   public List<EdicionOutputDTO> buscarEdicionesPorUsuario(String userId) {
     return apiClient.getEdicionesPorUsuario(userId);
   }
+
+  // TODO: Revisar este método para que llame al backend si es necesario
+  public List<String> getAvailableProvinces() {
+    // Llama al endpoint del Agregador que devuelve provincias
+    // Si no tienes uno, puedes hardcodearlas temporalmente o crear el endpoint en el backend.
+    // Por ahora, para que avance, usaremos una lista fija en el Controller si no quieres tocar el backend de nuevo.
+    return List.of("Buenos Aires", "Catamarca", "Chaco", "Chubut", "Córdoba", "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán");
+  }
 }

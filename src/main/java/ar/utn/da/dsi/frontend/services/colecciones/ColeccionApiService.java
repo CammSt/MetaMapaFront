@@ -34,8 +34,11 @@ public class ColeccionApiService {
 		apiClientService.post(coleccionesApiUrl, dto, Void.class);
 	}
 
-	public void actualizar(String id, ColeccionInputDTO dto) {
-		apiClientService.put(coleccionesApiUrl + "/" + id, dto, Void.class);
+	public void actualizar(String handleId, ColeccionInputDTO dto) {
+		// Endpoint: PUT /colecciones/{handleId}
+		String url = coleccionesApiUrl + "/" + handleId;
+
+		apiClientService.put(url, dto, Void.class);
 	}
 
 	public void eliminar(String id, String visualizadorID) {

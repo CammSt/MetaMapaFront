@@ -27,12 +27,15 @@ public class ColeccionService {
 		apiClient.crear(dto);
 	}
 
-	public void actualizar(String id, ColeccionInputDTO dto) {
-		validarDatosColeccion(dto); // Valida al menos título, descripción y algoritmo (si es nuevo)
-
+	/*public void actualizar(String id, ColeccionInputDTO dto) {
+		validarDatosColeccion(dto);
 		apiClient.actualizarDatosBasicos(id, dto);
-
 		apiClient.editarConfiguracionUnificada(id, dto);
+	}*/
+
+	public void actualizar(String id, ColeccionInputDTO dto) {
+		validarDatosColeccion(dto);  // Valida al menos título, descripción y algoritmo (si es nuevo)
+		apiClient.actualizar(id, dto);
 	}
 
 	public void eliminar(String id, String visualizadorID) {
