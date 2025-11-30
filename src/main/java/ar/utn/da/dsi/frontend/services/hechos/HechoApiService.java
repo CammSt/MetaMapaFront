@@ -34,7 +34,7 @@ public class HechoApiService {
   private final String estaticaApiUrl;
   private final WebClient webClient;
   private final ObjectMapper objectMapper;
-  private final String agregadorApiUrl;
+  private final String  agregadorApiUrl;
 
   @Autowired
   public HechoApiService(ApiClientService apiClientService, @Value("${dinamica.service.url}") String dinamicaUrl, @Value("${estatica.service.url}") String estaticaApiUrl, @Value("${agregador.service.url}") String agregadorApiUrl) {
@@ -214,7 +214,7 @@ public class HechoApiService {
 
   //LO PIDE EB AGREGADOR PARA MOSTRAR DETALLES DE HECHO - Lo usa el mapa público y el detalle de hechos publicados.
   public HechoDTO getHechoPorId(Long id) {
-    String url = dinamicaUrl + "/hechos/" + id;
+    String url = agregadorApiUrl + "/hechos/" + id;
 
     try {
       return apiClientService.executeWithToken(accessToken ->

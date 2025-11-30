@@ -18,8 +18,8 @@
             </div>
 
             <form th:object="${solicitudDTO}" th:action="@{/solicitudes/crear}" method="post">
-
-                <input type="hidden" th:field="*{id}" />
+<!--                llenarlo con el id del hecho-->
+                <input type="hidden" name="id" th:value="${hecho.id}" />
 
                 <div class.mb-3>
                     <label for="motivo" class="form-label">Motivo de la solicitud</label>

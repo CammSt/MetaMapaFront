@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 public record SolicitudEliminacionOutputDTO(
 		@JsonProperty("nroDeSolicitud") Long nroDeSolicitud, // Mapeamos 'id' del JSON a 'nroDeSolicitud'
 		@JsonProperty("nombreHecho") String nombreHecho,
-		@JsonProperty("tituloDelHechoAEliminar") String tituloDelHechoAEliminar,
 		@JsonProperty("estado") String estado,
 		@JsonProperty("motivo") String motivo,
 		@JsonProperty("fechaCreacionSolicitud") LocalDateTime fechaCreacionSolicitud

@@ -30,7 +30,6 @@ public class SolicitudController {
     HechoInputDTO hechoDTO = hechoService.getHechoInputDTOporId(hechoId);
 
     SolicitudEliminacionInputDTO solicitudDTO = new SolicitudEliminacionInputDTO();
-    solicitudDTO.setId(hechoDTO.getId());
 
     model.addAttribute("hecho", hechoDTO);
     model.addAttribute("solicitudDTO", solicitudDTO);
@@ -42,6 +41,8 @@ public class SolicitudController {
   @PostMapping("/crear")
   public String crearSolicitud(@ModelAttribute SolicitudEliminacionInputDTO solicitudDTO, @Nullable Authentication auth) {
 
+
+    System.out.println("Creando solicitud de eliminación para hecho ID: " + solicitudDTO);
     solicitudService.crear(solicitudDTO);
 
     return "redirect:/?success=solicitud_creada";

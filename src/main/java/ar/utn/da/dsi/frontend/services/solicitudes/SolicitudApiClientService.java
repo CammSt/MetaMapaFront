@@ -24,7 +24,6 @@ public class SolicitudApiClientService {
 	}
 
 	public List<SolicitudEliminacionOutputDTO> obtenerTodasParaAdmin() {
-		// Llama a GET http://localhost:8081/solicitudes (Sin params)
 		return apiClientService.executeWithToken(accessToken ->
 				apiClientService.getWebClient().get()
 						.uri(solicitudesApiUrl)
@@ -36,11 +35,8 @@ public class SolicitudApiClientService {
 		);
 	}
 
-	// Método para Contribuyente (Mis Solicitudes)
 	public List<SolicitudEliminacionOutputDTO> obtenerTodas(String visualizadorId) {
-		// Llama a /mis-solicitudes (usa el token para filtrar en backend, el visualizadorId parámetro ya no es estricto pero lo dejamos por compatibilidad)
 		String url = solicitudesApiUrl + "/mis-solicitudes";
-
 		return apiClientService.executeWithToken(accessToken ->
 				apiClientService.getWebClient().get()
 						.uri(url)
@@ -53,25 +49,61 @@ public class SolicitudApiClientService {
 	}
 
 	public SolicitudEliminacionOutputDTO obtenerPorId(Integer id, String visualizadorId) {
-		// El Backend es GET /solicitudes/{id} y usa el token para la autorización.
 		String url = solicitudesApiUrl + "/" + id;
-		return apiClientService.get(url, SolicitudEliminacionOutputDTO.class);
+
+		// Usamos ParameterizedTypeReference para capturar ApiResponse<DTO>
+		return apiClientService.executeWithToken(accessToken ->
+				apiClientService.getWebClient().get()
+						.uri(url)
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+						.retrieve()
+						.bodyToMono(new ParameterizedTypeReference<ApiResponse<SolicitudEliminacionOutputDTO>>() {})
+						.map(response -> response.getDatos()) // Extraemos el objeto real de 'datos'
+						.block()
+		);
 	}
 
 	public SolicitudEliminacionOutputDTO crear(SolicitudEliminacionInputDTO dto) {
-		// El Backend (POST /solicitudes) requiere autenticación (token) para obtener el userId.
-		return apiClientService.post(solicitudesApiUrl, dto, SolicitudEliminacionOutputDTO.class);
+		// También aplicamos la corrección aquí por seguridad, ya que el controller devuelve ApiResponse
+		SolicitudEliminacionOutputDTO s = apiClientService.executeWithToken(accessToken ->
+				apiClientService.getWebClient().post()
+						.uri(solicitudesApiUrl)
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+						.bodyValue(dto)
+						.retrieve()
+						.bodyToMono(new ParameterizedTypeReference<ApiResponse<SolicitudEliminacionOutputDTO>>() {})
+						.map(response -> response.getDatos())
+						.block()
+		);
+		System.out.println("s = " + s);
+		return s;
 	}
 
 	public SolicitudEliminacionOutputDTO aceptar(Integer id, String visualizadorId) {
-		//El Backend es PUT /solicitudes/{id}?aceptado=true y usa el token para la identidad.
 		String url = solicitudesApiUrl + "/" + id + "?aceptado=true";
-		return apiClientService.put(url, null, SolicitudEliminacionOutputDTO.class);
+		// Corrección del desempaquetado
+		return apiClientService.executeWithToken(accessToken ->
+				apiClientService.getWebClient().put()
+						.uri(url)
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+						.retrieve()
+						.bodyToMono(new ParameterizedTypeReference<ApiResponse<SolicitudEliminacionOutputDTO>>() {})
+						.map(response -> response.getDatos())
+						.block()
+		);
 	}
 
 	public SolicitudEliminacionOutputDTO rechazar(Integer id, String visualizadorId) {
-		//El Backend es PUT /solicitudes/{id}?aceptado=false y usa el token para la identidad.
 		String url = solicitudesApiUrl + "/" + id + "?aceptado=false";
-		return apiClientService.put(url, null, SolicitudEliminacionOutputDTO.class);
+		// Corrección del desempaquetado
+		return apiClientService.executeWithToken(accessToken ->
+				apiClientService.getWebClient().put()
+						.uri(url)
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+						.retrieve()
+						.bodyToMono(new ParameterizedTypeReference<ApiResponse<SolicitudEliminacionOutputDTO>>() {})
+						.map(response -> response.getDatos())
+						.block()
+		);
 	}
 }
