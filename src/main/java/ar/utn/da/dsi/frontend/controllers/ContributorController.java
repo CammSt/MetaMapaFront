@@ -80,7 +80,7 @@ public class ContributorController {
     for (SolicitudEliminacionOutputDTO baja : misBajas) {
       listaUnificada.add(new SolicitudUnificadaDTO(
           baja.nroDeSolicitud(),
-          baja.tituloDelHechoAEliminar(),
+          baja.nombreHecho(),
           "Eliminación",
           baja.estado()
       ));

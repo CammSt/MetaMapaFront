@@ -214,7 +214,7 @@ public class HechoApiService {
 
   //LO PIDE EB AGREGADOR PARA MOSTRAR DETALLES DE HECHO - Lo usa el mapa público y el detalle de hechos publicados.
   public HechoDTO getHechoPorId(Long id) {
-    String url = agregadorApiUrl + "/hechos/" + id;
+    String url = dinamicaUrl + "/hechos/" + id;
 
     try {
       return apiClientService.executeWithToken(accessToken ->

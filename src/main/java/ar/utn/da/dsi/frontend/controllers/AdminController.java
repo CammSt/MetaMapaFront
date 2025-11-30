@@ -75,10 +75,12 @@ public class AdminController {
       // B) Solicitudes de Baja (Ya trae todas)
       try {
         List<SolicitudEliminacionOutputDTO> bajas = solicitudService.obtenerTodasParaAdmin();
+        System.out.println("Cantidad de solicitudes de baja obtenidas: " + (bajas != null ? bajas.size() : 0));
+        System.out.println("Solicitudes de baja: " + bajas);
         if (bajas != null) {
           for (SolicitudEliminacionOutputDTO b : bajas) {
             if (b.nroDeSolicitud() != null) {
-              listaUnificada.add(new SolicitudUnificadaDTO(b.nroDeSolicitud(), b.tituloDelHechoAEliminar(), "Eliminación", b.estado()));
+              listaUnificada.add(new SolicitudUnificadaDTO(b.nroDeSolicitud(), b.nombreHecho(), "Eliminación", b.estado()));
             }
           }
         }
