@@ -28,10 +28,8 @@ public class SolicitudService {
 	}
 
 	public SolicitudEliminacionOutputDTO crear(SolicitudEliminacionInputDTO dto) {
-		System.out.println("Se recibio la solicitud de eliminacion");
 		System.out.println(dto);
 		validarSolicitud(dto);
-		System.out.println("Se valido la solicitud de eliminacion, falta mandarlo al agregador");
 		return apiClient.crear(dto);
 	}
 

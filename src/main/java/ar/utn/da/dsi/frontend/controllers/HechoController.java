@@ -1,5 +1,6 @@
 package ar.utn.da.dsi.frontend.controllers;
 
+import ar.utn.da.dsi.frontend.client.dto.HechoDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.HechoInputDTO;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -77,15 +78,31 @@ public class HechoController {
   @GetMapping("/{id}/editar")
   public String mostrarFormularioEditarHecho(@PathVariable("id") Long id, Model model) {
 
+    // 1. OBTENER EL DTO COMPLETO DESDE DINÁMICA
+    HechoDTO hechoCheck = hechoService.buscarHechoEnDinamica(id);
+
+    // 2. TOMAR EL VALOR REAL
+    boolean tienePendiente = hechoCheck != null && hechoCheck.isTieneEdicionPendiente();
+
+    // 3. PASARLO A LA VISTA (¡SIN PISARLO!)
+    model.addAttribute("tieneEdicionPendiente", tienePendiente);
+
+    // 4. CARGAR EL DTO PARA EL FORMULARIO
     if (!model.containsAttribute("hechoDTO")) {
       model.addAttribute("hechoDTO", hechoService.buscarHechoInputEnDinamica(id));
     }
 
     HechoInputDTO hechoDTO = (HechoInputDTO) model.getAttribute("hechoDTO");
 
-    model.addAttribute("titulo", "Editar Hecho: " + hechoDTO.getTitulo());
+    if (hechoDTO != null) {
+      model.addAttribute("titulo", "Editar Hecho: " + hechoDTO.getTitulo());
+    } else {
+      model.addAttribute("titulo", "Editar Hecho");
+    }
+
     model.addAttribute("accion", "editar");
 
+    // 5. CATEGORÍAS
     try {
       model.addAttribute("categorias", hechoService.getAvailableCategories());
     } catch (Exception e) {
@@ -94,6 +111,7 @@ public class HechoController {
 
     return "hecho-form";
   }
+
 
   @PostMapping("/{id}/editar")
   public String editarHecho(

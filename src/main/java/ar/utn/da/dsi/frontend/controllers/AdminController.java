@@ -248,7 +248,6 @@ public class AdminController {
   @PostMapping("/colecciones/crear")
   public String crearColeccion(@ModelAttribute ColeccionInputDTO dto, HttpSession session, RedirectAttributes redirectAttributes) {
     dto.setVisualizadorID(getUserIdFromSession(session));
-    System.out.println("Creando colección con DTO: " + dto);
     coleccionService.crear(dto);
     redirectAttributes.addFlashAttribute("success", "Colección creada exitosamente.");
     return "redirect:/admin?tab=collections";

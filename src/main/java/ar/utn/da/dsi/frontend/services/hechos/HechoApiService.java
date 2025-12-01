@@ -380,10 +380,6 @@ public class HechoApiService {
             .uri(url)
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
             .retrieve()
-            // DESEMPAQUETAMOS EL ApiResponse IGUAL QUE EN 'getHechosPorUsuario'
-            // Usamos HechoBackendDinamicaDTO intermedio si la estructura es anidada (categoria objeto),
-            // o HechoDTO si ya lo aplanaste en el backend.
-            // Como vi en tu JSON que categoria es un String ("Urgencias"), podemos usar HechoDTO directo si coinciden los campos.
             .bodyToMono(new ParameterizedTypeReference<ApiResponse<List<HechoDTO>>>() {})
             .map(response -> response.getDatos() != null ? response.getDatos() : List.<HechoDTO>of())
             .block()

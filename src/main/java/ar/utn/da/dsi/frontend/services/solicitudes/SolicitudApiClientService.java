@@ -94,7 +94,6 @@ public class SolicitudApiClientService {
 					.map(response -> response.getDatos())
 					.block();
 
-			System.out.println("s = " + s);
 			return s;
 		} catch (Exception e) {
 			// Capturamos cualquier error (incluidos los de comunicación HTTP/WebClient)
