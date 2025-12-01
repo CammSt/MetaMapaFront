@@ -217,21 +217,21 @@ public class HechoApiService {
     String url = agregadorApiUrl + "/hechos/" + id;
 
     try {
-      return apiClientService.executeWithToken(accessToken ->
-          webClient.get()
-              .uri(url)
-              .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-              .retrieve()
-              .bodyToMono(new ParameterizedTypeReference<ApiResponse<HechoDTO>>() {})
-              .flatMap(response -> {
-                // Si datos es null, retornamos un Mono vacío (que .block() convierte en null de forma segura)
-                if (response.getDatos() == null) {
-                  return Mono.empty();
-                }
-                return Mono.just(response.getDatos());
-              })
-              .block()
-      );
+      // CORRECCIÓN: Se elimina el executeWithToken y el Header.
+      // La llamada se hace directamente a webClient (no autenticada) pero
+      // se mantiene la lógica para desempaquetar la respuesta ApiResponse.
+      return webClient.get()
+          .uri(url)
+          .retrieve()
+          .bodyToMono(new ParameterizedTypeReference<ApiResponse<HechoDTO>>() {})
+          .flatMap(response -> {
+            // Si 'datos' es null (ej: error 404/500 con wrapper), se retorna Mono.empty() (que .block() convierte en null).
+            if (response.getDatos() == null) {
+              return Mono.empty();
+            }
+            return Mono.just(response.getDatos());
+          })
+          .block();
     } catch (Exception e) {
       System.out.println("Error al buscar hecho por ID " + id + ": " + e.getMessage());
       return null;

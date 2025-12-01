@@ -27,8 +27,12 @@ public class SolicitudController {
 
   @GetMapping("/nueva")
   public String mostrarFormularioNuevaSolicitud(@RequestParam("hechoId") Long hechoId, Model model) {
-
+    System.out.println("Id del ehcho buscado" + hechoId);
     HechoInputDTO hechoDTO = hechoService.getHechoAgregadorDTOporId(hechoId);
+
+    System.out.println("HECHO DTO: " + hechoDTO.getId());
+    System.out.println("HECHO DTO: " + hechoDTO.getTitulo());
+    System.out.println("HECHO DTO: " + hechoDTO.getCategoria());
 
     SolicitudEliminacionInputDTO solicitudDTO = new SolicitudEliminacionInputDTO();
 

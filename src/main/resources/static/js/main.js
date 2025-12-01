@@ -189,7 +189,7 @@ function renderRequestDetailModal(container, requestData) {
     const isEliminacion = requestType === 'Eliminación';
 
     // Campos primarios
-    const titulo = requestData.titulo || requestData.tituloPropuesto || requestData.tituloDelHechoAEliminar || `Hecho ID ${requestData.idHechoOriginal || requestData.id}`;
+    const titulo = requestData.titulo || requestData.tituloPropuesto || requestData.tituloDelHechoAEliminar || requestData.nombreHecho || `Hecho ID ${requestData.idHechoOriginal || requestData.id}`;
     const descripcionPropuesta = requestData.descripcionPropuesta || requestData.descripcion || '';
     const motivoEliminacion = requestData.motivo || '';
 
@@ -231,7 +231,7 @@ function renderRequestDetailModal(container, requestData) {
 
     if (isEliminacion) {
         propuestaContent += `<p class="fw-bold text-danger">Motivo de Eliminación:</p><p class="text-muted" style="white-space: pre-wrap;">${motivoEliminacion || 'No especificado.'}</p>`;
-        propuestaContent += `<p><strong>Título del Hecho a Eliminar:</strong> ${requestData.tituloHecho || titulo}</p>`;
+        propuestaContent += `<p><strong>Título del Hecho a Eliminar:</strong> ${requestData.nombreHecho || titulo}</p>`;
     } else {
         propuestaContent += `<p class="fw-bold text-primary">${isEdicion ? 'Detalles de la Edición Propuesta' : 'Detalles del Hecho'}</p>`;
         propuestaContent += `<p><strong>Descripción:</strong> <span class="text-muted" style="white-space: pre-wrap;">${descripcionPropuesta || 'Sin descripción.'}</span></p>`;
