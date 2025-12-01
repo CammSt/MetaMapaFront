@@ -2,6 +2,7 @@ package ar.utn.da.dsi.frontend.controllers;
 
 import ar.utn.da.dsi.frontend.client.dto.input.HechoInputDTO;
 import ar.utn.da.dsi.frontend.client.dto.input.SolicitudEliminacionInputDTO;
+import ar.utn.da.dsi.frontend.exceptions.ValidationException;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
 import ar.utn.da.dsi.frontend.services.solicitudes.SolicitudService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,8 +56,17 @@ public class SolicitudController {
       // 2. Usar addFlashAttribute (Esto viaja oculto y seguro hasta la siguiente vista)
       redirectAttributes.addFlashAttribute("success", "Solicitud de eliminación creada correctamente. Un administrador la revisará.");
 
+    } catch (ValidationException e) {
+      // Extraemos el primer mensaje de error detallado del mapa de ValidationException
+      String errorMessage = "Error de validación: " + e.getFieldErrors().values().iterator().next();
+
+      redirectAttributes.addFlashAttribute("error", errorMessage);
+      // Mantenemos los datos introducidos para el redirect
+      redirectAttributes.addFlashAttribute("solicitudDTO", solicitudDTO);
+      // Redirigimos al formulario original (necesitamos el hechoId, que está en solicitudDTO.getId())
+      return "redirect:/solicitudes/nueva?hechoId=" + solicitudDTO.getId();
+
     } catch (Exception e) {
-      // Es buena práctica capturar errores también
       redirectAttributes.addFlashAttribute("error", "Hubo un problema al crear la solicitud: " + e.getMessage());
     }
 
