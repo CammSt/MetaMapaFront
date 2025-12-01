@@ -47,6 +47,8 @@ function renderSidebar(currentPage) {
 }
 // --- FUNCIONES PARA RENDERIZAR MODALES  ---
 
+// ... dentro de main.js ...
+
 function openModal(modalRenderFunc, ...args) {
     const modalContainer = document.getElementById('modal-container');
     modalContainer.innerHTML = '';
@@ -56,7 +58,9 @@ function openModal(modalRenderFunc, ...args) {
         const modal = new bootstrap.Modal(modalElement);
         modal.show();
         modalElement.addEventListener('hidden.bs.modal', () => { modalContainer.innerHTML = ''; }, { once: true });
-        return modal;
+
+        // --- CAMBIO AQUÍ: Devolver el elemento DOM, no la instancia ---
+        return modalElement;
     }
     return null;
 }
@@ -97,10 +101,42 @@ function renderTermsModal(container) {
 
 function renderFactDetailModal(container, fact) {
     const formattedDate = new Date(fact.fechaAcontecimiento).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+    const fuenteTexto = fact.nombreOrigen || 'No especificada';
+
+    // --- LÓGICA DE MULTIMEDIA ---
+    // --- LÓGICA DE MULTIMEDIA CORREGIDA ---
+    let imageHtml = '';
+    if (fact.contenidoMultimedia) {
+        let imageUrl = fact.contenidoMultimedia;
+
+        // Aseguramos que siempre apunte al backend de Fuente Dinámica (puerto 8082)
+        // Si la URL no incluye el dominio correcto, se lo forzamos.
+        const baseUrlBackend = 'http://localhost:8082';
+
+        if (!imageUrl.includes(baseUrlBackend)) {
+            // Quitamos cualquier barra inicial o 'http://...' incorrecto que pueda tener
+            imageUrl = imageUrl.replace(/^(https?:\/\/[^\/]+)?\//, '');
+            // Construimos la URL final correcta
+            imageUrl = `${baseUrlBackend}/uploads/${imageUrl}`;
+        }
+
+        imageHtml = `
+        <div class="mb-4 text-center bg-light p-2 rounded border">
+            <img src="${imageUrl}" 
+                 class="img-fluid rounded shadow-sm" 
+                 style="max-height: 350px; width: auto;" 
+                 alt="Evidencia del hecho"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="text-muted small mt-2" style="display:none;">
+                <i class="bi bi-exclamation-triangle me-1"></i> No se pudo cargar la imagen.
+            </div>
+        </div>`;
+    }
+// ---------------------------------------
+
     container.innerHTML = `
         <div class="modal fade" id="fact-detail-modal" tabindex="-1">
-            
-            <div class="modal-dialog modal-lg modal-dialog-centered"> 
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"> 
                 <div class="modal-content rounded-4 shadow-lg border-0">
                     <div class="modal-header bg-light border-bottom-0">
                         <div>
@@ -110,16 +146,32 @@ function renderFactDetailModal(container, fact) {
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body p-4">
+                        
 
-                        <p class="text-muted" style="overflow-wrap: break-word;">${fact.descripcion}</p>
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Descripción</h6>
+                        <p class="text-muted" style="white-space: pre-wrap; overflow-wrap: break-word;">${fact.descripcion}</p>
 
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-6"><h6 class="fw-bold">Detalles</h6><ul class="list-unstyled"><li><strong><i class="bi bi-calendar-event me-2"></i>Fecha:</strong> ${formattedDate}</li></ul></div>
-                            <div class="col-md-6"><h6 class="fw-bold">Ubicación</h6><div id="mini-map" style="height: 150px; width: 100%; border-radius: 8px; background-color: #eee;"></div></div>
+                        <div class="row mt-4 pt-3 border-top">
+                            <div class="col-md-6">
+                                <h6 class="fw-bold mb-3">Información Adicional</h6>
+                                <ul class="list-unstyled text-muted small">
+                                    <li class="mb-2"><strong><i class="bi bi-calendar-event me-2 text-primary"></i>Fecha:</strong> ${formattedDate}</li>
+                                    <li class="mb-2"><strong><i class="bi bi-hdd-network me-2 text-primary"></i>Fuente:</strong> ${fuenteTexto}</li>
+                                    <li><strong><i class="bi bi-person-check me-2 text-primary"></i>Consenso:</strong> ${fact.consensuado ? '<span class="text-success">Verificado</span>' : '<span class="text-warning">En revisión</span>'}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-bold mb-2">Ubicación</h6>
+                                <div id="mini-map" style="height: 180px; width: 100%; border-radius: 8px; background-color: #eee; border: 1px solid #ddd;"></div>
+                            </div>
                         </div>
+                        <div class="row mt-4 pt-3 border-top">
+                            ${imageHtml}
+                        </div>                     
                     </div>
-                    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
                 </div>
             </div>
         </div>`;

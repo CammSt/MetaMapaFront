@@ -141,7 +141,7 @@ public class AdminController {
         HechoInputDTO original = new HechoInputDTO();
         try {
           if (edicion.getIdHechoOriginal() != null) {
-            original = hechoService.getHechoInputDTOporId(edicion.getIdHechoOriginal());
+            original = hechoService.buscarHechoInputEnDinamica(edicion.getIdHechoOriginal());
           }
         } catch (Exception e) {
           original.setTitulo("No disponible");

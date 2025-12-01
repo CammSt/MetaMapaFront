@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.lang.Nullable;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/solicitudes")
@@ -27,7 +28,7 @@ public class SolicitudController {
   @GetMapping("/nueva")
   public String mostrarFormularioNuevaSolicitud(@RequestParam("hechoId") Long hechoId, Model model) {
 
-    HechoInputDTO hechoDTO = hechoService.getHechoInputDTOporId(hechoId);
+    HechoInputDTO hechoDTO = hechoService.getHechoAgregadorDTOporId(hechoId);
 
     SolicitudEliminacionInputDTO solicitudDTO = new SolicitudEliminacionInputDTO();
 
@@ -39,12 +40,22 @@ public class SolicitudController {
   }
 
   @PostMapping("/crear")
-  public String crearSolicitud(@ModelAttribute SolicitudEliminacionInputDTO solicitudDTO, @Nullable Authentication auth) {
+  public String crearSolicitud(
+      @ModelAttribute SolicitudEliminacionInputDTO solicitudDTO,
+      @Nullable Authentication auth,
+      RedirectAttributes redirectAttributes) { // <--- 1. Agregar este parámetro
 
+    try {
+      solicitudService.crear(solicitudDTO);
 
-    System.out.println("Creando solicitud de eliminación para hecho ID: " + solicitudDTO);
-    solicitudService.crear(solicitudDTO);
+      // 2. Usar addFlashAttribute (Esto viaja oculto y seguro hasta la siguiente vista)
+      redirectAttributes.addFlashAttribute("success", "Solicitud de eliminación creada correctamente. Un administrador la revisará.");
 
-    return "redirect:/?success=solicitud_creada";
+    } catch (Exception e) {
+      // Es buena práctica capturar errores también
+      redirectAttributes.addFlashAttribute("error", "Hubo un problema al crear la solicitud: " + e.getMessage());
+    }
+
+    return "redirect:/"; // 3. Redirigir a la home LIMPIO (sin ?success=...)
   }
 }

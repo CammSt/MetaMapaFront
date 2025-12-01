@@ -391,20 +391,40 @@
                                     // --- 1. NUEVO HECHO ---
                                     if (tipo === 'Nuevo Hecho') {
                                         const fecha = data.fechaAcontecimiento ? new Date(data.fechaAcontecimiento).toLocaleString() : '-';
-                                        const imgHtml = data.contenidoMultimedia ?
-                                            `<div class="mb-3 text-center p-2 bg-light rounded border"><img src="${data.contenidoMultimedia}" class="img-fluid rounded" style="max-height: 300px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"><div style="display:none" class="text-muted small mt-1"><i class="bi bi-file-earmark"></i> ${data.contenidoMultimedia}</div></div>`
+
+                                        // --- CORRECCIÓN DE URL DE IMAGEN ---
+                                        let imgUrl = data.contenidoMultimedia;
+                                        if (imgUrl && !imgUrl.startsWith('http')) {
+                                            // Apuntamos al puerto 8082 donde configuramos el ResourceHandler
+                                            imgUrl = `http://localhost:8082/uploads/${imgUrl}`;
+                                        }
+                                        // -----------------------------------
+
+                                        const imgHtml = imgUrl ?
+                                            `<div class="mb-3 text-center p-2 bg-light rounded border">
+                                                <img src="${imgUrl}" class="img-fluid rounded" style="max-height: 300px;"
+                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                                                <div style="display:none" class="text-muted small mt-1">
+                                                    <i class="bi bi-file-earmark"></i> Error al cargar imagen
+                                                </div>
+                                            </div>`
                                             : `<div class="alert alert-secondary py-2 small text-center">No se adjuntó contenido multimedia.</div>`;
 
                                         html = `
-                                    <div class="alert alert-info border-0 shadow-sm mb-3">Propuesta de creación</div>
-                                    <h4 class="text-primary fw-bold mb-3">${data.titulo || 'Sin título'}</h4>
-                                    <p class="lead fs-6">${data.descripcion || 'Sin descripción'}</p>
-                                    ${imgHtml}
-                                    <div class="row g-2 small text-muted mb-3">
-                                        <div class="col-6"><strong>Categoría:</strong> <span class="badge bg-secondary">${data.categoria}</span></div>
-                                        <div class="col-6"><strong>Fecha:</strong> ${fecha}</div>
-                                    </div>
-                                    <div class="card border-0"><div class="card-header bg-white fw-bold small text-muted">Ubicación</div><div class="card-body p-0"><div id="modal-map-container" style="height: 250px; width: 100%; background: #eee; border-radius: 0 0 8px 8px;"></div></div></div>`;
+                                           <div class="alert alert-info border-0 shadow-sm mb-3">Propuesta de creación</div>
+                                           <h4 class="text-primary fw-bold mb-3">${data.titulo || 'Sin título'}</h4>
+                                           <p class="lead fs-6">${data.descripcion || 'Sin descripción'}</p>
+                                           ${imgHtml}
+                                           <div class="row g-2 small text-muted mb-3">
+                                               <div class="col-6"><strong>Categoría:</strong> <span class="badge bg-secondary">${data.categoria}</span></div>
+                                               <div class="col-6"><strong>Fecha:</strong> ${fecha}</div>
+                                           </div>
+                                           <div class="card border-0">
+                                               <div class="card-header bg-white fw-bold small text-muted">Ubicación</div>
+                                               <div class="card-body p-0">
+                                                   <div id="modal-map-container" style="height: 250px; width: 100%; background: #eee; border-radius: 0 0 8px 8px;"></div>
+                                               </div>
+                                           </div>`;
 
                                         if(data.latitud && data.longitud) {
                                             mapsToInit.push({ id: 'modal-map-container', lat: data.latitud, lng: data.longitud, popup: 'Ubicación' });

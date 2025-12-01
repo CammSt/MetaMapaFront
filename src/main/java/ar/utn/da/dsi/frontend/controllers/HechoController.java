@@ -78,7 +78,7 @@ public class HechoController {
   public String mostrarFormularioEditarHecho(@PathVariable("id") Long id, Model model) {
 
     if (!model.containsAttribute("hechoDTO")) {
-      model.addAttribute("hechoDTO", hechoService.getHechoInputDTOporId(id));
+      model.addAttribute("hechoDTO", hechoService.buscarHechoInputEnDinamica(id));
     }
 
     HechoInputDTO hechoDTO = (HechoInputDTO) model.getAttribute("hechoDTO");
