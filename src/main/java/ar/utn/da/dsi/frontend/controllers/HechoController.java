@@ -78,31 +78,36 @@ public class HechoController {
   @GetMapping("/{id}/editar")
   public String mostrarFormularioEditarHecho(@PathVariable("id") Long id, Model model) {
 
-    // 1. OBTENER EL DTO COMPLETO DESDE DINÁMICA
     HechoDTO hechoCheck = hechoService.buscarHechoEnDinamica(id);
 
-    // 2. TOMAR EL VALOR REAL
-    boolean tienePendiente = hechoCheck != null && hechoCheck.isTieneEdicionPendiente();
+    if (hechoCheck == null) {
+      throw new RuntimeException("No se encontró el hecho en Dinámica");
+    }
 
-    // 3. PASARLO A LA VISTA (¡SIN PISARLO!)
+    // EXTRAER DATOS IMPORTANTES
+    String estado = hechoCheck.getEstado();
+    boolean tienePendiente = hechoCheck.isTieneEdicionPendiente();
+
+    // VALIDACIÓN
+    boolean puedeEditar = "ACEPTADO".equalsIgnoreCase(estado) && !tienePendiente;
+
+    if (!puedeEditar) {
+      model.addAttribute("error",
+          "Este hecho no puede editarse porque no está aceptado o tiene una edición pendiente.");
+      return "redirect:/hechos/" + id;
+    }
+
     model.addAttribute("tieneEdicionPendiente", tienePendiente);
 
-    // 4. CARGAR EL DTO PARA EL FORMULARIO
     if (!model.containsAttribute("hechoDTO")) {
       model.addAttribute("hechoDTO", hechoService.buscarHechoInputEnDinamica(id));
     }
 
     HechoInputDTO hechoDTO = (HechoInputDTO) model.getAttribute("hechoDTO");
 
-    if (hechoDTO != null) {
-      model.addAttribute("titulo", "Editar Hecho: " + hechoDTO.getTitulo());
-    } else {
-      model.addAttribute("titulo", "Editar Hecho");
-    }
-
+    model.addAttribute("titulo", "Editar Hecho: " + hechoDTO.getTitulo());
     model.addAttribute("accion", "editar");
 
-    // 5. CATEGORÍAS
     try {
       model.addAttribute("categorias", hechoService.getAvailableCategories());
     } catch (Exception e) {
@@ -111,6 +116,7 @@ public class HechoController {
 
     return "hecho-form";
   }
+
 
 
   @PostMapping("/{id}/editar")

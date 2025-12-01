@@ -312,11 +312,14 @@ public class HechoApiService {
   public HechoDTO actualizarHecho(Long id, HechoInputDTO dto, @Nullable MultipartFile archivo) {
     String url = dinamicaUrl + "/hechos/" + id + "/editar"; // Endpoint: PUT /hechos/{id}/editar
 
-    // Mapeamos HechoInputDTO a la estructura necesaria para EdicionInputDTO (solo los campos propuestos)
     Map<String, Object> edicionData = new LinkedHashMap<>();
     edicionData.put("tituloPropuesto", dto.getTitulo());
     edicionData.put("descripcionPropuesta", dto.getDescripcion());
-    edicionData.put("categoriaPropuesta", Map.of("nombre", dto.getCategoria())); // El backend espera un objeto Categoria
+
+    if (dto.getCategoria() != null) {
+      edicionData.put("categoriaPropuesta", dto.getCategoria());
+    }
+
     edicionData.put("latitudPropuesta", dto.getLatitud());
     edicionData.put("longitudPropuesta", dto.getLongitud());
     edicionData.put("fechaAcontecimientoPropuesta", dto.getFechaAcontecimiento());
