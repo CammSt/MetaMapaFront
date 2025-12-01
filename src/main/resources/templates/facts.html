@@ -63,12 +63,12 @@
             <div class="d-flex gap-3">
                 <div class="btn-group" role="group">
                     <input type="radio" class="btn-check" name="modo" id="nav-unrestricted" value="irrestricta"
-                           th:checked="${filtros.modo == 'irrestricta'}">
-                    <label class="btn btn-outline-secondary btn-sm" for="nav-unrestricted"><i class="bi bi-unlock me-2"></i>Irrestricta</label>
+                           th:checked="${filtros.modo == 'irrestricta'}"
+                           onchange="this.form.submit()"><label class="btn btn-outline-secondary btn-sm" for="nav-unrestricted"><i class="bi bi-unlock me-2"></i>Irrestricta</label>
 
                     <input type="radio" class="btn-check" name="modo" id="nav-curated" value="curada"
-                           th:checked="${filtros.modo == 'curada'}">
-                    <label class="btn btn-outline-secondary btn-sm" for="nav-curated"><i class="bi bi-shield-check me-2"></i>Curada</label>
+                           th:checked="${filtros.modo == 'curada'}"
+                           onchange="this.form.submit()"><label class="btn btn-outline-secondary btn-sm" for="nav-curated"><i class="bi bi-shield-check me-2"></i>Curada</label>
                 </div>
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-primary btn-sm active" id="list-tab-btn"><i class="bi bi-list-ul me-2"></i>Lista</button>
