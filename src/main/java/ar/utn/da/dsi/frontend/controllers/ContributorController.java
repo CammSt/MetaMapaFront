@@ -32,26 +32,25 @@ public class ContributorController {
   }
 
   @GetMapping
-  public String mostrarPanelContribuyente(Model model, Authentication authentication) {
-    String userId = authentication.getName();
+  public String mostrarPanelContribuyente(Model model) {
 
     List<HechoDTO> todosMisHechos = new ArrayList<>();
     try {
-      todosMisHechos = hechoService.buscarHechosPorUsuario(userId);
+      todosMisHechos = hechoService.buscarHechosPorUsuario();
     } catch (Exception e) {
       System.out.println("Error buscando hechos: " + e.getMessage());
     }
 
     List<SolicitudEliminacionOutputDTO> misBajas = new ArrayList<>();
     try {
-      misBajas = solicitudService.obtenerTodas(userId);
+      misBajas = solicitudService.obtenerTodas();
     } catch (Exception e) {
       System.out.println("Error buscando solicitudes de baja: " + e.getMessage());
     }
 
     List<EdicionOutputDTO> misEdiciones = new ArrayList<>();
     try {
-      misEdiciones = hechoService.buscarEdicionesPorUsuario(userId);
+      misEdiciones = hechoService.buscarEdicionesPorUsuario();
     } catch (Exception e) {
       System.out.println("Error buscando ediciones: " + e.getMessage());
     }
