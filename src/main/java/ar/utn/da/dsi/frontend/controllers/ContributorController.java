@@ -6,6 +6,7 @@ import ar.utn.da.dsi.frontend.client.dto.output.SolicitudEliminacionOutputDTO;
 import ar.utn.da.dsi.frontend.client.dto.output.SolicitudUnificadaDTO;
 import ar.utn.da.dsi.frontend.services.hechos.HechoService;
 import ar.utn.da.dsi.frontend.services.solicitudes.SolicitudService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,6 +19,9 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/contributor")
 public class ContributorController {
+
+  @Value("${dinamica.service.url}")
+  private String dinamicaUrl;
 
   private final SolicitudService solicitudService;
   private final HechoService hechoService;
@@ -101,6 +105,9 @@ public class ContributorController {
     }
 
     model.addAttribute("misSolicitudes", listaUnificada);
+
+    String baseUrl = dinamicaUrl.replace("/dinamica", "");
+    model.addAttribute("backendImagesUrl", baseUrl);
 
     return "contributor";
   }
