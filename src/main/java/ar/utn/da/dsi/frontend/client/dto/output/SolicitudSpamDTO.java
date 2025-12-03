@@ -1,22 +1,34 @@
 package ar.utn.da.dsi.frontend.client.dto.output;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-@Data // <--- Genera Getters y Setters automáticamente
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SolicitudSpamDTO {
 
-  // El porcentaje de spam calculado
-  private Double porcentaje;
+  // El backend envía "cantidadSpam", debemos capturarlo tal cual
+  @JsonProperty("cantidadSpam")
+  private Long cantidadSpam;
 
-  // CORRECCIÓN:
-  // El backend envía este dato como "cantidad" en el JSON.
-  // Nosotros queremos usarlo como "totalSolicitudes" en Java/HTML.
-  // Esta anotación hace la traducción automática.
-  @JsonProperty("cantidad")
+  // El backend envía "totalSolicitudes", corregimos el mapeo
+  @JsonProperty("totalSolicitudes")
   private Long totalSolicitudes;
+
+  /**
+   * Este método calcula el porcentaje automáticamente.
+   * Al usar Thymeleaf u otro motor de plantillas, puedes acceder a él como ${spamRatio.porcentaje}
+   */
+  public Double getPorcentaje() {
+    if (totalSolicitudes == null || totalSolicitudes == 0) {
+      return 0.0;
+    }
+    // Calculamos el porcentaje: (Spam / Total) * 100
+    return (double) cantidadSpam / totalSolicitudes * 100;
+  }
 }
